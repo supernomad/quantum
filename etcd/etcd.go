@@ -26,6 +26,7 @@ func (e *Etcd) Watch(mappings map[string]common.Mapping) {
 			resp, err := watch.Next(context.Background())
 			if err != nil {
 				e.log.Error("[ETCD]", "Error during watch:", err)
+				time.Sleep(e.ttl / e.retries * time.Second)
 				continue
 			}
 
