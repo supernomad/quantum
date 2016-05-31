@@ -42,7 +42,7 @@ func main() {
 	}
 	etcd.SetMapping(cfg.PrivateIP, mapping)
 
-	etcd.Heartbeat(cfg.PrivateIP)
+	etcd.Heartbeat(cfg.PrivateIP, mapping)
 	etcd.Watch(mappings)
 
 	tunnel, err := tun.New(cfg.InterfaceName, cfg.PrivateIP+"/"+cfg.SubnetMask, log)

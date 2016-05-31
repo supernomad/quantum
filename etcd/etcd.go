@@ -41,17 +41,27 @@ func (e *Etcd) Watch(mappings map[string]common.Mapping) {
 	}()
 }
 
-func (e *Etcd) Heartbeat(privateIP string) {
+func (e *Etcd) Heartbeat(privateIP string, mapping common.Mapping) {
 	go func() {
 		kapi := client.NewKeysAPI(e.cli)
-		setOptions := &client.SetOptions{TTL: e.ttl * time.Second, Refresh: true}
+		key := path.Join("/", e.key, "mappings", privateIP)
+
+		refreshOptions := &client.SetOptions{TTL: e.ttl * time.Second, Refresh: true}
+		setOptions := &client.SetOptions{TTL: e.ttl * time.Second}
+
 		for {
 			time.Sleep(e.ttl / e.retries * time.Second)
-			_, err := kapi.Set(context.Background(), e.key+"/mappings/"+privateIP, "", setOptions)
+			_, err := kapi.Set(context.Background(), key, "", refreshOptions)
 
 			if err != nil {
+				if client.IsKeyNotFound(err) {
+					_, err := kapi.Set(context.Background(), key, mapping.String(), setOptions)
+					if err != nil {
+						e.log.Error("[ETCD]", "Error during re-registration:", err)
+					}
+					continue
+				}
 				e.log.Error("[ETCD]", "Error during heartbeat:", err)
-				continue
 			}
 		}
 	}()
