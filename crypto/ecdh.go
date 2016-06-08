@@ -19,12 +19,11 @@ type ECDH struct {
 func NewEcdh(log *logger.Logger) (*ECDH, error) {
 	var pub, priv [keyLength]byte
 
-	rand, err := RandomBytes(keyLength)
+	_, err := RandomBytes(priv[:])
 	if err != nil {
 		return nil, err
 	}
 
-	copy(priv[:], rand)
 	curve25519.ScalarBaseMult(&pub, &priv)
 
 	return &ECDH{
