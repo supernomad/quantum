@@ -44,7 +44,7 @@ func (gcm *GCM) Seal(payload *common.Payload) (*common.Payload, bool) {
 	}
 
 	// Seal the packet and associated meta data
-	aesgcm.Seal(payload.Packet[:0], payload.Nonce, payload.Packet, nil)
+	aesgcm.Seal(payload.Packet[:0], payload.Nonce, payload.Packet, gcm.ecdh.PublicKey[:])
 
 	copy(payload.Key, gcm.ecdh.PublicKey[:])
 	return payload, true
@@ -68,7 +68,7 @@ func (gcm *GCM) Unseal(payload *common.Payload) (*common.Payload, bool) {
 		return payload, false
 	}
 
-	_, err = aesgcm.Open(payload.Packet[:0], payload.Nonce, payload.Packet, nil)
+	_, err = aesgcm.Open(payload.Packet[:0], payload.Nonce, payload.Packet, payload.Key)
 	if err != nil {
 		gcm.log.Error("[GCM]", "Error decrypting/authenticating packet:", err)
 		return payload, false
