@@ -17,40 +17,66 @@ func (sock *Socket) Close() error {
 	return sock.conn.Close()
 }
 
-func (sock *Socket) Listen() <-chan common.Payload {
-	out := make(chan common.Payload, 1024)
+func (sock *Socket) Listen() <-chan *common.Payload {
+	out := make(chan *common.Payload, 1024)
 
 	go func() {
 		for {
-			buf := make([]byte, 65535)
+			buf := make([]byte, common.MaxPacketLength)
 			n, err := sock.conn.Read(buf)
 			if err != nil {
 				sock.log.Warn("[UDP] Read Error:", err)
 				continue
 			}
-			out <- common.Payload{Packet: buf[:n]}
+			out <- common.NewSockPayload(buf, n)
 		}
 	}()
 
 	return out
 }
 
-func (sock *Socket) Send(sealed <-chan common.Payload) {
+func (sock *Socket) Read() (*common.Payload, bool) {
+	buf := make([]byte, common.MaxPacketLength)
+	n, err := sock.conn.Read(buf)
+	if err != nil {
+		sock.log.Warn("[UDP] Read Error:", err)
+		return nil, false
+	}
+	return common.NewSockPayload(buf, n), true
+}
+
+func (sock *Socket) Send(encrypted <-chan *common.Payload) {
 	go func() {
-		for payload := range sealed {
+		for payload := range encrypted {
 			addr, err := net.ResolveUDPAddr("udp", payload.Address)
 			if err != nil {
 				sock.log.Warn("[UDP] Resolve Address Error:", err)
 				continue
 			}
 
-			n, err := sock.conn.WriteToUDP(payload.Packet, addr)
-			if err != nil || n != len(payload.Packet) {
+			_, err = sock.conn.WriteToUDP(payload.Raw[:payload.Length], addr)
+			if err != nil {
 				sock.log.Warn("[UDP] Write Error:", err)
 				continue
 			}
 		}
 	}()
+}
+
+func (sock *Socket) Write(payload *common.Payload) bool {
+	addr, err := net.ResolveUDPAddr("udp", payload.Address)
+	if err != nil {
+		sock.log.Warn("[UDP] Resolve Address Error:", err)
+		return false
+	}
+
+	_, err = sock.conn.WriteToUDP(payload.Raw[:payload.Length], addr)
+	if err != nil {
+		sock.log.Warn("[UDP] Write Error:", err)
+		return false
+	}
+
+	return true
 }
 
 func New(address string, port int, log *logger.Logger) (*Socket, error) {

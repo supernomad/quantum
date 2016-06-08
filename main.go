@@ -6,18 +6,23 @@ import (
 	"github.com/Supernomad/quantum/crypto"
 	"github.com/Supernomad/quantum/etcd"
 	"github.com/Supernomad/quantum/logger"
-	"github.com/Supernomad/quantum/nat"
 	"github.com/Supernomad/quantum/socket"
 	"github.com/Supernomad/quantum/tun"
+	"github.com/Supernomad/quantum/workers"
 	"os"
+	"runtime"
 	"strconv"
 )
 
 func main() {
-	debugingEnabled := os.Getenv("ESDN_DEBUG") == "true"
+	debugingEnabled := os.Getenv("QUANTUM_DEBUG") == "true"
+
+	cores := runtime.NumCPU()
+	runtime.GOMAXPROCS(cores)
 
 	cfg := config.New()
 	log := logger.New(debugingEnabled)
+
 	ecdh, err := crypto.NewEcdh(log)
 	if err != nil {
 		log.Error("[MAIN] Init error: ", err)
@@ -30,7 +35,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	mappings, err := etcd.GetMappings()
+	err = etcd.SyncMappings()
 	if err != nil {
 		log.Error("[MAIN] Init error: ", err)
 		os.Exit(1)
@@ -38,12 +43,12 @@ func main() {
 
 	mapping := common.Mapping{
 		Address:   cfg.PublicIP + ":" + strconv.Itoa(cfg.ListenPort),
-		PublicKey: crypto.SerializeKey(ecdh.PublicKey),
+		PublicKey: ecdh.PublicKey[:],
 	}
-	etcd.SetMapping(cfg.PrivateIP, mapping)
 
+	etcd.SetMapping(cfg.PrivateIP, mapping)
 	etcd.Heartbeat(cfg.PrivateIP, mapping)
-	etcd.Watch(mappings)
+	etcd.Watch()
 
 	tunnel, err := tun.New(cfg.InterfaceName, cfg.PrivateIP+"/"+cfg.SubnetMask, log)
 	defer tunnel.Close()
@@ -61,37 +66,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	nat := nat.New(mappings, log)
+	outgoing := workers.NewOutgoing(log, ecdh, etcd.Mappings, tunnel, sock)
+	defer outgoing.Stop()
 
-	aes := crypto.NewAES(log, ecdh)
+	incoming := workers.NewIncoming(log, ecdh, etcd.Mappings, tunnel, sock)
+	defer incoming.Stop()
 
-	// Outgoing
-	outgoing := tunnel.Listen()
-	encrypted := make(chan common.Payload, 1024)
-	go func() {
-		for payload := range outgoing {
-			go func(work common.Payload) {
-				work = nat.ResolveOutgoing(work)
-				work = aes.Encrypt(work)
-				encrypted <- work
-			}(payload)
-		}
-	}()
-	sock.Send(encrypted)
-
-	// Incoming
-	incoming := sock.Listen()
-	decrypted := make(chan common.Payload, 1024)
-	go func() {
-		for payload := range incoming {
-			go func(work common.Payload) {
-				work = nat.ResolveIncoming(work)
-				work = aes.Decrypt(work)
-				decrypted <- work
-			}(payload)
-		}
-	}()
-	tunnel.Send(decrypted)
+	for i := 0; i < cores; i++ {
+		incoming.Start()
+		outgoing.Start()
+	}
 
 	log.Info("[MAIN] Started up successfuly.")
 	log.Info("[MAIN] Listening on TUN device: ", tunnel.Name)

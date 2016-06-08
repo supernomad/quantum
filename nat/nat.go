@@ -3,38 +3,36 @@ package nat
 import (
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/logger"
-	"net"
+	"math/big"
 )
 
 type Nat struct {
 	log      *logger.Logger
-	Mappings map[string]common.Mapping
+	Mappings map[uint64]common.Mapping
 }
 
-func (nat *Nat) ResolveOutgoing(payload common.Payload) common.Payload {
-	var dip string
-	switch payload.Packet[0] >> 4 {
-	case 4:
-		dip = net.IP(payload.Packet[16:20]).String()
-	case 6:
-		dip = net.IP(payload.Packet[24:40]).String()
-	default:
-		nat.log.Error("[NAT] Unknown IP version recieved")
-		return payload
+func (nat *Nat) ResolveOutgoing(payload *common.Payload) (*common.Payload, bool) {
+	if payload.Packet[0]>>4 != 4 {
+		nat.log.Error("[NAT]", "Unknown IP version recieved")
+		return payload, false
 	}
 
-	if mapping, ok := nat.Mappings[dip]; ok {
+	dip := big.NewInt(0)
+	dip.SetBytes(payload.Packet[16:20])
+
+	if mapping, ok := nat.Mappings[dip.Uint64()]; ok {
 		payload.Address = mapping.Address
 		payload.PublicKey = mapping.PublicKey
+		return payload, true
 	}
-	return payload
+	return payload, false
 }
 
-func (nat *Nat) ResolveIncoming(payload common.Payload) common.Payload {
-	return payload
+func (nat *Nat) ResolveIncoming(payload *common.Payload) (*common.Payload, bool) {
+	return payload, true
 }
 
-func New(mappings map[string]common.Mapping, log *logger.Logger) *Nat {
+func New(mappings map[uint64]common.Mapping, log *logger.Logger) *Nat {
 	return &Nat{
 		log:      log,
 		Mappings: mappings,
