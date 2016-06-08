@@ -30,24 +30,6 @@ func (tun *Tun) Close() error {
 	return tun.file.Close()
 }
 
-func (tun *Tun) Listen() <-chan *common.Payload {
-	out := make(chan *common.Payload, 1024)
-	go func() {
-		for {
-			buf := make([]byte, common.MaxPacketLength)
-			n, err := tun.file.Read(buf[common.PacketStart:])
-
-			if err != nil {
-				tun.log.Warn("[TUN] Read Error:", err)
-				continue
-			}
-
-			out <- common.NewTunPayload(buf, n)
-		}
-	}()
-	return out
-}
-
 func (tun *Tun) Read() (*common.Payload, bool) {
 	buf := make([]byte, common.MaxPacketLength)
 	n, err := tun.file.Read(buf[common.PacketStart:])
@@ -58,18 +40,6 @@ func (tun *Tun) Read() (*common.Payload, bool) {
 	}
 
 	return common.NewTunPayload(buf, n), true
-}
-
-func (tun *Tun) Send(incoming <-chan *common.Payload) {
-	go func() {
-		for payload := range incoming {
-			_, err := tun.file.Write(payload.Packet)
-			if err != nil {
-				tun.log.Warn("[TUN] Write Error:", err)
-				continue
-			}
-		}
-	}()
 }
 
 func (tun *Tun) Write(payload *common.Payload) bool {

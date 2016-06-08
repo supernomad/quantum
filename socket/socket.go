@@ -17,24 +17,6 @@ func (sock *Socket) Close() error {
 	return sock.conn.Close()
 }
 
-func (sock *Socket) Listen() <-chan *common.Payload {
-	out := make(chan *common.Payload, 1024)
-
-	go func() {
-		for {
-			buf := make([]byte, common.MaxPacketLength)
-			n, err := sock.conn.Read(buf)
-			if err != nil {
-				sock.log.Warn("[UDP] Read Error:", err)
-				continue
-			}
-			out <- common.NewSockPayload(buf, n)
-		}
-	}()
-
-	return out
-}
-
 func (sock *Socket) Read() (*common.Payload, bool) {
 	buf := make([]byte, common.MaxPacketLength)
 	n, err := sock.conn.Read(buf)
@@ -43,24 +25,6 @@ func (sock *Socket) Read() (*common.Payload, bool) {
 		return nil, false
 	}
 	return common.NewSockPayload(buf, n), true
-}
-
-func (sock *Socket) Send(encrypted <-chan *common.Payload) {
-	go func() {
-		for payload := range encrypted {
-			addr, err := net.ResolveUDPAddr("udp", payload.Address)
-			if err != nil {
-				sock.log.Warn("[UDP] Resolve Address Error:", err)
-				continue
-			}
-
-			_, err = sock.conn.WriteToUDP(payload.Raw[:payload.Length], addr)
-			if err != nil {
-				sock.log.Warn("[UDP] Write Error:", err)
-				continue
-			}
-		}
-	}()
 }
 
 func (sock *Socket) Write(payload *common.Payload) bool {
