@@ -9,8 +9,7 @@ import (
 )
 
 type GCM struct {
-	log  *logger.Logger
-	ecdh *ECDH
+	log *logger.Logger
 }
 
 func RandomBytes(b []byte) ([]byte, error) {
@@ -19,9 +18,6 @@ func RandomBytes(b []byte) ([]byte, error) {
 }
 
 func (gcm *GCM) Seal(payload *common.Payload) (*common.Payload, bool) {
-	// Generate the shared key
-	key := gcm.ecdh.GenerateSharedSecret(payload.PublicKey)
-
 	// Grab a new random nonce
 	_, err := RandomBytes(payload.Nonce)
 	if err != nil {
@@ -30,7 +26,7 @@ func (gcm *GCM) Seal(payload *common.Payload) (*common.Payload, bool) {
 	}
 
 	// Get the block ciper
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(payload.Mapping.SecretKey)
 	if err != nil {
 		gcm.log.Error("[GCM]", "Error generating ciper:", err)
 		return payload, false
@@ -44,18 +40,13 @@ func (gcm *GCM) Seal(payload *common.Payload) (*common.Payload, bool) {
 	}
 
 	// Seal the packet and associated meta data
-	aesgcm.Seal(payload.Packet[:0], payload.Nonce, payload.Packet, gcm.ecdh.PublicKey[:])
-
-	copy(payload.Key, gcm.ecdh.PublicKey[:])
+	aesgcm.Seal(payload.Packet[:0], payload.Nonce, payload.Packet, nil)
 	return payload, true
 }
 
 func (gcm *GCM) Unseal(payload *common.Payload) (*common.Payload, bool) {
-	// Generate the shared key
-	key := gcm.ecdh.GenerateSharedSecret(payload.Key)
-
 	// Get the block ciper
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(payload.Mapping.SecretKey)
 	if err != nil {
 		gcm.log.Error("[GCM]", "Error generating ciper:", err)
 		return payload, false
@@ -68,7 +59,7 @@ func (gcm *GCM) Unseal(payload *common.Payload) (*common.Payload, bool) {
 		return payload, false
 	}
 
-	_, err = aesgcm.Open(payload.Packet[:0], payload.Nonce, payload.Packet, payload.Key)
+	_, err = aesgcm.Open(payload.Packet[:0], payload.Nonce, payload.Packet, nil)
 	if err != nil {
 		gcm.log.Error("[GCM]", "Error decrypting/authenticating packet:", err)
 		return payload, false
@@ -77,6 +68,6 @@ func (gcm *GCM) Unseal(payload *common.Payload) (*common.Payload, bool) {
 	return payload, true
 }
 
-func NewGCM(log *logger.Logger, ecdh *ECDH) *GCM {
-	return &GCM{log: log, ecdh: ecdh}
+func NewGCM(log *logger.Logger) *GCM {
+	return &GCM{log: log}
 }

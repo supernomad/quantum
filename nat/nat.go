@@ -4,37 +4,46 @@ import (
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/logger"
 	"math/big"
+	"net"
 )
 
 type Nat struct {
-	log      *logger.Logger
-	Mappings map[uint64]common.Mapping
+	log       *logger.Logger
+	privateIP []byte
+	Mappings  map[uint64]common.Mapping
 }
 
 func (nat *Nat) ResolveOutgoing(payload *common.Payload) (*common.Payload, bool) {
-	if payload.Packet[0]>>4 != 4 {
-		nat.log.Error("[NAT]", "Unknown IP version recieved")
-		return payload, false
-	}
-
 	dip := big.NewInt(0)
 	dip.SetBytes(payload.Packet[16:20])
 
 	if mapping, ok := nat.Mappings[dip.Uint64()]; ok {
-		payload.Address = mapping.Address
-		payload.PublicKey = mapping.PublicKey
+		payload.Mapping = mapping
+		copy(payload.IpAddress, nat.privateIP)
 		return payload, true
 	}
+
+	nat.log.Error("[NAT]", "Unknown Outgoing Mapping")
 	return payload, false
 }
 
 func (nat *Nat) ResolveIncoming(payload *common.Payload) (*common.Payload, bool) {
-	return payload, true
+	dip := big.NewInt(0)
+	dip.SetBytes(payload.IpAddress)
+
+	if mapping, ok := nat.Mappings[dip.Uint64()]; ok {
+		payload.Mapping = mapping
+		return payload, true
+	}
+
+	nat.log.Error("[NAT]", "Unknown Incoming Mapping")
+	return payload, false
 }
 
-func New(mappings map[uint64]common.Mapping, log *logger.Logger) *Nat {
+func New(privateIP string, mappings map[uint64]common.Mapping, log *logger.Logger) *Nat {
 	return &Nat{
-		log:      log,
-		Mappings: mappings,
+		log:       log,
+		privateIP: net.ParseIP(privateIP).To4(),
+		Mappings:  mappings,
 	}
 }
