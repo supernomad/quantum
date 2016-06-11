@@ -21,61 +21,66 @@ import (
 import "C"
 
 type Tun struct {
-	Name string
-	log  *logger.Logger
-	file *os.File
+	Name   string
+	log    *logger.Logger
+	queues []*os.File
 }
 
 func (tun *Tun) Close() error {
-	return tun.file.Close()
+	for i := 0; i < len(tun.queues); i++ {
+		err := tun.queues[i].Close()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func (tun *Tun) Read() (*common.Payload, bool) {
+func (tun *Tun) Read(queue int) (*common.Payload, bool) {
 	buf := make([]byte, common.MaxPacketLength)
-	n, err := tun.file.Read(buf[common.PacketStart:])
+	n, err := tun.queues[queue].Read(buf[common.PacketStart:])
 
 	if err != nil {
-		tun.log.Warn("[TUN] Read Error:", err)
+		tun.log.Warn("[TUN]", "Read Error:", err)
+		return nil, false
+	}
+
+	if buf[common.PacketStart]>>4 != 4 {
+		tun.log.Error("[TUN]", "Unknown IP version recieved")
 		return nil, false
 	}
 
 	return common.NewTunPayload(buf, n), true
 }
 
-func (tun *Tun) Write(payload *common.Payload) bool {
-	_, err := tun.file.Write(payload.Packet)
+func (tun *Tun) Write(payload *common.Payload, queue int) bool {
+	_, err := tun.queues[queue].Write(payload.Packet)
 	if err != nil {
-		tun.log.Warn("[TUN] Write Error:", err)
+		tun.log.Warn("[TUN]", "Write Error:", err)
 		return false
 	}
 	return true
 }
 
-func New(ifPattern string, cidr string, log *logger.Logger) (*Tun, error) {
-	file, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
+func New(ifPattern string, cidr string, numQueues int, log *logger.Logger) (*Tun, error) {
+	ifName, queues, err := createTun(ifPattern, numQueues)
 	if err != nil {
 		return nil, err
 	}
 
-	ifName, err := createTun(file, ifPattern)
-	if err != nil {
-		file.Close()
-		return nil, err
-	}
-	realName := ifName[:strings.Index(ifName, "\000")]
-	cmd := exec.Command("ip", "link", "set", "dev", realName, "up")
+	cmd := exec.Command("ip", "link", "set", "dev", ifName, "up")
 	err = cmd.Run()
 	if err != nil {
 		return nil, err
 	}
 
-	cmd = exec.Command("ip", "addr", "add", cidr, "dev", realName)
+	cmd = exec.Command("ip", "addr", "add", cidr, "dev", ifName)
 	err = cmd.Run()
 	if err != nil {
 		return nil, err
 	}
 
-	return &Tun{realName, log, file}, nil
+	return &Tun{ifName, log, queues}, nil
 }
 
 type ifReq struct {
@@ -84,15 +89,35 @@ type ifReq struct {
 	pad   [C.IFREQ_SIZE - C.IFNAMSIZ - 2]byte
 }
 
-func createTun(file *os.File, ifPattern string) (string, error) {
-	var req ifReq
-	req.Flags = C.IFF_NO_PI | C.IFF_TUN
+func createTun(ifPattern string, numQueues int) (string, []*os.File, error) {
+	name := ifPattern
+	first := true
+	queues := make([]*os.File, numQueues)
 
-	copy(req.Name[:15], ifPattern)
+	for i := 0; i < numQueues; i++ {
+		var req ifReq
+		req.Flags = C.IFF_TUN | C.IFF_NO_PI | C.IFF_MULTI_QUEUE
 
-	_, _, err := syscall.Syscall(syscall.SYS_IOCTL, file.Fd(), uintptr(syscall.TUNSETIFF), uintptr(unsafe.Pointer(&req)))
-	if err != 0 {
-		return "", err
+		copy(req.Name[:15], name)
+
+		file, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
+		if err != nil {
+			file.Close()
+			return "", nil, err
+		}
+
+		_, _, errNo := syscall.Syscall(syscall.SYS_IOCTL, file.Fd(), uintptr(syscall.TUNSETIFF), uintptr(unsafe.Pointer(&req)))
+		if errNo != 0 {
+			file.Close()
+			return "", nil, err
+		}
+		queues[i] = file
+
+		if first {
+			first = false
+			name = string(req.Name[:strings.Index(string(req.Name[:]), "\000")])
+		}
 	}
-	return string(req.Name[:]), nil
+
+	return name, queues, nil
 }

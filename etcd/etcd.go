@@ -2,6 +2,7 @@ package etcd
 
 import (
 	"github.com/Supernomad/quantum/common"
+	"github.com/Supernomad/quantum/crypto"
 	"github.com/Supernomad/quantum/logger"
 	"github.com/coreos/etcd/client"
 	"golang.org/x/net/context"
@@ -13,6 +14,7 @@ import (
 
 type Etcd struct {
 	log       *logger.Logger
+	ecdh      *crypto.ECDH
 	cli       client.Client
 	key       string
 	ttl       time.Duration
@@ -45,6 +47,7 @@ func (e *Etcd) Watch() {
 			switch resp.Action {
 			case "set", "update":
 				mapping := common.ParseMapping(resp.Node.Value)
+				mapping.SecretKey = e.ecdh.GenerateSharedSecret(mapping.PublicKey)
 				e.Mappings[IP4toInt(key)] = mapping
 			case "delete", "expire":
 				delete(e.Mappings, IP4toInt(key))
@@ -85,7 +88,7 @@ func (e *Etcd) Heartbeat(privateIP string, mapping common.Mapping) {
 
 func (e *Etcd) SetMapping(privateIP string, mapping common.Mapping) error {
 	kapi := client.NewKeysAPI(e.cli)
-	e.log.Debug("[ETCD]", "[SetMapping]", "Mapping:", mapping.String())
+	mapping.SecretKey = nil
 	_, err := kapi.Set(context.Background(),
 		e.key+"/mappings/"+privateIP,
 		mapping.String(),
@@ -108,13 +111,14 @@ func (e *Etcd) SyncMappings() error {
 		_, key := path.Split(v.Key)
 
 		mapping := common.ParseMapping(v.Value)
+		mapping.SecretKey = e.ecdh.GenerateSharedSecret(mapping.PublicKey)
 		e.Mappings[IP4toInt(key)] = mapping
 	}
 
 	return nil
 }
 
-func New(host string, key string, log *logger.Logger) (*Etcd, error) {
+func New(host string, key string, ecdh *crypto.ECDH, log *logger.Logger) (*Etcd, error) {
 	etcdCfg := client.Config{
 		Endpoints: []string{host},
 	}
@@ -131,6 +135,7 @@ func New(host string, key string, log *logger.Logger) (*Etcd, error) {
 		log:      log,
 		ttl:      15,
 		retries:  3,
+		ecdh:     ecdh,
 		Mappings: mappings,
 	}, nil
 }

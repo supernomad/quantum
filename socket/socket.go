@@ -28,7 +28,7 @@ func (sock *Socket) Read() (*common.Payload, bool) {
 }
 
 func (sock *Socket) Write(payload *common.Payload) bool {
-	addr, err := net.ResolveUDPAddr("udp", payload.Address)
+	addr, err := net.ResolveUDPAddr("udp", payload.Mapping.Address)
 	if err != nil {
 		sock.log.Warn("[UDP] Resolve Address Error:", err)
 		return false

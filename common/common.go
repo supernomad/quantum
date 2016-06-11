@@ -11,30 +11,30 @@ const (
 
 const (
 	// Packet offsets
-	PacketStart = 44
+	PacketStart = 16
 
-	// Key offsets
-	KeyStart = 12
-	KeyEnd   = 44
+	// IP offsets
+	IpStart = 0
+	IpEnd   = 4
 
 	// Nonce offsets
-	NonceStart = 0
-	NonceEnd   = 12
+	NonceStart = 4
+	NonceEnd   = 16
 )
 
 type Payload struct {
 	Raw       []byte
 	Packet    []byte
+	IpAddress []byte
 	Nonce     []byte
-	Key       []byte
-	PublicKey []byte
 	Length    int
-	Address   string
+	Mapping   Mapping
 }
 
 type Mapping struct {
 	Address   string
 	PublicKey []byte
+	SecretKey []byte `json:"-"`
 }
 
 func (m Mapping) String() string {
@@ -49,28 +49,28 @@ func ParseMapping(data string) Mapping {
 }
 
 func NewTunPayload(raw []byte, packetLength int) *Payload {
+	ip := raw[IpStart:IpEnd]
 	nonce := raw[NonceStart:NonceEnd]
-	key := raw[KeyStart:KeyEnd]
 	pkt := raw[PacketStart : PacketStart+packetLength]
 
 	return &Payload{
-		Raw:    raw,
-		Nonce:  nonce,
-		Key:    key,
-		Packet: pkt,
-		Length: PacketStart + packetLength + BlockSize,
+		Raw:       raw,
+		IpAddress: ip,
+		Nonce:     nonce,
+		Packet:    pkt,
+		Length:    PacketStart + packetLength + BlockSize,
 	}
 }
 
 func NewSockPayload(raw []byte, packetLength int) *Payload {
+	ip := raw[IpStart:IpEnd]
 	nonce := raw[NonceStart:NonceEnd]
-	key := raw[KeyStart:KeyEnd]
 	pkt := raw[PacketStart:packetLength]
 
 	return &Payload{
-		Raw:    raw,
-		Nonce:  nonce,
-		Key:    key,
-		Packet: pkt,
+		Raw:       raw,
+		IpAddress: ip,
+		Nonce:     nonce,
+		Packet:    pkt,
 	}
 }

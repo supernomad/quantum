@@ -29,7 +29,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	etcd, err := etcd.New(cfg.EtcdHost, cfg.EtcdKey, log)
+	etcd, err := etcd.New(cfg.EtcdHost, cfg.EtcdKey, ecdh, log)
 	if err != nil {
 		log.Error("[MAIN] Init error: ", err)
 		os.Exit(1)
@@ -50,7 +50,7 @@ func main() {
 	etcd.Heartbeat(cfg.PrivateIP, mapping)
 	etcd.Watch()
 
-	tunnel, err := tun.New(cfg.InterfaceName, cfg.PrivateIP+"/"+cfg.SubnetMask, log)
+	tunnel, err := tun.New(cfg.InterfaceName, cfg.PrivateIP+"/"+cfg.SubnetMask, cores, log)
 	defer tunnel.Close()
 
 	if err != nil {
@@ -66,15 +66,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	outgoing := workers.NewOutgoing(log, ecdh, etcd.Mappings, tunnel, sock)
+	outgoing := workers.NewOutgoing(log, cfg.PrivateIP, etcd.Mappings, tunnel, sock)
 	defer outgoing.Stop()
 
-	incoming := workers.NewIncoming(log, ecdh, etcd.Mappings, tunnel, sock)
+	incoming := workers.NewIncoming(log, cfg.PrivateIP, etcd.Mappings, tunnel, sock)
 	defer incoming.Stop()
 
 	for i := 0; i < cores; i++ {
-		incoming.Start()
-		outgoing.Start()
+		incoming.Start(i)
+		outgoing.Start(i)
 	}
 
 	log.Info("[MAIN] Started up successfuly.")

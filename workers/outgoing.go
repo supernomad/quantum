@@ -17,7 +17,7 @@ type Outgoing struct {
 	quit   chan bool
 }
 
-func (out *Outgoing) Start() {
+func (out *Outgoing) Start(queue int) {
 	go func() {
 	loop:
 		for {
@@ -25,7 +25,10 @@ func (out *Outgoing) Start() {
 			case <-out.quit:
 				return
 			default:
-				payload, ok := out.tunnel.Read()
+				payload, ok := out.tunnel.Read(queue)
+				if !ok {
+					continue loop
+				}
 				payload, ok = out.nat.ResolveOutgoing(payload)
 				if !ok {
 					continue loop
@@ -46,9 +49,9 @@ func (out *Outgoing) Stop() {
 	}()
 }
 
-func NewOutgoing(log *logger.Logger, ecdh *crypto.ECDH, mappings map[uint64]common.Mapping, tunnel *tun.Tun, sock *socket.Socket) *Outgoing {
-	nat := nat.New(mappings, log)
-	gcm := crypto.NewGCM(log, ecdh)
+func NewOutgoing(log *logger.Logger, privateIP string, mappings map[uint64]common.Mapping, tunnel *tun.Tun, sock *socket.Socket) *Outgoing {
+	gcm := crypto.NewGCM(log)
+	nat := nat.New(privateIP, mappings, log)
 	return &Outgoing{
 		nat:    nat,
 		gcm:    gcm,
