@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/config"
-	"github.com/Supernomad/quantum/crypto"
+	"github.com/Supernomad/quantum/ecdh"
 	"github.com/Supernomad/quantum/etcd"
 	"github.com/Supernomad/quantum/logger"
 	"github.com/Supernomad/quantum/socket"
@@ -14,6 +14,13 @@ import (
 	"strconv"
 )
 
+func handleError(err error, log *logger.Logger) {
+	if err != nil {
+		log.Error("[MAIN] Init error: ", err)
+		os.Exit(1)
+	}
+}
+
 func main() {
 	debugingEnabled := os.Getenv("QUANTUM_DEBUG") == "true"
 
@@ -23,48 +30,31 @@ func main() {
 	cfg := config.New()
 	log := logger.New(debugingEnabled)
 
-	ecdh, err := crypto.NewEcdh(log)
-	if err != nil {
-		log.Error("[MAIN] Init error: ", err)
-		os.Exit(1)
-	}
+	pubkey, privkey, err := ecdh.GenerateECKeyPair()
+	handleError(err, log)
 
-	etcd, err := etcd.New(cfg.EtcdHost, cfg.EtcdKey, ecdh, log)
-	if err != nil {
-		log.Error("[MAIN] Init error: ", err)
-		os.Exit(1)
-	}
+	etcd, err := etcd.New(cfg.EtcdHost, cfg.EtcdKey, privkey, log)
+	handleError(err, log)
 
 	err = etcd.SyncMappings()
-	if err != nil {
-		log.Error("[MAIN] Init error: ", err)
-		os.Exit(1)
-	}
+	handleError(err, log)
 
-	mapping := common.Mapping{
-		Address:   cfg.PublicIP + ":" + strconv.Itoa(cfg.ListenPort),
-		PublicKey: ecdh.PublicKey[:],
-	}
+	mapping := common.NewMapping(cfg.PublicIP+":"+strconv.Itoa(cfg.ListenPort), pubkey[:])
+	handleError(err, log)
 
 	etcd.SetMapping(cfg.PrivateIP, mapping)
 	etcd.Heartbeat(cfg.PrivateIP, mapping)
 	etcd.Watch()
 
 	tunnel, err := tun.New(cfg.InterfaceName, cfg.PrivateIP+"/"+cfg.SubnetMask, cores, log)
+	handleError(err, log)
+
 	defer tunnel.Close()
 
-	if err != nil {
-		log.Error("[MAIN] Init error: ", err)
-		os.Exit(1)
-	}
-
 	sock, err := socket.New(cfg.ListenAddress, cfg.ListenPort, log)
-	defer sock.Close()
+	handleError(err, log)
 
-	if err != nil {
-		log.Error("[MAIN] Init error: ", err)
-		os.Exit(1)
-	}
+	defer sock.Close()
 
 	outgoing := workers.NewOutgoing(log, cfg.PrivateIP, etcd.Mappings, tunnel, sock)
 	defer outgoing.Stop()

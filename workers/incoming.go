@@ -1,20 +1,37 @@
 package workers
 
 import (
+	"encoding/binary"
 	"github.com/Supernomad/quantum/common"
-	"github.com/Supernomad/quantum/crypto"
 	"github.com/Supernomad/quantum/logger"
-	"github.com/Supernomad/quantum/nat"
 	"github.com/Supernomad/quantum/socket"
 	"github.com/Supernomad/quantum/tun"
 )
 
 type Incoming struct {
-	gcm    *crypto.GCM
-	tunnel *tun.Tun
-	nat    *nat.Nat
-	sock   *socket.Socket
-	quit   chan bool
+	tunnel   *tun.Tun
+	sock     *socket.Socket
+	mappings map[uint32]*common.Mapping
+	quit     chan bool
+}
+
+func (incoming *Incoming) resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
+	dip := binary.LittleEndian.Uint32(payload.IpAddress)
+
+	if mapping, ok := incoming.mappings[dip]; ok {
+		return payload, mapping, true
+	}
+
+	return payload, nil, false
+}
+
+func (incoming *Incoming) unseal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
+	_, err := mapping.Cipher.Open(payload.Packet[:0], payload.Nonce, payload.Packet, nil)
+	if err != nil {
+		return payload, false
+	}
+
+	return payload, true
 }
 
 func (incoming *Incoming) Start(queue int) {
@@ -29,11 +46,11 @@ func (incoming *Incoming) Start(queue int) {
 				if !ok {
 					continue loop
 				}
-				payload, ok = incoming.nat.ResolveIncoming(payload)
+				payload, mapping, ok := incoming.resolve(payload)
 				if !ok {
 					continue loop
 				}
-				payload, ok = incoming.gcm.Unseal(payload)
+				payload, ok = incoming.unseal(payload, mapping)
 				if !ok {
 					continue loop
 				}
@@ -49,14 +66,11 @@ func (incoming *Incoming) Stop() {
 	}()
 }
 
-func NewIncoming(log *logger.Logger, privateIP string, mappings map[uint64]common.Mapping, tunnel *tun.Tun, sock *socket.Socket) *Incoming {
-	gcm := crypto.NewGCM(log)
-	nat := nat.New(privateIP, mappings, log)
+func NewIncoming(log *logger.Logger, privateIP string, mappings map[uint32]*common.Mapping, tunnel *tun.Tun, sock *socket.Socket) *Incoming {
 	return &Incoming{
-		gcm:    gcm,
-		tunnel: tunnel,
-		sock:   sock,
-		nat:    nat,
-		quit:   make(chan bool),
+		tunnel:   tunnel,
+		sock:     sock,
+		mappings: mappings,
+		quit:     make(chan bool),
 	}
 }
