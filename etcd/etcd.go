@@ -1,33 +1,29 @@
 package etcd
 
 import (
+	"encoding/binary"
 	"github.com/Supernomad/quantum/common"
-	"github.com/Supernomad/quantum/crypto"
 	"github.com/Supernomad/quantum/logger"
 	"github.com/coreos/etcd/client"
 	"golang.org/x/net/context"
-	"math/big"
 	"net"
 	"path"
 	"time"
 )
 
 type Etcd struct {
-	log       *logger.Logger
-	ecdh      *crypto.ECDH
-	cli       client.Client
-	key       string
-	ttl       time.Duration
-	retries   time.Duration
-	privateIP string
-	mapping   common.Mapping
-	Mappings  map[uint64]common.Mapping
+	log        *logger.Logger
+	cli        client.Client
+	key        string
+	ttl        time.Duration
+	retries    time.Duration
+	privateKey []byte
+	Mappings   map[uint32]*common.Mapping
 }
 
-func IP4toInt(IP string) uint64 {
-	IPv4Int := big.NewInt(0)
-	IPv4Int.SetBytes(net.ParseIP(IP).To4())
-	return IPv4Int.Uint64()
+func IP4toInt(IP string) uint32 {
+	buf := net.ParseIP(IP).To4()
+	return binary.LittleEndian.Uint32(buf)
 }
 
 func (e *Etcd) Watch() {
@@ -46,8 +42,12 @@ func (e *Etcd) Watch() {
 			_, key := path.Split(resp.Node.Key)
 			switch resp.Action {
 			case "set", "update":
-				mapping := common.ParseMapping(resp.Node.Value)
-				mapping.SecretKey = e.ecdh.GenerateSharedSecret(mapping.PublicKey)
+				mapping, err := common.ParseMapping(resp.Node.Value, e.privateKey)
+				if err != nil {
+					e.log.Error("[ETCD]", "Error during watch:", err)
+					time.Sleep(e.ttl / e.retries * time.Second)
+					continue
+				}
 				e.Mappings[IP4toInt(key)] = mapping
 			case "delete", "expire":
 				delete(e.Mappings, IP4toInt(key))
@@ -56,7 +56,7 @@ func (e *Etcd) Watch() {
 	}()
 }
 
-func (e *Etcd) Heartbeat(privateIP string, mapping common.Mapping) {
+func (e *Etcd) Heartbeat(privateIP string, mapping *common.Mapping) {
 	go func() {
 		kapi := client.NewKeysAPI(e.cli)
 		key := path.Join("/", e.key, "mappings", privateIP)
@@ -86,7 +86,7 @@ func (e *Etcd) Heartbeat(privateIP string, mapping common.Mapping) {
 	}()
 }
 
-func (e *Etcd) SetMapping(privateIP string, mapping common.Mapping) error {
+func (e *Etcd) SetMapping(privateIP string, mapping *common.Mapping) error {
 	kapi := client.NewKeysAPI(e.cli)
 	mapping.SecretKey = nil
 	_, err := kapi.Set(context.Background(),
@@ -110,15 +110,17 @@ func (e *Etcd) SyncMappings() error {
 	for _, v := range mappingsNode.Node.Nodes {
 		_, key := path.Split(v.Key)
 
-		mapping := common.ParseMapping(v.Value)
-		mapping.SecretKey = e.ecdh.GenerateSharedSecret(mapping.PublicKey)
+		mapping, err := common.ParseMapping(v.Value, e.privateKey)
+		if err != nil {
+			return err
+		}
 		e.Mappings[IP4toInt(key)] = mapping
 	}
 
 	return nil
 }
 
-func New(host string, key string, ecdh *crypto.ECDH, log *logger.Logger) (*Etcd, error) {
+func New(host, key string, privkey []byte, log *logger.Logger) (*Etcd, error) {
 	etcdCfg := client.Config{
 		Endpoints: []string{host},
 	}
@@ -128,14 +130,14 @@ func New(host string, key string, ecdh *crypto.ECDH, log *logger.Logger) (*Etcd,
 		return nil, err
 	}
 
-	mappings := make(map[uint64]common.Mapping)
+	mappings := make(map[uint32]*common.Mapping)
 	return &Etcd{
-		cli:      c,
-		key:      key,
-		log:      log,
-		ttl:      15,
-		retries:  3,
-		ecdh:     ecdh,
-		Mappings: mappings,
+		cli:        c,
+		key:        key,
+		log:        log,
+		ttl:        15,
+		retries:    3,
+		privateKey: privkey,
+		Mappings:   mappings,
 	}, nil
 }
