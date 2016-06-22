@@ -1,14 +1,11 @@
 package common
 
-import "net"
-
 type Payload struct {
 	Raw       []byte
 	Packet    []byte
 	IpAddress []byte
 	Nonce     []byte
 	Length    int
-	Address   *net.UDPAddr
 }
 
 func NewTunPayload(raw []byte, packetLength int) *Payload {
