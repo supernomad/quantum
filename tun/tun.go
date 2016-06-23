@@ -20,6 +20,12 @@ import (
 */
 import "C"
 
+const (
+	IFF_TUN         = 0x0001
+	IFF_NO_PI       = 0x1000
+	IFF_MULTI_QUEUE = 0x8000
+)
+
 type Tun struct {
 	Name   string
 	log    *logger.Logger
@@ -96,7 +102,7 @@ func createTun(ifPattern string, numQueues int) (string, []*os.File, error) {
 
 	for i := 0; i < numQueues; i++ {
 		var req ifReq
-		req.Flags = C.IFF_TUN | C.IFF_NO_PI | C.IFF_MULTI_QUEUE
+		req.Flags = IFF_TUN | IFF_NO_PI | IFF_MULTI_QUEUE
 
 		copy(req.Name[:15], name)
 
