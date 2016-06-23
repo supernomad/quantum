@@ -10,11 +10,10 @@ import (
 
 type Mapping struct {
 	StringAddress string
-
-	PublicKey []byte
-	Address   *net.UDPAddr `json:"-"`
-	SecretKey []byte       `json:"-"`
-	Cipher    cipher.AEAD  `json:"-"`
+	PublicKey     []byte
+	Address       *net.UDPAddr `json:"-"`
+	SecretKey     []byte       `json:"-"`
+	Cipher        cipher.AEAD  `json:"-"`
 }
 
 func (m *Mapping) String() string {

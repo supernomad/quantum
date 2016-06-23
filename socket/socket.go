@@ -50,5 +50,8 @@ func New(address string, port int, log *logger.Logger) (*Socket, error) {
 		return nil, err
 	}
 
+	conn.SetWriteBuffer(common.MaxPacketLength * 1000)
+	conn.SetReadBuffer(common.MaxPacketLength * 1000)
+
 	return &Socket{conn: conn, log: log, Address: saddr}, nil
 }

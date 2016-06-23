@@ -15,7 +15,7 @@ type Incoming struct {
 	quit     chan bool
 }
 
-func (incoming *Incoming) resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
+func (incoming *Incoming) Resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
 	dip := binary.LittleEndian.Uint32(payload.IpAddress)
 
 	if mapping, ok := incoming.mappings[dip]; ok {
@@ -25,7 +25,7 @@ func (incoming *Incoming) resolve(payload *common.Payload) (*common.Payload, *co
 	return payload, nil, false
 }
 
-func (incoming *Incoming) unseal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
+func (incoming *Incoming) Unseal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
 	_, err := mapping.Cipher.Open(payload.Packet[:0], payload.Nonce, payload.Packet, nil)
 	if err != nil {
 		return payload, false
@@ -46,11 +46,11 @@ func (incoming *Incoming) Start(queue int) {
 				if !ok {
 					continue loop
 				}
-				payload, mapping, ok := incoming.resolve(payload)
+				payload, mapping, ok := incoming.Resolve(payload)
 				if !ok {
 					continue loop
 				}
-				payload, ok = incoming.unseal(payload, mapping)
+				payload, ok = incoming.Unseal(payload, mapping)
 				if !ok {
 					continue loop
 				}

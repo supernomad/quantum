@@ -14,22 +14,22 @@ type Outgoing struct {
 	tunnel    *tun.Tun
 	sock      *socket.Socket
 	privateIP []byte
-	mappings  map[uint32]*common.Mapping
+	Mappings  map[uint32]*common.Mapping
 	quit      chan bool
 }
 
-func (out *Outgoing) resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
+func (outgoing *Outgoing) Resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
 	dip := binary.LittleEndian.Uint32(payload.Packet[16:20])
 
-	if mapping, ok := out.mappings[dip]; ok {
-		copy(payload.IpAddress, out.privateIP)
+	if mapping, ok := outgoing.Mappings[dip]; ok {
+		copy(payload.IpAddress, outgoing.privateIP)
 		return payload, mapping, true
 	}
 
 	return payload, nil, false
 }
 
-func (out *Outgoing) seal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
+func (outgoing *Outgoing) Seal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
 	_, err := rand.Read(payload.Nonce)
 	if err != nil {
 		return payload, false
@@ -39,35 +39,35 @@ func (out *Outgoing) seal(payload *common.Payload, mapping *common.Mapping) (*co
 	return payload, true
 }
 
-func (out *Outgoing) Start(queue int) {
+func (outgoing *Outgoing) Start(queue int) {
 	go func() {
 	loop:
 		for {
 			select {
-			case <-out.quit:
+			case <-outgoing.quit:
 				return
 			default:
-				payload, ok := out.tunnel.Read(queue)
+				payload, ok := outgoing.tunnel.Read(queue)
 				if !ok {
 					continue loop
 				}
-				payload, mapping, ok := out.resolve(payload)
+				payload, mapping, ok := outgoing.Resolve(payload)
 				if !ok {
 					continue loop
 				}
-				payload, ok = out.seal(payload, mapping)
+				payload, ok = outgoing.Seal(payload, mapping)
 				if !ok {
 					continue loop
 				}
-				out.sock.Write(payload, mapping.Address)
+				outgoing.sock.Write(payload, mapping.Address)
 			}
 		}
 	}()
 }
 
-func (out *Outgoing) Stop() {
+func (outgoing *Outgoing) Stop() {
 	go func() {
-		out.quit <- true
+		outgoing.quit <- true
 	}()
 }
 
@@ -76,7 +76,7 @@ func NewOutgoing(log *logger.Logger, privateIP string, mappings map[uint32]*comm
 		tunnel:    tunnel,
 		sock:      sock,
 		privateIP: net.ParseIP(privateIP).To4(),
-		mappings:  mappings,
+		Mappings:  mappings,
 		quit:      make(chan bool),
 	}
 }

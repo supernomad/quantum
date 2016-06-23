@@ -2,7 +2,7 @@ package common
 
 const (
 	BlockSize       = 16
-	MaxPacketLength = 1560
+	MaxPacketLength = 1532
 )
 
 const (
