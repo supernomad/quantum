@@ -46,7 +46,7 @@ func main() {
 	etcd.Heartbeat(cfg.PrivateIP, mapping)
 	etcd.Watch()
 
-	tunnel, err := tun.New(cfg.InterfaceName, cfg.PrivateIP+"/"+cfg.SubnetMask, cores, log)
+	tunnel, err := tun.New(cfg.InterfaceName, cfg.PrivateIP+"/"+cfg.SubnetMask, log)
 	handleError(err, log)
 
 	defer tunnel.Close()
@@ -63,8 +63,8 @@ func main() {
 	defer incoming.Stop()
 
 	for i := 0; i < cores; i++ {
-		incoming.Start(i)
-		outgoing.Start(i)
+		incoming.Start()
+		outgoing.Start()
 	}
 
 	log.Info("[MAIN] Started up successfuly.")

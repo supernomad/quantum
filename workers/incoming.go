@@ -34,7 +34,7 @@ func (incoming *Incoming) Unseal(payload *common.Payload, mapping *common.Mappin
 	return payload, true
 }
 
-func (incoming *Incoming) Start(queue int) {
+func (incoming *Incoming) Start() {
 	go func() {
 	loop:
 		for {
@@ -54,7 +54,7 @@ func (incoming *Incoming) Start(queue int) {
 				if !ok {
 					continue loop
 				}
-				incoming.tunnel.Write(payload, queue)
+				incoming.tunnel.Write(payload)
 			}
 		}
 	}()

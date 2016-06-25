@@ -39,7 +39,7 @@ func (outgoing *Outgoing) Seal(payload *common.Payload, mapping *common.Mapping)
 	return payload, true
 }
 
-func (outgoing *Outgoing) Start(queue int) {
+func (outgoing *Outgoing) Start() {
 	go func() {
 	loop:
 		for {
@@ -47,7 +47,7 @@ func (outgoing *Outgoing) Start(queue int) {
 			case <-outgoing.quit:
 				return
 			default:
-				payload, ok := outgoing.tunnel.Read(queue)
+				payload, ok := outgoing.tunnel.Read()
 				if !ok {
 					continue loop
 				}

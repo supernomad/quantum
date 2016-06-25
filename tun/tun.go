@@ -1,50 +1,36 @@
 package tun
 
 import (
+	"bytes"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/logger"
+	"github.com/vishvananda/netlink"
 	"os"
-	"os/exec"
 	"strings"
 	"syscall"
 	"unsafe"
 )
 
-/*
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <linux/if.h>
-#include <linux/if_tun.h>
-
-#define IFREQ_SIZE sizeof(struct ifreq)
-*/
-import "C"
-
 const (
+	IF_NAME_SIZE    = 16
 	IFF_TUN         = 0x0001
 	IFF_NO_PI       = 0x1000
 	IFF_MULTI_QUEUE = 0x8000
 )
 
 type Tun struct {
-	Name   string
-	log    *logger.Logger
-	queues []*os.File
+	Name  string
+	log   *logger.Logger
+	queue *os.File
 }
 
 func (tun *Tun) Close() error {
-	for i := 0; i < len(tun.queues); i++ {
-		err := tun.queues[i].Close()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return tun.queue.Close()
 }
 
-func (tun *Tun) Read(queue int) (*common.Payload, bool) {
+func (tun *Tun) Read() (*common.Payload, bool) {
 	buf := make([]byte, common.MaxPacketLength)
-	n, err := tun.queues[queue].Read(buf[common.PacketStart:])
+	n, err := tun.queue.Read(buf[common.PacketStart:])
 
 	if err != nil {
 		tun.log.Warn("[TUN]", "Read Error:", err)
@@ -59,8 +45,8 @@ func (tun *Tun) Read(queue int) (*common.Payload, bool) {
 	return common.NewTunPayload(buf, n), true
 }
 
-func (tun *Tun) Write(payload *common.Payload, queue int) bool {
-	_, err := tun.queues[queue].Write(payload.Packet)
+func (tun *Tun) Write(payload *common.Payload) bool {
+	_, err := tun.queue.Write(payload.Packet)
 	if err != nil {
 		tun.log.Warn("[TUN]", "Write Error:", err)
 		return false
@@ -68,62 +54,58 @@ func (tun *Tun) Write(payload *common.Payload, queue int) bool {
 	return true
 }
 
-func New(ifPattern string, cidr string, numQueues int, log *logger.Logger) (*Tun, error) {
-	ifName, queues, err := createTun(ifPattern, numQueues)
+func New(ifPattern string, cidr string, log *logger.Logger) (*Tun, error) {
+	ifName, queue, err := createTun(ifPattern)
 	if err != nil {
 		return nil, err
 	}
 
-	cmd := exec.Command("ip", "link", "set", "dev", ifName, "up")
-	err = cmd.Run()
+	err = initTun(ifName, cidr)
 	if err != nil {
 		return nil, err
 	}
 
-	cmd = exec.Command("ip", "addr", "add", cidr, "dev", ifName)
-	err = cmd.Run()
-	if err != nil {
-		return nil, err
-	}
-
-	return &Tun{ifName, log, queues}, nil
+	return &Tun{ifName, log, queue}, nil
 }
 
 type ifReq struct {
-	Name  [C.IFNAMSIZ]byte
+	Name  [IF_NAME_SIZE]byte
 	Flags uint16
-	pad   [C.IFREQ_SIZE - C.IFNAMSIZ - 2]byte
 }
 
-func createTun(ifPattern string, numQueues int) (string, []*os.File, error) {
-	name := ifPattern
-	first := true
-	queues := make([]*os.File, numQueues)
+func initTun(name, cidr string) error {
+	quantum0, err := netlink.LinkByName(name)
+	if err != nil {
+		return err
+	}
+	addr, err := netlink.ParseAddr(cidr)
+	if err != nil {
+		return err
+	}
+	err = netlink.LinkSetUp(quantum0)
+	if err != nil {
+		return err
+	}
+	return netlink.AddrAdd(quantum0, addr)
+}
 
-	for i := 0; i < numQueues; i++ {
-		var req ifReq
-		req.Flags = IFF_TUN | IFF_NO_PI | IFF_MULTI_QUEUE
+func createTun(name string) (string, *os.File, error) {
+	var req ifReq
+	req.Flags = syscall.IFF_TUN | syscall.IFF_NO_PI
 
-		copy(req.Name[:15], name)
+	copy(req.Name[:], bytes.TrimRight([]byte(name), "\000"))
 
-		file, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
-		if err != nil {
-			file.Close()
-			return "", nil, err
-		}
-
-		_, _, errNo := syscall.Syscall(syscall.SYS_IOCTL, file.Fd(), uintptr(syscall.TUNSETIFF), uintptr(unsafe.Pointer(&req)))
-		if errNo != 0 {
-			file.Close()
-			return "", nil, err
-		}
-		queues[i] = file
-
-		if first {
-			first = false
-			name = string(req.Name[:strings.Index(string(req.Name[:]), "\000")])
-		}
+	file, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
+	if err != nil {
+		file.Close()
+		return "", nil, err
 	}
 
-	return name, queues, nil
+	_, _, errNo := syscall.Syscall(syscall.SYS_IOCTL, file.Fd(), uintptr(syscall.TUNSETIFF), uintptr(unsafe.Pointer(&req)))
+	if errNo != 0 {
+		file.Close()
+		return "", nil, err
+	}
+
+	return string(req.Name[:strings.Index(string(req.Name[:]), "\000")]), file, nil
 }
