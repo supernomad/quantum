@@ -107,5 +107,5 @@ func createTun(name string) (string, *os.File, error) {
 		return "", nil, err
 	}
 
-	return string(req.Name[:strings.Index(string(req.Name[:]), "\000")]), file, nil
+	return string(req.Name[:]), file, nil
 }
