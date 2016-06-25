@@ -6,7 +6,6 @@ import (
 	"github.com/Supernomad/quantum/logger"
 	"github.com/vishvananda/netlink"
 	"os"
-	"strings"
 	"syscall"
 	"unsafe"
 )
