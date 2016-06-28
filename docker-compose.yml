@@ -1,0 +1,36 @@
+version: "2"
+services:
+  quantum0:
+    container_name: quantum0
+    image: networkstatic/iperf3
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - /dev/net/tun:/dev/net/tun
+      - $GOPATH/bin/quantum:/bin/quantum
+    networks:
+      perf_net:
+        ipv4_address: 172.18.0.2
+    entrypoint: ["/bin/quantum", "-etcd-host", "http://172.18.0.1:2379", "-private-ip", "10.8.0.1", "-public-ip", "172.18.0.2"]
+  quantum1:
+    container_name: quantum1
+    image: networkstatic/iperf3
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - /dev/net/tun:/dev/net/tun
+      - $GOPATH/bin/quantum:/bin/quantum
+    networks:
+      perf_net:
+        ipv4_address: 172.18.0.3
+    entrypoint: ["/bin/quantum", "-etcd-host", "http://172.18.0.1:2379", "-private-ip", "10.8.0.2", "-public-ip", "172.18.0.3"]
+networks:
+  perf_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.18.0.0/24
+        gateway: 172.18.0.1

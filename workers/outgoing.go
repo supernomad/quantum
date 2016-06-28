@@ -39,28 +39,22 @@ func (outgoing *Outgoing) Seal(payload *common.Payload, mapping *common.Mapping)
 	return payload, true
 }
 
-func (outgoing *Outgoing) Start() {
+func (outgoing *Outgoing) Start(queue int) {
 	go func() {
-	loop:
 		for {
-			select {
-			case <-outgoing.quit:
-				return
-			default:
-				payload, ok := outgoing.tunnel.Read()
-				if !ok {
-					continue loop
-				}
-				payload, mapping, ok := outgoing.Resolve(payload)
-				if !ok {
-					continue loop
-				}
-				payload, ok = outgoing.Seal(payload, mapping)
-				if !ok {
-					continue loop
-				}
-				outgoing.sock.Write(payload, mapping.Address)
+			payload, ok := outgoing.tunnel.Read(queue)
+			if !ok {
+				continue
 			}
+			payload, mapping, ok := outgoing.Resolve(payload)
+			if !ok {
+				continue
+			}
+			payload, ok = outgoing.Seal(payload, mapping)
+			if !ok {
+				continue
+			}
+			outgoing.sock.Write(payload, mapping.Sockaddr, queue)
 		}
 	}()
 }
