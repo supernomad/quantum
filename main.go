@@ -25,7 +25,7 @@ func main() {
 	debugingEnabled := os.Getenv("QUANTUM_DEBUG") == "true"
 
 	cores := runtime.NumCPU()
-	runtime.GOMAXPROCS(cores)
+	runtime.GOMAXPROCS(cores * 2)
 
 	cfg := config.New()
 	log := logger.New(debugingEnabled)
@@ -46,12 +46,12 @@ func main() {
 	etcd.Heartbeat(cfg.PrivateIP, mapping)
 	etcd.Watch()
 
-	tunnel, err := tun.New(cfg.InterfaceName, cfg.PrivateIP+"/"+cfg.SubnetMask, log)
+	tunnel, err := tun.New(cfg.InterfaceName, cfg.PrivateIP+"/"+cfg.SubnetMask, cores, log)
 	handleError(err, log)
 
 	defer tunnel.Close()
 
-	sock, err := socket.New(cfg.ListenAddress, cfg.ListenPort, log)
+	sock, err := socket.New(cfg.ListenAddress, cfg.ListenPort, cores, log)
 	handleError(err, log)
 
 	defer sock.Close()
@@ -63,8 +63,8 @@ func main() {
 	defer incoming.Stop()
 
 	for i := 0; i < cores; i++ {
-		incoming.Start()
-		outgoing.Start()
+		incoming.Start(i)
+		outgoing.Start(i)
 	}
 
 	log.Info("[MAIN] Started up successfuly.")

@@ -135,7 +135,7 @@ func New(host, key string, privkey []byte, log *logger.Logger) (*Etcd, error) {
 		cli:        c,
 		key:        key,
 		log:        log,
-		ttl:        15,
+		ttl:        300,
 		retries:    3,
 		privateKey: privkey,
 		Mappings:   mappings,

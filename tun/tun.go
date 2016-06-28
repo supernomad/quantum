@@ -1,11 +1,10 @@
 package tun
 
 import (
-	"bytes"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/logger"
 	"github.com/vishvananda/netlink"
-	"os"
+	"strings"
 	"syscall"
 	"unsafe"
 )
@@ -14,22 +13,32 @@ const (
 	IF_NAME_SIZE    = 16
 	IFF_TUN         = 0x0001
 	IFF_NO_PI       = 0x1000
-	IFF_MULTI_QUEUE = 0x8000
+	IFF_MULTI_QUEUE = 0x0100
 )
 
+type ifReq struct {
+	Name  [IF_NAME_SIZE]byte
+	Flags uint16
+}
+
 type Tun struct {
-	Name  string
-	log   *logger.Logger
-	queue *os.File
+	Name   string
+	log    *logger.Logger
+	queues []int
 }
 
 func (tun *Tun) Close() error {
-	return tun.queue.Close()
+	for i := 0; i < len(tun.queues); i++ {
+		if err := syscall.Close(tun.queues[i]); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func (tun *Tun) Read() (*common.Payload, bool) {
+func (tun *Tun) Read(queue int) (*common.Payload, bool) {
 	buf := make([]byte, common.MaxPacketLength)
-	n, err := tun.queue.Read(buf[common.PacketStart:])
+	n, err := syscall.Read(tun.queues[queue], buf[common.PacketStart:])
 
 	if err != nil {
 		tun.log.Warn("[TUN]", "Read Error:", err)
@@ -44,8 +53,8 @@ func (tun *Tun) Read() (*common.Payload, bool) {
 	return common.NewTunPayload(buf, n), true
 }
 
-func (tun *Tun) Write(payload *common.Payload) bool {
-	_, err := tun.queue.Write(payload.Packet)
+func (tun *Tun) Write(payload *common.Payload, queue int) bool {
+	_, err := syscall.Write(tun.queues[queue], payload.Packet)
 	if err != nil {
 		tun.log.Warn("[TUN]", "Write Error:", err)
 		return false
@@ -53,27 +62,34 @@ func (tun *Tun) Write(payload *common.Payload) bool {
 	return true
 }
 
-func New(ifPattern string, cidr string, log *logger.Logger) (*Tun, error) {
-	ifName, queue, err := createTun(ifPattern)
+func New(ifPattern string, cidr string, numWorkers int, log *logger.Logger) (*Tun, error) {
+	queues := make([]int, numWorkers)
+	first := true
+	name := ifPattern
+
+	for i := 0; i < numWorkers; i++ {
+		ifName, queue, err := createTun(name)
+		if err != nil {
+			return nil, err
+		}
+		queues[i] = queue
+
+		if first {
+			first = false
+			name = ifName
+		}
+	}
+
+	err := initTun(name, cidr)
 	if err != nil {
 		return nil, err
 	}
 
-	err = initTun(ifName, cidr)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Tun{ifName, log, queue}, nil
-}
-
-type ifReq struct {
-	Name  [IF_NAME_SIZE]byte
-	Flags uint16
+	return &Tun{Name: name, queues: queues, log: log}, nil
 }
 
 func initTun(name, cidr string) error {
-	quantum0, err := netlink.LinkByName(name)
+	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return err
 	}
@@ -81,30 +97,30 @@ func initTun(name, cidr string) error {
 	if err != nil {
 		return err
 	}
-	err = netlink.LinkSetUp(quantum0)
+	err = netlink.LinkSetUp(link)
 	if err != nil {
 		return err
 	}
-	return netlink.AddrAdd(quantum0, addr)
+	return netlink.AddrAdd(link, addr)
 }
 
-func createTun(name string) (string, *os.File, error) {
+func createTun(name string) (string, int, error) {
 	var req ifReq
-	req.Flags = syscall.IFF_TUN | syscall.IFF_NO_PI
+	req.Flags = IFF_TUN | IFF_NO_PI | IFF_MULTI_QUEUE
 
-	copy(req.Name[:], bytes.TrimRight([]byte(name), "\000"))
+	copy(req.Name[:15], name)
 
-	file, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
+	queue, err := syscall.Open("/dev/net/tun", syscall.O_RDWR, 0)
 	if err != nil {
-		file.Close()
-		return "", nil, err
+		syscall.Close(queue)
+		return "", -1, err
 	}
 
-	_, _, errNo := syscall.Syscall(syscall.SYS_IOCTL, file.Fd(), uintptr(syscall.TUNSETIFF), uintptr(unsafe.Pointer(&req)))
+	_, _, errNo := syscall.Syscall(syscall.SYS_IOCTL, uintptr(queue), uintptr(syscall.TUNSETIFF), uintptr(unsafe.Pointer(&req)))
 	if errNo != 0 {
-		file.Close()
-		return "", nil, err
+		syscall.Close(queue)
+		return "", -1, err
 	}
 
-	return string(req.Name[:]), file, nil
+	return string(req.Name[:strings.Index(string(req.Name[:]), "\000")]), queue, nil
 }

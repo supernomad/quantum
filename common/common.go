@@ -3,6 +3,7 @@ package common
 const (
 	BlockSize       = 16
 	MaxPacketLength = 1532
+	LISTEN_BACKLOG  = 1024
 )
 
 const (

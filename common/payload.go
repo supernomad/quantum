@@ -6,6 +6,7 @@ type Payload struct {
 	IpAddress []byte
 	Nonce     []byte
 	Length    int
+	Mapping   *Mapping
 }
 
 func NewTunPayload(raw []byte, packetLength int) *Payload {

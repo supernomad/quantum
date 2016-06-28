@@ -6,14 +6,17 @@ import (
 	"encoding/json"
 	"github.com/Supernomad/quantum/ecdh"
 	"net"
+	"strconv"
+	"strings"
+	"syscall"
 )
 
 type Mapping struct {
-	StringAddress string
-	PublicKey     []byte
-	Address       *net.UDPAddr `json:"-"`
-	SecretKey     []byte       `json:"-"`
-	Cipher        cipher.AEAD  `json:"-"`
+	Address   string
+	PublicKey []byte
+	Sockaddr  *syscall.SockaddrInet4 `json:"-"`
+	SecretKey []byte                 `json:"-"`
+	Cipher    cipher.AEAD            `json:"-"`
 }
 
 func (m *Mapping) String() string {
@@ -23,14 +26,16 @@ func (m *Mapping) String() string {
 
 func ParseMapping(data string, privkey []byte) (*Mapping, error) {
 	var mapping Mapping
+	var addr [4]byte
 	json.Unmarshal([]byte(data), &mapping)
 
-	addr, err := net.ResolveUDPAddr("udp", mapping.StringAddress)
-	if err != nil {
-		return nil, err
+	split := strings.Split(mapping.Address, ":")
+	copy(addr[:], net.ParseIP(split[0]).To4())
+	port, _ := strconv.Atoi(split[1])
+	mapping.Sockaddr = &syscall.SockaddrInet4{
+		Port: port,
+		Addr: addr,
 	}
-
-	mapping.Address = addr
 	mapping.SecretKey = ecdh.GenerateSharedSecret(mapping.PublicKey, privkey)
 
 	block, err := aes.NewCipher(mapping.SecretKey)
@@ -50,7 +55,7 @@ func ParseMapping(data string, privkey []byte) (*Mapping, error) {
 
 func NewMapping(address string, pubkey []byte) *Mapping {
 	return &Mapping{
-		StringAddress: address,
-		PublicKey:     pubkey,
+		Address:   address,
+		PublicKey: pubkey,
 	}
 }
