@@ -1,11 +1,14 @@
 package workers
 
 import (
+	"crypto/ecdsa"
+	"crypto/sha256"
 	"encoding/binary"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/logger"
 	"github.com/Supernomad/quantum/socket"
 	"github.com/Supernomad/quantum/tun"
+	"math/big"
 )
 
 type Incoming struct {
@@ -34,6 +37,17 @@ func (incoming *Incoming) Unseal(payload *common.Payload, mapping *common.Mappin
 	return payload, true
 }
 
+func (incoming *Incoming) Verify(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
+	hash := sha256.Sum256(payload.Packet)
+
+	r := big.NewInt(0)
+	s := big.NewInt(0)
+	r.SetBytes(payload.R)
+	s.SetBytes(payload.S)
+
+	return payload, ecdsa.Verify(mapping.VerifyKey, hash[:], r, s)
+}
+
 func (incoming *Incoming) Start(queue int) {
 	go func() {
 		for {
@@ -42,6 +56,10 @@ func (incoming *Incoming) Start(queue int) {
 				continue
 			}
 			payload, mapping, ok := incoming.Resolve(payload)
+			if !ok {
+				continue
+			}
+			payload, ok = incoming.Verify(payload, mapping)
 			if !ok {
 				continue
 			}

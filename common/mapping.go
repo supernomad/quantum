@@ -3,6 +3,8 @@ package common
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"encoding/json"
 	"github.com/Supernomad/quantum/ecdh"
 	"net"
@@ -12,11 +14,13 @@ import (
 )
 
 type Mapping struct {
-	Address   string
-	PublicKey []byte
-	Sockaddr  *syscall.SockaddrInet4 `json:"-"`
-	SecretKey []byte                 `json:"-"`
-	Cipher    cipher.AEAD            `json:"-"`
+	Address      string
+	PublicKey    []byte
+	VerifyKeyBuf []byte
+	VerifyKey    *ecdsa.PublicKey       `json:"-"`
+	Sockaddr     *syscall.SockaddrInet4 `json:"-"`
+	SecretKey    []byte                 `json:"-"`
+	Cipher       cipher.AEAD            `json:"-"`
 }
 
 func (m *Mapping) String() string {
@@ -49,13 +53,20 @@ func ParseMapping(data string, privkey []byte) (*Mapping, error) {
 	}
 
 	mapping.Cipher = aesgcm
-
+	x, y := elliptic.Unmarshal(elliptic.P256(), mapping.VerifyKeyBuf)
+	mapping.VerifyKey = &ecdsa.PublicKey{
+		X: x,
+		Y: y,
+	}
+	mapping.VerifyKey.Curve = elliptic.P256()
 	return &mapping, nil
 }
 
-func NewMapping(address string, pubkey []byte) *Mapping {
+func NewMapping(address string, pubkey []byte, verifykey *ecdsa.PublicKey) *Mapping {
 	return &Mapping{
-		Address:   address,
-		PublicKey: pubkey,
+		Address:      address,
+		PublicKey:    pubkey,
+		VerifyKeyBuf: elliptic.Marshal(elliptic.P256(), verifykey.X, verifykey.Y),
+		VerifyKey:    verifykey,
 	}
 }

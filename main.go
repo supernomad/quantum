@@ -1,6 +1,9 @@
 package main
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/config"
 	"github.com/Supernomad/quantum/ecdh"
@@ -33,13 +36,17 @@ func main() {
 	pubkey, privkey, err := ecdh.GenerateECKeyPair()
 	handleError(err, log)
 
+	signkey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	verifykey := signkey.Public().(*ecdsa.PublicKey)
+	handleError(err, log)
+
 	etcd, err := etcd.New(cfg.EtcdHost, cfg.EtcdKey, privkey, log)
 	handleError(err, log)
 
 	err = etcd.SyncMappings()
 	handleError(err, log)
 
-	mapping := common.NewMapping(cfg.PublicIP+":"+strconv.Itoa(cfg.ListenPort), pubkey[:])
+	mapping := common.NewMapping(cfg.PublicIP+":"+strconv.Itoa(cfg.ListenPort), pubkey[:], verifykey)
 	handleError(err, log)
 
 	etcd.SetMapping(cfg.PrivateIP, mapping)
@@ -56,7 +63,7 @@ func main() {
 
 	defer sock.Close()
 
-	outgoing := workers.NewOutgoing(log, cfg.PrivateIP, etcd.Mappings, tunnel, sock)
+	outgoing := workers.NewOutgoing(log, cfg.PrivateIP, signkey, etcd.Mappings, tunnel, sock)
 	defer outgoing.Stop()
 
 	incoming := workers.NewIncoming(log, cfg.PrivateIP, etcd.Mappings, tunnel, sock)

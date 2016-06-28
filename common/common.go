@@ -2,14 +2,10 @@ package common
 
 const (
 	BlockSize       = 16
-	MaxPacketLength = 1532
-	LISTEN_BACKLOG  = 1024
+	MaxPacketLength = 1596
 )
 
 const (
-	// Packet offsets
-	PacketStart = 16
-
 	// IP offsets
 	IpStart = 0
 	IpEnd   = 4
@@ -17,4 +13,15 @@ const (
 	// Nonce offsets
 	NonceStart = 4
 	NonceEnd   = 16
+
+	// R offsets
+	RStart = 16
+	REnd   = 48
+
+	// S offsets
+	SStart = 48
+	SEnd   = 80
+
+	// Packet offsets
+	PacketStart = 80
 )
