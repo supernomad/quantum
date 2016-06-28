@@ -36,26 +36,20 @@ func (incoming *Incoming) Unseal(payload *common.Payload, mapping *common.Mappin
 
 func (incoming *Incoming) Start(queue int) {
 	go func() {
-	loop:
 		for {
-			select {
-			case <-incoming.quit:
-				return
-			default:
-				payload, ok := incoming.sock.Read()
-				if !ok {
-					continue loop
-				}
-				payload, mapping, ok := incoming.Resolve(payload)
-				if !ok {
-					continue loop
-				}
-				payload, ok = incoming.Unseal(payload, mapping)
-				if !ok {
-					continue loop
-				}
-				incoming.tunnel.Write(payload, queue)
+			payload, ok := incoming.sock.Read(queue)
+			if !ok {
+				continue
 			}
+			payload, mapping, ok := incoming.Resolve(payload)
+			if !ok {
+				continue
+			}
+			payload, ok = incoming.Unseal(payload, mapping)
+			if !ok {
+				continue
+			}
+			incoming.tunnel.Write(payload, queue)
 		}
 	}()
 }

@@ -25,7 +25,7 @@ func main() {
 	debugingEnabled := os.Getenv("QUANTUM_DEBUG") == "true"
 
 	cores := runtime.NumCPU()
-	runtime.GOMAXPROCS(cores)
+	runtime.GOMAXPROCS(cores * 2)
 
 	cfg := config.New()
 	log := logger.New(debugingEnabled)
@@ -51,7 +51,7 @@ func main() {
 
 	defer tunnel.Close()
 
-	sock, err := socket.New(cfg.ListenAddress, cfg.ListenPort, log)
+	sock, err := socket.New(cfg.ListenAddress, cfg.ListenPort, cores, log)
 	handleError(err, log)
 
 	defer sock.Close()
