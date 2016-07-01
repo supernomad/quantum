@@ -3,6 +3,8 @@ package workers
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/binary"
 	"github.com/Supernomad/quantum/common"
@@ -10,11 +12,9 @@ import (
 	"testing"
 )
 
-var out *Outgoing = NewOutgoing(nil, "10.8.0.2", nil, nil, nil)
+var out *Outgoing = NewOutgoing(nil, "10.8.0.2", nil, nil, nil, nil)
 
-var sealResult *common.Payload
-
-var resolveResult *common.Payload
+var sealResult, signResult, resolveResult *common.Payload
 var resolveMapping *common.Mapping
 
 func benchmarkSeal(payload *common.Payload, mapping *common.Mapping, b *testing.B) {
@@ -77,4 +77,25 @@ func BenchmarkResolve(b *testing.B) {
 
 	binary.LittleEndian.PutUint32(payload.Packet[16:20], intRemoteIp)
 	benchmarkResolve(payload, b)
+}
+
+func benchmarkSign(payload *common.Payload, b *testing.B) {
+	b.ResetTimer()
+	var p *common.Payload
+	for n := 0; n < b.N; n++ {
+		if payload, pass := out.Sign(payload); pass {
+			p = payload
+		} else {
+			panic("Sign failed something is wrong")
+		}
+	}
+	signResult = p
+}
+
+func BenchmarkSign(b *testing.B) {
+	signkey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	out = NewOutgoing(nil, "10.8.0.2", signkey, nil, nil, nil)
+	buf := make([]byte, common.MaxPacketLength)
+	payload := common.NewTunPayload(buf, 1500)
+	benchmarkSign(payload, b)
 }

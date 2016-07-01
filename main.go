@@ -37,8 +37,9 @@ func main() {
 	handleError(err, log)
 
 	signkey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	verifykey := signkey.Public().(*ecdsa.PublicKey)
 	handleError(err, log)
+
+	verifykey := signkey.Public().(*ecdsa.PublicKey)
 
 	etcd, err := etcd.New(cfg.EtcdHost, cfg.EtcdKey, privkey, log)
 	handleError(err, log)
