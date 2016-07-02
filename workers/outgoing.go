@@ -3,7 +3,6 @@ package workers
 import (
 	"crypto/ecdsa"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/binary"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/logger"
@@ -43,9 +42,7 @@ func (outgoing *Outgoing) Seal(payload *common.Payload, mapping *common.Mapping)
 }
 
 func (outgoing *Outgoing) Sign(payload *common.Payload) (*common.Payload, bool) {
-	hash := sha256.Sum256(payload.Raw[common.PacketStart:payload.Length])
-
-	r, s, err := ecdsa.Sign(rand.Reader, outgoing.privateKey, hash[:])
+	r, s, err := ecdsa.Sign(rand.Reader, outgoing.privateKey, payload.Hash)
 	if err != nil {
 		return nil, false
 	}
@@ -58,8 +55,9 @@ func (outgoing *Outgoing) Sign(payload *common.Payload) (*common.Payload, bool) 
 
 func (outgoing *Outgoing) Start(queue int) {
 	go func() {
+		buf := make([]byte, common.MaxPacketLength)
 		for {
-			payload, ok := outgoing.tunnel.Read(queue)
+			payload, ok := outgoing.tunnel.Read(buf, queue)
 			if !ok {
 				continue
 			}

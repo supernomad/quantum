@@ -36,8 +36,7 @@ func (tun *Tun) Close() error {
 	return nil
 }
 
-func (tun *Tun) Read(queue int) (*common.Payload, bool) {
-	buf := make([]byte, common.MaxPacketLength)
+func (tun *Tun) Read(buf []byte, queue int) (*common.Payload, bool) {
 	n, err := syscall.Read(tun.queues[queue], buf[common.PacketStart:])
 
 	if err != nil {

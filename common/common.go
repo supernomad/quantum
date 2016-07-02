@@ -1,27 +1,35 @@
 package common
 
 const (
-	BlockSize       = 16
+	FooterSize      = 96
 	MaxPacketLength = 1596
 )
 
 const (
-	// IP offsets
-	IpStart = 0
-	IpEnd   = 4
+	// Tag offsets x16
+	TagStart = 0
+	TagEnd   = 16
 
-	// Nonce offsets
-	NonceStart = 4
-	NonceEnd   = 16
+	// IP offsets x4
+	IpStart = 16
+	IpEnd   = 20
 
-	// R offsets
-	RStart = 16
-	REnd   = 48
+	// Nonce offsets x12
+	NonceStart = 20
+	NonceEnd   = 32
 
-	// S offsets
-	SStart = 48
-	SEnd   = 80
+	// R offsets x32
+	RStart = 32
+	REnd   = 64
+
+	// S offsets x32
+	SStart = 64
+	SEnd   = 96
+
+	// Hash offsets x32 (tag + ip + nonce)
+	HashStart = 0
+	HashEnd   = 32
 
 	// Packet offsets
-	PacketStart = 80
+	PacketStart = 0
 )

@@ -2,7 +2,6 @@ package workers
 
 import (
 	"crypto/ecdsa"
-	"crypto/sha256"
 	"encoding/binary"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/logger"
@@ -37,21 +36,20 @@ func (incoming *Incoming) Unseal(payload *common.Payload, mapping *common.Mappin
 	return payload, true
 }
 
-func (incoming *Incoming) Verify(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
-	hash := sha256.Sum256(payload.Packet)
-
-	r := big.NewInt(0)
-	s := big.NewInt(0)
+func (incoming *Incoming) Verify(payload *common.Payload, mapping *common.Mapping, r, s *big.Int) (*common.Payload, bool) {
 	r.SetBytes(payload.R)
 	s.SetBytes(payload.S)
 
-	return payload, ecdsa.Verify(mapping.VerifyKey, hash[:], r, s)
+	return payload, ecdsa.Verify(mapping.VerifyKey, payload.Hash, r, s)
 }
 
 func (incoming *Incoming) Start(queue int) {
 	go func() {
+		buf := make([]byte, common.MaxPacketLength)
+		r := big.NewInt(0)
+		s := big.NewInt(0)
 		for {
-			payload, ok := incoming.sock.Read(queue)
+			payload, ok := incoming.sock.Read(buf, queue)
 			if !ok {
 				continue
 			}
@@ -59,7 +57,7 @@ func (incoming *Incoming) Start(queue int) {
 			if !ok {
 				continue
 			}
-			payload, ok = incoming.Verify(payload, mapping)
+			payload, ok = incoming.Verify(payload, mapping, r, s)
 			if !ok {
 				continue
 			}
