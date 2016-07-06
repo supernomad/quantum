@@ -3,12 +3,8 @@ package common
 type Payload struct {
 	Raw       []byte
 	Packet    []byte
-	Tag       []byte
 	IpAddress []byte
 	Nonce     []byte
-	R         []byte
-	S         []byte
-	Hash      []byte
 	Length    int
 	Mapping   *Mapping
 }
