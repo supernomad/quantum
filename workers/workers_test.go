@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"github.com/Supernomad/quantum/common"
-	"github.com/Supernomad/quantum/etcd"
 )
 
 var (
@@ -30,8 +29,8 @@ func init() {
 	remoteIp := "10.8.0.1"
 	localIp := "10.8.0.2"
 
-	intRemoteIp = etcd.IP4toInt(remoteIp)
-	intLocalIp = etcd.IP4toInt(localIp)
+	intRemoteIp = common.IPtoInt(remoteIp)
+	intLocalIp = common.IPtoInt(localIp)
 
 	outgoing = NewOutgoing(nil, "10.8.0.2", nil, nil, nil)
 	incoming = NewIncoming(nil, "10.8.0.1", nil, nil, nil)
