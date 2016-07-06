@@ -94,6 +94,9 @@ func initTun(name, cidr string) error {
 		return err
 	}
 	err = netlink.LinkSetMTU(link, common.MTU)
+	if err != nil {
+		return err
+	}
 	return netlink.AddrAdd(link, addr)
 }
 
