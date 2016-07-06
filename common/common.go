@@ -1,35 +1,31 @@
 package common
 
-const (
-	FooterSize      = 96
-	MaxPacketLength = 1596
+import (
+	"encoding/binary"
+	"net"
 )
 
 const (
-	// Tag offsets x16
-	TagStart = 0
-	TagEnd   = 16
+	MTU             = 65475
+	HeaderSize      = 16
+	FooterSize      = 16
+	MaxPacketLength = HeaderSize + MTU + FooterSize
+)
 
+const (
 	// IP offsets x4
-	IpStart = 16
-	IpEnd   = 20
+	IpStart = 0
+	IpEnd   = 4
 
 	// Nonce offsets x12
-	NonceStart = 20
-	NonceEnd   = 32
-
-	// R offsets x32
-	RStart = 32
-	REnd   = 64
-
-	// S offsets x32
-	SStart = 64
-	SEnd   = 96
-
-	// Hash offsets x32 (tag + ip + nonce)
-	HashStart = 0
-	HashEnd   = 32
+	NonceStart = 4
+	NonceEnd   = 16
 
 	// Packet offsets
-	PacketStart = 0
+	PacketStart = 16
 )
+
+func IPtoInt(IP string) uint32 {
+	buf := net.ParseIP(IP).To4()
+	return binary.LittleEndian.Uint32(buf)
+}
