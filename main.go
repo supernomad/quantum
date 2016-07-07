@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/config"
+	"github.com/Supernomad/quantum/datastore"
 	"github.com/Supernomad/quantum/ecdh"
-	"github.com/Supernomad/quantum/etcd"
 	"github.com/Supernomad/quantum/logger"
 	"github.com/Supernomad/quantum/socket"
 	"github.com/Supernomad/quantum/tun"
@@ -33,18 +33,14 @@ func main() {
 	pubkey, privkey, err := ecdh.GenerateECKeyPair()
 	handleError(err, log)
 
-	etcd, err := etcd.New(cfg.EtcdHost, cfg.EtcdKey, privkey, log)
-	handleError(err, log)
-
-	err = etcd.SyncMappings()
-	handleError(err, log)
-
 	mapping := common.NewMapping(cfg.PublicIP+":"+strconv.Itoa(cfg.ListenPort), pubkey[:])
 	handleError(err, log)
 
-	etcd.SetMapping(cfg.PrivateIP, mapping)
-	etcd.Heartbeat(cfg.PrivateIP, mapping)
-	etcd.Watch()
+	etcd, err := datastore.New(datastore.EtcdDatastore, privkey, mapping, cfg)
+	handleError(err, log)
+
+	err = etcd.Start()
+	handleError(err, log)
 
 	tunnel, err := tun.New(cfg.InterfaceName, cfg.PrivateIP+"/"+cfg.SubnetMask, cores, log)
 	handleError(err, log)

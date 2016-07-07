@@ -36,20 +36,12 @@ func (tun *Tun) Close() error {
 	return nil
 }
 
-func (tun *Tun) Read(queue int) (*common.Payload, bool) {
-	buf := make([]byte, common.MaxPacketLength)
+func (tun *Tun) Read(buf []byte, queue int) (*common.Payload, bool) {
 	n, err := syscall.Read(tun.queues[queue], buf[common.PacketStart:])
-
 	if err != nil {
 		tun.log.Warn("[TUN]", "Read Error:", err)
 		return nil, false
 	}
-
-	if buf[common.PacketStart]>>4 != 4 {
-		tun.log.Error("[TUN]", "Unknown IP version recieved")
-		return nil, false
-	}
-
 	return common.NewTunPayload(buf, n), true
 }
 
@@ -98,6 +90,10 @@ func initTun(name, cidr string) error {
 		return err
 	}
 	err = netlink.LinkSetUp(link)
+	if err != nil {
+		return err
+	}
+	err = netlink.LinkSetMTU(link, common.MTU)
 	if err != nil {
 		return err
 	}

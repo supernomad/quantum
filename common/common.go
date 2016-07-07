@@ -1,20 +1,31 @@
 package common
 
-const (
-	BlockSize       = 16
-	MaxPacketLength = 1532
-	LISTEN_BACKLOG  = 1024
+import (
+	"encoding/binary"
+	"net"
 )
 
 const (
-	// Packet offsets
-	PacketStart = 16
+	MTU             = 65475
+	HeaderSize      = 16
+	FooterSize      = 16
+	MaxPacketLength = HeaderSize + MTU + FooterSize
+)
 
-	// IP offsets
+const (
+	// IP offsets x4
 	IpStart = 0
 	IpEnd   = 4
 
-	// Nonce offsets
+	// Nonce offsets x12
 	NonceStart = 4
 	NonceEnd   = 16
+
+	// Packet offsets
+	PacketStart = 16
 )
+
+func IPtoInt(IP string) uint32 {
+	buf := net.ParseIP(IP).To4()
+	return binary.LittleEndian.Uint32(buf)
+}
