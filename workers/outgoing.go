@@ -41,8 +41,9 @@ func (outgoing *Outgoing) Seal(payload *common.Payload, mapping *common.Mapping)
 
 func (outgoing *Outgoing) Start(queue int) {
 	go func() {
+		buf := make([]byte, common.MaxPacketLength)
 		for {
-			payload, ok := outgoing.tunnel.Read(queue)
+			payload, ok := outgoing.tunnel.Read(buf, queue)
 			if !ok {
 				continue
 			}

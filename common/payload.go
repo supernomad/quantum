@@ -19,7 +19,7 @@ func NewTunPayload(raw []byte, packetLength int) *Payload {
 		IpAddress: ip,
 		Nonce:     nonce,
 		Packet:    pkt,
-		Length:    PacketStart + packetLength + BlockSize,
+		Length:    HeaderSize + packetLength + FooterSize,
 	}
 }
 
@@ -33,5 +33,6 @@ func NewSockPayload(raw []byte, packetLength int) *Payload {
 		IpAddress: ip,
 		Nonce:     nonce,
 		Packet:    pkt,
+		Length:    packetLength,
 	}
 }

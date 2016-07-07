@@ -27,11 +27,14 @@ func (m *Mapping) String() string {
 func ParseMapping(data string, privkey []byte) (*Mapping, error) {
 	var mapping Mapping
 	var addr [4]byte
+
 	json.Unmarshal([]byte(data), &mapping)
 
 	split := strings.Split(mapping.Address, ":")
+
 	copy(addr[:], net.ParseIP(split[0]).To4())
 	port, _ := strconv.Atoi(split[1])
+
 	mapping.Sockaddr = &syscall.SockaddrInet4{
 		Port: port,
 		Addr: addr,
@@ -49,7 +52,6 @@ func ParseMapping(data string, privkey []byte) (*Mapping, error) {
 	}
 
 	mapping.Cipher = aesgcm
-
 	return &mapping, nil
 }
 

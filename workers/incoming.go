@@ -11,14 +11,14 @@ import (
 type Incoming struct {
 	tunnel   *tun.Tun
 	sock     *socket.Socket
-	mappings map[uint32]*common.Mapping
+	Mappings map[uint32]*common.Mapping
 	quit     chan bool
 }
 
 func (incoming *Incoming) Resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
 	dip := binary.LittleEndian.Uint32(payload.IpAddress)
 
-	if mapping, ok := incoming.mappings[dip]; ok {
+	if mapping, ok := incoming.Mappings[dip]; ok {
 		return payload, mapping, true
 	}
 
@@ -36,8 +36,9 @@ func (incoming *Incoming) Unseal(payload *common.Payload, mapping *common.Mappin
 
 func (incoming *Incoming) Start(queue int) {
 	go func() {
+		buf := make([]byte, common.MaxPacketLength)
 		for {
-			payload, ok := incoming.sock.Read(queue)
+			payload, ok := incoming.sock.Read(buf, queue)
 			if !ok {
 				continue
 			}
@@ -64,7 +65,7 @@ func NewIncoming(log *logger.Logger, privateIP string, mappings map[uint32]*comm
 	return &Incoming{
 		tunnel:   tunnel,
 		sock:     sock,
-		mappings: mappings,
+		Mappings: mappings,
 		quit:     make(chan bool),
 	}
 }

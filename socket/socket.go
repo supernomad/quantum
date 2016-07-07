@@ -21,9 +21,7 @@ func (sock *Socket) Close() error {
 	return nil
 }
 
-func (sock *Socket) Read(queue int) (*common.Payload, bool) {
-	buf := make([]byte, common.MaxPacketLength)
-
+func (sock *Socket) Read(buf []byte, queue int) (*common.Payload, bool) {
 	n, _, err := syscall.Recvfrom(sock.queues[queue], buf, 0)
 	if err != nil {
 		sock.log.Warn("[UDP] Read Error:", err)
