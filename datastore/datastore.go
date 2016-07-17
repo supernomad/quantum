@@ -89,7 +89,7 @@ func toDatastore(privateKey []byte, mapping *common.Mapping, store store.Store, 
 		Mappings: make(map[uint32]*common.Mapping),
 	}
 
-	err := datastore.Set()
+	err := datastore.set()
 	return datastore, err
 }
 
