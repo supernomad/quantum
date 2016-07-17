@@ -3,5 +3,14 @@ language: go
 go:
   - 1.6
 
-script: |
-  go test -bench . -benchmem ./...
+before_install:
+  - go get golang.org/x/tools/cmd/cover
+  - go get github.com/mattn/goveralls
+  - go get github.com/golang/lint/golint
+  - go get github.com/GeertJohan/fgt
+
+script:
+  - "[[ $(go fmt ./... | wc -l) -le 0 ]]"
+  - go vet ./...
+  - fgt golint ./...
+  - go test -v -race -bench . -benchmem ./...
