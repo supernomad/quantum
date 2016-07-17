@@ -2,7 +2,7 @@ version: "2"
 services:
   quantum0:
     container_name: quantum0
-    depends_on: [datastore]
+    depends_on: [etcd]
     image: networkstatic/iperf3
     cap_add:
       - NET_ADMIN
@@ -16,7 +16,7 @@ services:
     entrypoint: ["/bin/quantum", "-endpoints", "172.18.0.4:2379", "-private-ip", "10.8.0.1", "-public-ip", "172.18.0.2"]
   quantum1:
     container_name: quantum1
-    depends_on: [datastore]
+    depends_on: [etcd]
     image: networkstatic/iperf3
     cap_add:
       - NET_ADMIN
@@ -28,7 +28,7 @@ services:
       perf_net:
         ipv4_address: 172.18.0.3
     entrypoint: ["/bin/quantum", "-endpoints", "172.18.0.4:2379", "-private-ip", "10.8.0.2", "-public-ip", "172.18.0.3"]
-  datastore:
+  etcd:
     image: quay.io/coreos/etcd
     volumes:
       - etcd:/var/lib/etcd

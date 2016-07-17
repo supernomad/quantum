@@ -36,7 +36,7 @@ func New() *Config {
 	laddr := flag.String("listen-address", "0.0.0.0", "The ip address to listen on for forwarded packets.")
 	lport := flag.Int("listen-port", 1099, "The ip port to listen on for forwarded packets.")
 
-	prefix := flag.String("prefix", "/quantum", "The etcd key that quantum information is stored under.")
+	prefix := flag.String("prefix", "quantum", "The etcd key that quantum information is stored under.")
 	leaseTime := flag.Duration("lease-time", 300, "Lease time for the private ip address.")
 	syncInterval := flag.Duration("sync-interval", 30, "The backend sync interval")
 	retries := flag.Duration("retries", 5, "The number of times to retry aquiring the private ip address lease.")
