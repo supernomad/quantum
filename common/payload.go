@@ -3,20 +3,20 @@ package common
 type Payload struct {
 	Raw       []byte
 	Packet    []byte
-	IpAddress []byte
+	IPAddress []byte
 	Nonce     []byte
 	Length    int
 	Mapping   *Mapping
 }
 
 func NewTunPayload(raw []byte, packetLength int) *Payload {
-	ip := raw[IpStart:IpEnd]
+	ip := raw[IPStart:IPEnd]
 	nonce := raw[NonceStart:NonceEnd]
 	pkt := raw[PacketStart : PacketStart+packetLength]
 
 	return &Payload{
 		Raw:       raw,
-		IpAddress: ip,
+		IPAddress: ip,
 		Nonce:     nonce,
 		Packet:    pkt,
 		Length:    HeaderSize + packetLength + FooterSize,
@@ -24,13 +24,13 @@ func NewTunPayload(raw []byte, packetLength int) *Payload {
 }
 
 func NewSockPayload(raw []byte, packetLength int) *Payload {
-	ip := raw[IpStart:IpEnd]
+	ip := raw[IPStart:IPEnd]
 	nonce := raw[NonceStart:NonceEnd]
 	pkt := raw[PacketStart:packetLength]
 
 	return &Payload{
 		Raw:       raw,
-		IpAddress: ip,
+		IPAddress: ip,
 		Nonce:     nonce,
 		Packet:    pkt,
 		Length:    packetLength,

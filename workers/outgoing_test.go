@@ -29,7 +29,7 @@ func BenchmarkOutgoingResolve(b *testing.B) {
 	buf := make([]byte, common.MaxPacketLength)
 	payload := common.NewTunPayload(buf, common.MTU)
 
-	binary.LittleEndian.PutUint32(payload.Packet[16:20], intRemoteIp)
+	binary.LittleEndian.PutUint32(payload.Packet[16:20], intRemoteIP)
 	benchmarkOutgoingResolve(payload, b)
 }
 

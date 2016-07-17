@@ -29,7 +29,7 @@ func BenchmarkIncomingResolve(b *testing.B) {
 	buf := make([]byte, common.MaxPacketLength)
 	payload := common.NewSockPayload(buf, common.MaxPacketLength)
 
-	binary.LittleEndian.PutUint32(payload.IpAddress, intLocalIp)
+	binary.LittleEndian.PutUint32(payload.IPAddress, intLocalIP)
 	benchmarkIncomingResolve(payload, b)
 }
 

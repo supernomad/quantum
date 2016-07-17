@@ -22,7 +22,7 @@ func (outgoing *Outgoing) Resolve(payload *common.Payload) (*common.Payload, *co
 	dip := binary.LittleEndian.Uint32(payload.Packet[16:20])
 
 	if mapping, ok := outgoing.Mappings[dip]; ok {
-		copy(payload.IpAddress, outgoing.privateIP)
+		copy(payload.IPAddress, outgoing.privateIP)
 		return payload, mapping, true
 	}
 

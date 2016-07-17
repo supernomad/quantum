@@ -14,8 +14,8 @@ const (
 
 const (
 	// IP offsets x4
-	IpStart = 0
-	IpEnd   = 4
+	IPStart = 0
+	IPEnd   = 4
 
 	// Nonce offsets x12
 	NonceStart = 4

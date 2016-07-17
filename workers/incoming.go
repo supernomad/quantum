@@ -16,7 +16,7 @@ type Incoming struct {
 }
 
 func (incoming *Incoming) Resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
-	dip := binary.LittleEndian.Uint32(payload.IpAddress)
+	dip := binary.LittleEndian.Uint32(payload.IPAddress)
 
 	if mapping, ok := incoming.Mappings[dip]; ok {
 		return payload, mapping, true

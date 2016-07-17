@@ -30,7 +30,7 @@ type Datastore struct {
 	prefix string
 
 	privateKey []byte
-	privateIp  string
+	privateIP  string
 	mapping    *common.Mapping
 
 	syncInterval time.Duration
@@ -68,7 +68,7 @@ func (datastore *Datastore) sync() error {
 
 func (datastore *Datastore) set() error {
 	return datastore.store.Put(
-		path.Join(datastore.prefix, "/mappings/", datastore.privateIp),
+		path.Join(datastore.prefix, "/mappings/", datastore.privateIP),
 		datastore.mapping.Bytes(),
 		&store.WriteOptions{TTL: datastore.leaseTime * time.Second})
 }
@@ -79,7 +79,7 @@ func toDatastore(privateKey []byte, mapping *common.Mapping, store store.Store, 
 		prefix: cfg.Prefix,
 
 		privateKey: privateKey,
-		privateIp:  cfg.PrivateIP,
+		privateIP:  cfg.PrivateIP,
 		mapping:    mapping,
 
 		syncInterval: cfg.SyncInterval,
