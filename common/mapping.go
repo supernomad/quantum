@@ -20,15 +20,19 @@ type Mapping struct {
 }
 
 func (m *Mapping) String() string {
-	buf, _ := json.Marshal(m)
-	return string(buf)
+	return string(m.Bytes())
 }
 
-func ParseMapping(data string, privkey []byte) (*Mapping, error) {
+func (m *Mapping) Bytes() []byte {
+	buf, _ := json.Marshal(m)
+	return buf
+}
+
+func ParseMapping(data []byte, privkey []byte) (*Mapping, error) {
 	var mapping Mapping
 	var addr [4]byte
 
-	json.Unmarshal([]byte(data), &mapping)
+	json.Unmarshal(data, &mapping)
 
 	split := strings.Split(mapping.Address, ":")
 

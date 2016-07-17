@@ -4,16 +4,20 @@ import (
 	"errors"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/config"
+	"github.com/docker/libkv"
+	"github.com/docker/libkv/store"
+	"github.com/docker/libkv/store/consul"
+	"github.com/docker/libkv/store/etcd"
+	"path"
 	"time"
 )
 
-type DatastoreType int
+type DatastoreType string
 type DatastoreAction int
 
 var (
-	EtcdDatastore   DatastoreType = 0
-	ConsulDatastore DatastoreType = 1
-	RedisDatastore  DatastoreType = 2
+	EtcdDatastore   DatastoreType = "etcd"
+	ConsulDatastore DatastoreType = "consul"
 )
 
 var (
@@ -21,18 +25,9 @@ var (
 	RemoveAction DatastoreAction = 1
 )
 
-type MappingHandler func(DatastoreAction, string, string)
-
-type DatastoreBackend interface {
-	Watch(string, MappingHandler)
-	Sync(string, MappingHandler) error
-	ResetTtl(string, string, time.Duration) error
-	Set(string, string, time.Duration, *common.Mapping) error
-}
-
 type Datastore struct {
-	backend DatastoreBackend
-	prefix  string
+	store  store.Store
+	prefix string
 
 	privateKey []byte
 	privateIp  string
@@ -45,29 +40,7 @@ type Datastore struct {
 	Mappings map[uint32]*common.Mapping
 }
 
-func (datastore *Datastore) Start() error {
-	err := datastore.backend.Sync(datastore.prefix, datastore.mappingHandler)
-	if err != nil {
-		return err
-	}
-	refresh := time.NewTicker(datastore.leaseTime / datastore.retries * time.Second)
-	sync := time.NewTicker(datastore.syncInterval * time.Second)
-
-	go datastore.backend.Watch(datastore.prefix, datastore.mappingHandler)
-	go func() {
-		for {
-			select {
-			case <-refresh.C:
-				datastore.backend.ResetTtl(datastore.prefix, datastore.privateIp, datastore.leaseTime)
-			case <-sync.C:
-				datastore.backend.Sync(datastore.prefix, datastore.mappingHandler)
-			}
-		}
-	}()
-	return nil
-}
-
-func (datastore *Datastore) mappingHandler(action DatastoreAction, key, value string) {
+func (datastore *Datastore) mappingHandler(action DatastoreAction, key string, value []byte) {
 	switch action {
 	case UpdateAction:
 		mapping, err := common.ParseMapping(value, datastore.privateKey)
@@ -80,10 +53,30 @@ func (datastore *Datastore) mappingHandler(action DatastoreAction, key, value st
 	}
 }
 
-func toDatastore(privateKey []byte, mapping *common.Mapping, backend DatastoreBackend, cfg *config.Config) (*Datastore, error) {
+func (datastore *Datastore) sync() error {
+	nodes, err := datastore.store.List(path.Join(datastore.prefix, "/mappings/"))
+	if err != nil {
+		return err
+	}
+
+	for _, keyVal := range nodes {
+		_, key := path.Split(keyVal.Key)
+		datastore.mappingHandler(UpdateAction, key, keyVal.Value)
+	}
+	return nil
+}
+
+func (datastore *Datastore) set() error {
+	return datastore.store.Put(
+		path.Join(datastore.prefix, "/mappings/", datastore.privateIp),
+		datastore.mapping.Bytes(),
+		&store.WriteOptions{TTL: datastore.leaseTime * time.Second})
+}
+
+func toDatastore(privateKey []byte, mapping *common.Mapping, store store.Store, cfg *config.Config) (*Datastore, error) {
 	datastore := &Datastore{
-		backend: backend,
-		prefix:  cfg.Prefix,
+		store:  store,
+		prefix: cfg.Prefix,
 
 		privateKey: privateKey,
 		privateIp:  cfg.PrivateIP,
@@ -96,31 +89,83 @@ func toDatastore(privateKey []byte, mapping *common.Mapping, backend DatastoreBa
 		Mappings: make(map[uint32]*common.Mapping),
 	}
 
-	err := datastore.backend.Set(datastore.prefix, datastore.privateIp, datastore.leaseTime, datastore.mapping)
+	err := datastore.Set()
 	return datastore, err
 }
 
-func New(datastoreType DatastoreType, privateKey []byte, mapping *common.Mapping, cfg *config.Config) (*Datastore, error) {
-	switch datastoreType {
+func (datastore *Datastore) watch() {
+	events, err := datastore.store.WatchTree(path.Join(datastore.prefix, "/mappings/"), nil)
+	if err != nil {
+		return
+	}
+
+	for {
+		select {
+		case pairs := <-events:
+			for _, keyVal := range pairs {
+				_, key := path.Split(keyVal.Key)
+				if len(keyVal.Value) == 0 {
+					datastore.mappingHandler(RemoveAction, key, keyVal.Value)
+				} else {
+					datastore.mappingHandler(UpdateAction, key, keyVal.Value)
+				}
+			}
+		}
+	}
+}
+
+func (datastore *Datastore) Start() error {
+	err := datastore.sync()
+	if err != nil {
+		return err
+	}
+	refresh := time.NewTicker(datastore.leaseTime / datastore.retries * time.Second)
+	sync := time.NewTicker(datastore.syncInterval * time.Second)
+
+	go datastore.watch()
+	go func() {
+		for {
+			select {
+			case <-refresh.C:
+				datastore.set()
+			case <-sync.C:
+				datastore.sync()
+			}
+		}
+	}()
+	return nil
+}
+
+func New(privateKey []byte, mapping *common.Mapping, cfg *config.Config) (*Datastore, error) {
+	options := &store.Config{
+		//TODO:: ClientTLS: cliTlsCfg,
+		//TODO:: TLS: tlsCfg,
+		//TODO:: ConnectionTimeout: connTimeout,
+		//TODO:: Bucket: "quantum",
+		PersistConnection: true,
+		Username:          cfg.Username,
+		Password:          cfg.Password,
+	}
+
+	switch DatastoreType(cfg.Datastore) {
 	case EtcdDatastore:
-		backend, err := newEtcd(cfg)
+		store, err := libkv.NewStore(store.ETCD, cfg.Endpoints, options)
 		if err != nil {
 			return nil, err
 		}
-		return toDatastore(privateKey, mapping, backend, cfg)
+		return toDatastore(privateKey, mapping, store, cfg)
 	case ConsulDatastore:
-		backend, err := newConsul(cfg)
+		store, err := libkv.NewStore(store.CONSUL, cfg.Endpoints, options)
 		if err != nil {
 			return nil, err
 		}
-		return toDatastore(privateKey, mapping, backend, cfg)
-	case RedisDatastore:
-		backend, err := newRedis(cfg)
-		if err != nil {
-			return nil, err
-		}
-		return toDatastore(privateKey, mapping, backend, cfg)
+		return toDatastore(privateKey, mapping, store, cfg)
 	default:
 		return nil, errors.New("The specified 'DatastoreType' is not supported.")
 	}
+}
+
+func init() {
+	consul.Register()
+	etcd.Register()
 }

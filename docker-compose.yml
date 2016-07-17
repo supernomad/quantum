@@ -13,7 +13,7 @@ services:
     networks:
       perf_net:
         ipv4_address: 172.18.0.2
-    entrypoint: ["/bin/quantum", "-etcd-endpoints", "http://172.18.0.4:2379", "-private-ip", "10.8.0.1", "-public-ip", "172.18.0.2"]
+    entrypoint: ["/bin/quantum", "-endpoints", "172.18.0.4:2379", "-private-ip", "10.8.0.1", "-public-ip", "172.18.0.2"]
   quantum1:
     container_name: quantum1
     depends_on: [datastore]
@@ -27,7 +27,7 @@ services:
     networks:
       perf_net:
         ipv4_address: 172.18.0.3
-    entrypoint: ["/bin/quantum", "-etcd-endpoints", "http://172.18.0.4:2379", "-private-ip", "10.8.0.2", "-public-ip", "172.18.0.3"]
+    entrypoint: ["/bin/quantum", "-endpoints", "172.18.0.4:2379", "-private-ip", "10.8.0.2", "-public-ip", "172.18.0.3"]
   datastore:
     image: quay.io/coreos/etcd
     volumes:
@@ -40,7 +40,7 @@ services:
       ETCD_LISTEN_CLIENT_URLS: "http://172.18.0.4:2379"
       ETCD_ADVERTISE_CLIENT_URLS: "http://172.18.0.4:2379"
       ETCD_DATA_DIR: "/var/lib/etcd"
-    entrypoint: ["/usr/local/bin/etcd", "-name", "datastore0"]
+    entrypoint: ["/usr/local/bin/etcd", "-name", "datastore"]
 networks:
   perf_net:
     driver: bridge

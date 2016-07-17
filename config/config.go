@@ -21,9 +21,10 @@ type Config struct {
 	Retries      time.Duration
 	EnableCrypto bool
 
-	EtcdEndpoints []string
-	EtcdUsername  string
-	EtcdPassword  string
+	Datastore string
+	Endpoints []string
+	Username  string
+	Password  string
 }
 
 func New() *Config {
@@ -41,13 +42,14 @@ func New() *Config {
 	retries := flag.Duration("retries", 5, "The number of times to retry aquiring the private ip address lease.")
 	crypto := flag.Bool("crypto", true, "Whether or not to encrypt data sent and recieved, by this node, to and from the rest of the cluster.")
 
-	etcdEndpoints := flag.String("etcd-endpoints", "http://127.0.0.1:2379", "The etcd endpoints to use, in a comma separated list.")
-	etcdUsername := flag.String("etcd-username", "", "The etcd user to use for authentication.")
-	etcdPassword := flag.String("etcd-password", "", "The etcd password to use for authentication.")
+	datastore := flag.String("datastore", "etcd", "The datastore backend to use, either consul or etcd")
+	endpoints := flag.String("endpoints", "127.0.0.1:2379", "The datastore endpoints to use, in a comma separated list.")
+	username := flag.String("username", "", "The datastore username to use for authentication.")
+	password := flag.String("password", "", "The datastore password to use for authentication.")
 
 	flag.Parse()
 
-	parsedEtcdEndpoints := strings.Split(*etcdEndpoints, ",")
+	parsedEndpoints := strings.Split(*endpoints, ",")
 	return &Config{
 		InterfaceName: *ifaceName,
 		PrivateIP:     *privateIP,
@@ -60,8 +62,9 @@ func New() *Config {
 		SyncInterval:  *syncInterval,
 		Retries:       *retries,
 		EnableCrypto:  *crypto,
-		EtcdEndpoints: parsedEtcdEndpoints,
-		EtcdUsername:  *etcdUsername,
-		EtcdPassword:  *etcdPassword,
+		Datastore:     *datastore,
+		Endpoints:     parsedEndpoints,
+		Username:      *username,
+		Password:      *password,
 	}
 }

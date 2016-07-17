@@ -36,7 +36,7 @@ func main() {
 	mapping := common.NewMapping(cfg.PublicIP+":"+strconv.Itoa(cfg.ListenPort), pubkey[:])
 	handleError(err, log)
 
-	etcd, err := datastore.New(datastore.EtcdDatastore, privkey, mapping, cfg)
+	etcd, err := datastore.New(privkey, mapping, cfg)
 	handleError(err, log)
 
 	err = etcd.Start()
