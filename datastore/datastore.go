@@ -13,6 +13,7 @@ type DatastoreAction int
 var (
 	EtcdDatastore   DatastoreType = 0
 	ConsulDatastore DatastoreType = 1
+	RedisDatastore  DatastoreType = 2
 )
 
 var (
@@ -103,6 +104,18 @@ func New(datastoreType DatastoreType, privateKey []byte, mapping *common.Mapping
 	switch datastoreType {
 	case EtcdDatastore:
 		backend, err := newEtcd(cfg)
+		if err != nil {
+			return nil, err
+		}
+		return toDatastore(privateKey, mapping, backend, cfg)
+	case ConsulDatastore:
+		backend, err := newConsul(cfg)
+		if err != nil {
+			return nil, err
+		}
+		return toDatastore(privateKey, mapping, backend, cfg)
+	case RedisDatastore:
+		backend, err := newRedis(cfg)
 		if err != nil {
 			return nil, err
 		}
