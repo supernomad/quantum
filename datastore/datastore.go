@@ -38,22 +38,18 @@ type Datastore struct {
 	mapping    *common.Mapping
 
 	syncInterval time.Duration
-	ttl          time.Duration
+	leaseTime    time.Duration
 	retries      time.Duration
 
 	Mappings map[uint32]*common.Mapping
 }
 
 func (datastore *Datastore) Start() error {
-	err := datastore.backend.Set(datastore.prefix, datastore.privateIp, datastore.ttl, datastore.mapping)
+	err := datastore.backend.Sync(datastore.prefix, datastore.mappingHandler)
 	if err != nil {
 		return err
 	}
-	err = datastore.backend.Sync(datastore.prefix, datastore.mappingHandler)
-	if err != nil {
-		return err
-	}
-	refresh := time.NewTicker(datastore.ttl / datastore.retries * time.Second)
+	refresh := time.NewTicker(datastore.leaseTime / datastore.retries * time.Second)
 	sync := time.NewTicker(datastore.syncInterval * time.Second)
 
 	go datastore.backend.Watch(datastore.prefix, datastore.mappingHandler)
@@ -61,7 +57,7 @@ func (datastore *Datastore) Start() error {
 		for {
 			select {
 			case <-refresh.C:
-				datastore.backend.ResetTtl(datastore.prefix, datastore.privateIp, datastore.ttl)
+				datastore.backend.ResetTtl(datastore.prefix, datastore.privateIp, datastore.leaseTime)
 			case <-sync.C:
 				datastore.backend.Sync(datastore.prefix, datastore.mappingHandler)
 			}
@@ -83,6 +79,26 @@ func (datastore *Datastore) mappingHandler(action DatastoreAction, key, value st
 	}
 }
 
+func toDatastore(privateKey []byte, mapping *common.Mapping, backend DatastoreBackend, cfg *config.Config) (*Datastore, error) {
+	datastore := &Datastore{
+		backend: backend,
+		prefix:  cfg.Prefix,
+
+		privateKey: privateKey,
+		privateIp:  cfg.PrivateIP,
+		mapping:    mapping,
+
+		syncInterval: cfg.SyncInterval,
+		leaseTime:    cfg.LeaseTime,
+		retries:      cfg.Retries,
+
+		Mappings: make(map[uint32]*common.Mapping),
+	}
+
+	err := datastore.backend.Set(datastore.prefix, datastore.privateIp, datastore.leaseTime, datastore.mapping)
+	return datastore, err
+}
+
 func New(datastoreType DatastoreType, privateKey []byte, mapping *common.Mapping, cfg *config.Config) (*Datastore, error) {
 	switch datastoreType {
 	case EtcdDatastore:
@@ -90,20 +106,7 @@ func New(datastoreType DatastoreType, privateKey []byte, mapping *common.Mapping
 		if err != nil {
 			return nil, err
 		}
-		return &Datastore{
-			backend: backend,
-			prefix:  cfg.Prefix,
-
-			privateKey: privateKey,
-			privateIp:  cfg.PrivateIP,
-			mapping:    mapping,
-
-			syncInterval: cfg.SyncInterval,
-			ttl:          cfg.Ttl,
-			retries:      cfg.Retries,
-
-			Mappings: make(map[uint32]*common.Mapping),
-		}, nil
+		return toDatastore(privateKey, mapping, backend, cfg)
 	default:
 		return nil, errors.New("The specified 'DatastoreType' is not supported.")
 	}

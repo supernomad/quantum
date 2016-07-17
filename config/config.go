@@ -16,7 +16,7 @@ type Config struct {
 	ListenPort    int
 
 	Prefix       string
-	Ttl          time.Duration
+	LeaseTime    time.Duration
 	SyncInterval time.Duration
 	Retries      time.Duration
 	EnableCrypto bool
@@ -30,15 +30,15 @@ func New() *Config {
 	ifaceName := flag.String("interface-name", "quantum", "The name for the TUN interface that will be used for forwarding. Use %d to have the OS pick an available interface name.")
 	privateIP := flag.String("private-ip", "", "The private ip address of this node.")
 	publicIP := flag.String("public-ip", "", "The public ip address of this node.")
-	subnetMask := flag.String("subnet-mask", "16", "The subnet mask in either ip format or bit width format")
+	subnetMask := flag.String("subnet-mask", "16", "The subnet mask in bit width format")
 
 	laddr := flag.String("listen-address", "0.0.0.0", "The ip address to listen on for forwarded packets.")
 	lport := flag.Int("listen-port", 1099, "The ip port to listen on for forwarded packets.")
 
 	prefix := flag.String("prefix", "/quantum", "The etcd key that quantum information is stored under.")
-	ttl := flag.Int("ttl", 300, "Lease time for the private ip address.")
-	syncInterval := flag.Int("sync-interval", 30, "The backend sync interval")
-	retries := flag.Int("retries", 5, "The number of times to retry aquiring the private ip address lease.")
+	leaseTime := flag.Duration("lease-time", 300, "Lease time for the private ip address.")
+	syncInterval := flag.Duration("sync-interval", 30, "The backend sync interval")
+	retries := flag.Duration("retries", 5, "The number of times to retry aquiring the private ip address lease.")
 	crypto := flag.Bool("crypto", true, "Whether or not to encrypt data sent and recieved, by this node, to and from the rest of the cluster.")
 
 	etcdEndpoints := flag.String("etcd-endpoints", "http://127.0.0.1:2379", "The etcd endpoints to use, in a comma separated list.")
@@ -56,9 +56,9 @@ func New() *Config {
 		ListenAddress: *laddr,
 		ListenPort:    *lport,
 		Prefix:        *prefix,
-		Ttl:           time.Duration(*ttl),
-		SyncInterval:  time.Duration(*syncInterval),
-		Retries:       time.Duration(*retries),
+		LeaseTime:     *leaseTime,
+		SyncInterval:  *syncInterval,
+		Retries:       *retries,
 		EnableCrypto:  *crypto,
 		EtcdEndpoints: parsedEtcdEndpoints,
 		EtcdUsername:  *etcdUsername,
