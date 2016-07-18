@@ -12,19 +12,18 @@ import (
 	"time"
 )
 
-type DatastoreType string
-type DatastoreAction int
+// Backend - The type of datastore to use
+type Backend string
 
-var (
-	EtcdDatastore   DatastoreType = "etcd"
-	ConsulDatastore DatastoreType = "consul"
+const (
+	etcdBackend   Backend = "etcd"
+	consulBackend Backend = "consul"
+
+	updateAction int = 0
+	removeAction int = 1
 )
 
-var (
-	UpdateAction DatastoreAction = 0
-	RemoveAction DatastoreAction = 1
-)
-
+// Datastore - The datastore object handles syncing the mappings from the configured backend
 type Datastore struct {
 	store  store.Store
 	prefix string
@@ -40,15 +39,15 @@ type Datastore struct {
 	Mappings map[uint32]*common.Mapping
 }
 
-func (datastore *Datastore) mappingHandler(action DatastoreAction, key string, value []byte) {
+func (datastore *Datastore) mappingHandler(action int, key string, value []byte) {
 	switch action {
-	case UpdateAction:
+	case updateAction:
 		mapping, err := common.ParseMapping(value, datastore.privateKey)
 		if err != nil {
 			return
 		}
 		datastore.Mappings[common.IPtoInt(key)] = mapping
-	case RemoveAction:
+	case removeAction:
 		delete(datastore.Mappings, common.IPtoInt(key))
 	}
 }
@@ -61,7 +60,7 @@ func (datastore *Datastore) sync() error {
 
 	for _, keyVal := range nodes {
 		_, key := path.Split(keyVal.Key)
-		datastore.mappingHandler(UpdateAction, key, keyVal.Value)
+		datastore.mappingHandler(updateAction, key, keyVal.Value)
 	}
 	return nil
 }
@@ -105,15 +104,16 @@ func (datastore *Datastore) watch() {
 			for _, keyVal := range pairs {
 				_, key := path.Split(keyVal.Key)
 				if len(keyVal.Value) == 0 {
-					datastore.mappingHandler(RemoveAction, key, keyVal.Value)
+					datastore.mappingHandler(removeAction, key, keyVal.Value)
 				} else {
-					datastore.mappingHandler(UpdateAction, key, keyVal.Value)
+					datastore.mappingHandler(updateAction, key, keyVal.Value)
 				}
 			}
 		}
 	}
 }
 
+// Start handling the datastore backend sync and watch
 func (datastore *Datastore) Start() error {
 	err := datastore.sync()
 	if err != nil {
@@ -136,6 +136,7 @@ func (datastore *Datastore) Start() error {
 	return nil
 }
 
+// New datastore
 func New(privateKey []byte, mapping *common.Mapping, cfg *config.Config) (*Datastore, error) {
 	options := &store.Config{
 		//TODO:: ClientTLS: cliTlsCfg,
@@ -147,21 +148,21 @@ func New(privateKey []byte, mapping *common.Mapping, cfg *config.Config) (*Datas
 		Password:          cfg.Password,
 	}
 
-	switch DatastoreType(cfg.Datastore) {
-	case EtcdDatastore:
+	switch Backend(cfg.Datastore) {
+	case etcdBackend:
 		store, err := libkv.NewStore(store.ETCD, cfg.Endpoints, options)
 		if err != nil {
 			return nil, err
 		}
 		return toDatastore(privateKey, mapping, store, cfg)
-	case ConsulDatastore:
+	case consulBackend:
 		store, err := libkv.NewStore(store.CONSUL, cfg.Endpoints, options)
 		if err != nil {
 			return nil, err
 		}
 		return toDatastore(privateKey, mapping, store, cfg)
 	default:
-		return nil, errors.New("The specified 'DatastoreType' is not supported.")
+		return nil, errors.New("The specified 'Backend' is not supported.")
 	}
 }
 

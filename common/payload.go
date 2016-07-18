@@ -1,5 +1,6 @@
 package common
 
+// Payload represents a packet going through either the incoming or outgoing pipelines
 type Payload struct {
 	Raw       []byte
 	Packet    []byte
@@ -9,6 +10,7 @@ type Payload struct {
 	Mapping   *Mapping
 }
 
+// NewTunPayload is used to generate a payload based on a TUN packet
 func NewTunPayload(raw []byte, packetLength int) *Payload {
 	ip := raw[IPStart:IPEnd]
 	nonce := raw[NonceStart:NonceEnd]
@@ -23,6 +25,7 @@ func NewTunPayload(raw []byte, packetLength int) *Payload {
 	}
 }
 
+// NewSockPayload is used to generate a payload based on a Socket packet
 func NewSockPayload(raw []byte, packetLength int) *Payload {
 	ip := raw[IPStart:IPEnd]
 	nonce := raw[NonceStart:NonceEnd]

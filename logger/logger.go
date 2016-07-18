@@ -5,45 +5,25 @@ import (
 	"os"
 )
 
+// Logger is a generic log interface
 type Logger struct {
-	error        *log.Logger
-	debug        *log.Logger
-	info         *log.Logger
-	warn         *log.Logger
-	debugEnabled bool
+	Error        *log.Logger
+	Debug        *log.Logger
+	Info         *log.Logger
+	Warn         *log.Logger
+	DebugEnabled bool
 }
 
-func (l *Logger) Info(v ...interface{}) {
-	l.info.Println(v...)
+func newLog(stream *os.File, level string) *log.Logger {
+	return log.New(stream, level, log.LUTC|log.LstdFlags|log.Lshortfile)
 }
 
-func (l *Logger) Error(v ...interface{}) {
-	l.error.Println(v...)
-}
-
-func (l *Logger) Debug(v ...interface{}) {
-	if l.debugEnabled {
-		l.debug.Println(v...)
-	}
-}
-
-func (l *Logger) Warn(v ...interface{}) {
-	l.warn.Println(v...)
-}
-
+// New Logger
 func New(debugEnabled bool) *Logger {
-	err := log.New(os.Stderr,
-		"[Error]",
-		log.Ldate|log.Ltime|log.Lshortfile)
-	info := log.New(os.Stdout,
-		"[INFO]",
-		log.Ldate|log.Ltime|log.Lshortfile)
-	debug := log.New(os.Stdout,
-		"[DEBUG]",
-		log.Ldate|log.Ltime|log.Lshortfile)
-	warn := log.New(os.Stdout,
-		"[WARN]",
-		log.Ldate|log.Ltime|log.Lshortfile)
+	debug := newLog(os.Stdout, "[Debug] ")
+	warn := newLog(os.Stderr, "[Warn] ")
+	info := newLog(os.Stdout, "[Info] ")
+	err := newLog(os.Stderr, "[Error] ")
 
-	return &Logger{error: err, debug: debug, info: info, warn: warn, debugEnabled: debugEnabled}
+	return &Logger{Error: err, Debug: debug, Info: info, Warn: warn, DebugEnabled: debugEnabled}
 }
