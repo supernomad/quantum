@@ -85,15 +85,15 @@ func initTun(name, cidr string) error {
 	if err != nil {
 		return err
 	}
-	addr, err := netlink.ParseAddr(cidr)
-	if err != nil {
-		return err
-	}
 	err = netlink.LinkSetUp(link)
 	if err != nil {
 		return err
 	}
 	err = netlink.LinkSetMTU(link, common.MTU)
+	if err != nil {
+		return err
+	}
+	addr, err := netlink.ParseAddr(cidr)
 	if err != nil {
 		return err
 	}
