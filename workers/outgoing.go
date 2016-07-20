@@ -10,6 +10,7 @@ import (
 	"net"
 )
 
+// Outgoing internal packet interface which handles reading packets off of a TUN object
 type Outgoing struct {
 	tunnel    *tun.Tun
 	sock      *socket.Socket
@@ -18,17 +19,19 @@ type Outgoing struct {
 	quit      chan bool
 }
 
+// Resolve the outgoing payload
 func (outgoing *Outgoing) Resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
 	dip := binary.LittleEndian.Uint32(payload.Packet[16:20])
 
 	if mapping, ok := outgoing.Mappings[dip]; ok {
-		copy(payload.IpAddress, outgoing.privateIP)
+		copy(payload.IPAddress, outgoing.privateIP)
 		return payload, mapping, true
 	}
 
 	return payload, nil, false
 }
 
+// Seal the outgoing payload
 func (outgoing *Outgoing) Seal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
 	_, err := rand.Read(payload.Nonce)
 	if err != nil {
@@ -39,6 +42,7 @@ func (outgoing *Outgoing) Seal(payload *common.Payload, mapping *common.Mapping)
 	return payload, true
 }
 
+// Start handling packets
 func (outgoing *Outgoing) Start(queue int) {
 	go func() {
 		buf := make([]byte, common.MaxPacketLength)
@@ -60,12 +64,14 @@ func (outgoing *Outgoing) Start(queue int) {
 	}()
 }
 
+// Stop handling packets
 func (outgoing *Outgoing) Stop() {
 	go func() {
 		outgoing.quit <- true
 	}()
 }
 
+// NewOutgoing object
 func NewOutgoing(log *logger.Logger, privateIP string, mappings map[uint32]*common.Mapping, tunnel *tun.Tun, sock *socket.Socket) *Outgoing {
 	return &Outgoing{
 		tunnel:    tunnel,

@@ -11,6 +11,7 @@ import (
 	"syscall"
 )
 
+// Mapping represents the relationship between a public/private address and encryption metadata
 type Mapping struct {
 	Address   string
 	PublicKey []byte
@@ -19,15 +20,18 @@ type Mapping struct {
 	Cipher    cipher.AEAD            `json:"-"`
 }
 
+// String returns the mapping as a string
 func (m *Mapping) String() string {
 	return string(m.Bytes())
 }
 
+// Bytes returns the mapping as a byte slice
 func (m *Mapping) Bytes() []byte {
 	buf, _ := json.Marshal(m)
 	return buf
 }
 
+// ParseMapping creates a new mapping based on the output of Mapping.Bytes
 func ParseMapping(data []byte, privkey []byte) (*Mapping, error) {
 	var mapping Mapping
 	var addr [4]byte
@@ -59,6 +63,7 @@ func ParseMapping(data []byte, privkey []byte) (*Mapping, error) {
 	return &mapping, nil
 }
 
+// NewMapping generates a new basic Mapping
 func NewMapping(address string, pubkey []byte) *Mapping {
 	return &Mapping{
 		Address:   address,

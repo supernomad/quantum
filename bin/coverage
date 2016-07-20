@@ -1,0 +1,14 @@
+#!/bin/bash
+
+HEADER="mode: count"
+
+echo $HEADER > full-coverage.out
+
+MODULES=$(go list ./...)
+for M in $MODULES; do
+    rm -f coverage.out
+    go test -covermode=count -coverprofile=coverage.out $M
+    [[ -f coverage.out ]] && cat coverage.out | grep -v "$HEADER" >> full-coverage.out
+done
+
+goveralls -service=travis-ci -coverprofile=full-coverage.out

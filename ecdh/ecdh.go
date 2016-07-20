@@ -9,6 +9,7 @@ const (
 	keyLength = 32
 )
 
+// GenerateECKeyPair - Generates a new eliptical curve key-pair
 func GenerateECKeyPair() ([]byte, []byte, error) {
 	var pub, priv [keyLength]byte
 
@@ -22,6 +23,7 @@ func GenerateECKeyPair() ([]byte, []byte, error) {
 	return pub[:], priv[:], nil
 }
 
+// GenerateSharedSecret - Generates a shared secret based on the supplied public/private keys
 func GenerateSharedSecret(pubkey, privkey []byte) []byte {
 	var secret, pub, priv [keyLength]byte
 
