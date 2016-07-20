@@ -16,7 +16,7 @@ import (
 
 func handleError(err error, log *logger.Logger) {
 	if err != nil {
-		log.Error("[MAIN] Init error: ", err)
+		log.Error.Println("[Initialization Error]", err)
 		os.Exit(1)
 	}
 }
@@ -63,12 +63,12 @@ func main() {
 		outgoing.Start(i)
 	}
 
-	log.Info("[MAIN] Started up successfuly.")
-	log.Info("[MAIN] Listening on TUN device: ", tunnel.Name)
-	log.Info("[MAIN] TUN private IP address:  ", cfg.PrivateIP)
-	log.Info("[MAIN] TUN private subnet mask: ", cfg.SubnetMask)
-	log.Info("[MAIN] TUN public IP address:   ", cfg.PublicIP)
-	log.Info("[MAIN] Listening on UDP address:", cfg.ListenAddress+":"+strconv.Itoa(cfg.ListenPort))
+	log.Info.Println("Started up successfuly.")
+	log.Info.Println("Listening on TUN device: ", tunnel.Name)
+	log.Info.Println("TUN private IP address:  ", cfg.PrivateIP)
+	log.Info.Println("TUN private subnet mask: ", cfg.SubnetMask)
+	log.Info.Println("TUN public IP address:   ", cfg.PublicIP)
+	log.Info.Println("Listening on UDP address:", cfg.ListenAddress+":"+strconv.Itoa(cfg.ListenPort))
 
 	stop := make(chan bool)
 	defer close(stop)

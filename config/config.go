@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// Config handles marshalling user supplied configuration data
 type Config struct {
 	InterfaceName string
 	PrivateIP     string
@@ -27,6 +28,7 @@ type Config struct {
 	Password  string
 }
 
+// New generates a new config object
 func New() *Config {
 	ifaceName := flag.String("interface-name", "quantum", "The name for the TUN interface that will be used for forwarding. Use %d to have the OS pick an available interface name.")
 	privateIP := flag.String("private-ip", "", "The private ip address of this node.")

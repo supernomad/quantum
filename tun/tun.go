@@ -10,23 +10,25 @@ import (
 )
 
 const (
-	IF_NAME_SIZE    = 16
-	IFF_TUN         = 0x0001
-	IFF_NO_PI       = 0x1000
-	IFF_MULTI_QUEUE = 0x0100
+	ifNameSize    = 16
+	iffTun        = 0x0001
+	iffNoPi       = 0x1000
+	iffMultiQueue = 0x0100
 )
 
 type ifReq struct {
-	Name  [IF_NAME_SIZE]byte
+	Name  [ifNameSize]byte
 	Flags uint16
 }
 
+// Tun interface
 type Tun struct {
 	Name   string
 	log    *logger.Logger
 	queues []int
 }
 
+// Close the tun
 func (tun *Tun) Close() error {
 	for i := 0; i < len(tun.queues); i++ {
 		if err := syscall.Close(tun.queues[i]); err != nil {
@@ -36,24 +38,25 @@ func (tun *Tun) Close() error {
 	return nil
 }
 
+// Read a packet off the tun
 func (tun *Tun) Read(buf []byte, queue int) (*common.Payload, bool) {
 	n, err := syscall.Read(tun.queues[queue], buf[common.PacketStart:])
 	if err != nil {
-		tun.log.Warn("[TUN]", "Read Error:", err)
 		return nil, false
 	}
 	return common.NewTunPayload(buf, n), true
 }
 
+// Write a packet to the tun
 func (tun *Tun) Write(payload *common.Payload, queue int) bool {
 	_, err := syscall.Write(tun.queues[queue], payload.Packet)
 	if err != nil {
-		tun.log.Warn("[TUN]", "Write Error:", err)
 		return false
 	}
 	return true
 }
 
+// New tun
 func New(ifPattern string, cidr string, numWorkers int, log *logger.Logger) (*Tun, error) {
 	queues := make([]int, numWorkers)
 	first := true
@@ -102,7 +105,7 @@ func initTun(name, cidr string) error {
 
 func createTun(name string) (string, int, error) {
 	var req ifReq
-	req.Flags = IFF_TUN | IFF_NO_PI | IFF_MULTI_QUEUE
+	req.Flags = iffTun | iffNoPi | iffMultiQueue
 
 	copy(req.Name[:15], name)
 
