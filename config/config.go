@@ -22,6 +22,10 @@ type Config struct {
 	Retries      time.Duration
 	EnableCrypto bool
 
+	TlsCert string
+	TlsKey  string
+	TlsCA   string
+
 	Datastore string
 	Endpoints []string
 	Username  string
@@ -44,6 +48,10 @@ func New() *Config {
 	retries := flag.Duration("retries", 5, "The number of times to retry aquiring the private ip address lease.")
 	crypto := flag.Bool("crypto", true, "Whether or not to encrypt data sent and recieved, by this node, to and from the rest of the cluster.")
 
+	tlsCert := flag.String("tls-cert", "", "The client certificate to use for authentication with the backend datastore.")
+	tlsKey := flag.String("tls-key", "", "The client key to use for authentication with the backend datastore.")
+	tlsCA := flag.String("tls-ca-cert", "", "The CA certificate to authenticate the backend datastore.")
+
 	datastore := flag.String("datastore", "etcd", "The datastore backend to use, either consul or etcd")
 	endpoints := flag.String("endpoints", "127.0.0.1:2379", "The datastore endpoints to use, in a comma separated list.")
 	username := flag.String("username", "", "The datastore username to use for authentication.")
@@ -64,6 +72,9 @@ func New() *Config {
 		SyncInterval:  *syncInterval,
 		Retries:       *retries,
 		EnableCrypto:  *crypto,
+		TlsCert:       *tlsCert,
+		TlsKey:        *tlsKey,
+		TlsCA:         *tlsCA,
 		Datastore:     *datastore,
 		Endpoints:     parsedEndpoints,
 		Username:      *username,

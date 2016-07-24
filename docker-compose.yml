@@ -4,43 +4,56 @@ services:
     container_name: quantum0
     depends_on: [etcd]
     image: networkstatic/iperf3
+    extra_hosts:
+      - "etcd.quantum.dev:172.18.0.4"
     cap_add:
       - NET_ADMIN
       - NET_RAW
     volumes:
       - /dev/net/tun:/dev/net/tun
       - $GOPATH/bin/quantum:/bin/quantum
+      - ./certs/:/etc/quantum/certs/:ro
     networks:
       perf_net:
         ipv4_address: 172.18.0.2
-    entrypoint: ["/bin/quantum", "-endpoints", "172.18.0.4:2379", "-private-ip", "10.8.0.1", "-public-ip", "172.18.0.2"]
+    entrypoint: ["/bin/quantum", "-endpoints", "etcd.quantum.dev:2379", "-private-ip", "10.8.0.1", "-public-ip", "172.18.0.2", "--tls-cert", "/etc/quantum/certs/quantum0.quantum.dev.crt", "--tls-key", "/etc/quantum/certs/quantum0.quantum.dev.key", "--tls-ca-cert", "/etc/quantum/certs/ca.crt"]
   quantum1:
     container_name: quantum1
     depends_on: [etcd]
     image: networkstatic/iperf3
+    extra_hosts:
+      - "etcd.quantum.dev:172.18.0.4"
     cap_add:
       - NET_ADMIN
       - NET_RAW
     volumes:
       - /dev/net/tun:/dev/net/tun
       - $GOPATH/bin/quantum:/bin/quantum
+      - ./certs/:/etc/quantum/certs/:ro
     networks:
       perf_net:
         ipv4_address: 172.18.0.3
-    entrypoint: ["/bin/quantum", "-endpoints", "172.18.0.4:2379", "-private-ip", "10.8.0.2", "-public-ip", "172.18.0.3"]
+    entrypoint: ["/bin/quantum", "-endpoints", "etcd.quantum.dev:2379", "-private-ip", "10.8.0.2", "-public-ip", "172.18.0.3", "--tls-cert", "/etc/quantum/certs/quantum1.quantum.dev.crt", "--tls-key", "/etc/quantum/certs/quantum1.quantum.dev.key", "--tls-ca-cert", "/etc/quantum/certs/ca.crt"]
   etcd:
+    container_name: etcd
     image: quay.io/coreos/etcd
+    extra_hosts:
+      - "etcd.quantum.dev:172.18.0.4"
     volumes:
       - etcd:/var/lib/etcd
+      - ./certs/:/etc/quantum/certs/:ro
     networks:
       perf_net:
         ipv4_address: 172.18.0.4
     environment:
-      ETCD_LISTEN_PEER_URLS: "http://172.18.0.4:2380"
-      ETCD_LISTEN_CLIENT_URLS: "http://172.18.0.4:2379"
-      ETCD_ADVERTISE_CLIENT_URLS: "http://172.18.0.4:2379"
+      ETCD_LISTEN_CLIENT_URLS: "https://etcd.quantum.dev:2379"
+      ETCD_ADVERTISE_CLIENT_URLS: "https://etcd.quantum.dev:2379"
+      ETCD_CERT_FILE: "/etc/quantum/certs/etcd.quantum.dev.crt"
+      ETCD_KEY_FILE: "/etc/quantum/certs/etcd.quantum.dev.key"
+      ETCD_TRUSTED_CA_FILE: "/etc/quantum/certs/ca.crt"
       ETCD_DATA_DIR: "/var/lib/etcd"
-    entrypoint: ["/usr/local/bin/etcd", "-name", "datastore"]
+      ETCD_NAME: "datastore"
+    entrypoint: ["/usr/local/bin/etcd", "--client-cert-auth=true"]
 networks:
   perf_net:
     driver: bridge

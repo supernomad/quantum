@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/config"
@@ -8,6 +10,7 @@ import (
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/consul"
 	"github.com/docker/libkv/store/etcd"
+	"io/ioutil"
 	"path"
 	"time"
 )
@@ -139,13 +142,33 @@ func (datastore *Datastore) Start() error {
 // New datastore
 func New(privateKey []byte, mapping *common.Mapping, cfg *config.Config) (*Datastore, error) {
 	options := &store.Config{
-		//TODO:: ClientTLS: cliTlsCfg,
-		//TODO:: TLS: tlsCfg,
 		//TODO:: ConnectionTimeout: connTimeout,
 		//TODO:: Bucket: "quantum",
 		PersistConnection: true,
 		Username:          cfg.Username,
 		Password:          cfg.Password,
+	}
+
+	if cfg.TlsKey != "" && cfg.TlsCert != "" {
+		cert, err := tls.LoadX509KeyPair(cfg.TlsCert, cfg.TlsKey)
+		if err != nil {
+			return nil, err
+		}
+
+		config := &tls.Config{Certificates: []tls.Certificate{cert}}
+		if cfg.TlsCA != "" {
+			// Load CA cert
+			ca, err := ioutil.ReadFile(cfg.TlsCA)
+			if err != nil {
+				return nil, err
+			}
+			caPool := x509.NewCertPool()
+			caPool.AppendCertsFromPEM(ca)
+			config.RootCAs = caPool
+		}
+
+		config.BuildNameToCertificate()
+		options.TLS = config
 	}
 
 	switch Backend(cfg.Datastore) {
