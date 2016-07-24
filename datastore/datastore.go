@@ -139,6 +139,31 @@ func (datastore *Datastore) Start() error {
 	return nil
 }
 
+func handleTLS(options *store.Config, cfg *config.Config) error {
+	if cfg.TLSKey != "" && cfg.TLSCert != "" {
+		cert, err := tls.LoadX509KeyPair(cfg.TLSCert, cfg.TLSKey)
+		if err != nil {
+			return err
+		}
+
+		config := &tls.Config{Certificates: []tls.Certificate{cert}}
+		if cfg.TLSCA != "" {
+			// Load CA cert
+			ca, err := ioutil.ReadFile(cfg.TLSCA)
+			if err != nil {
+				return err
+			}
+			caPool := x509.NewCertPool()
+			caPool.AppendCertsFromPEM(ca)
+			config.RootCAs = caPool
+		}
+
+		config.BuildNameToCertificate()
+		options.TLS = config
+	}
+	return nil
+}
+
 // New datastore
 func New(privateKey []byte, mapping *common.Mapping, cfg *config.Config) (*Datastore, error) {
 	options := &store.Config{
@@ -149,26 +174,9 @@ func New(privateKey []byte, mapping *common.Mapping, cfg *config.Config) (*Datas
 		Password:          cfg.Password,
 	}
 
-	if cfg.TLSKey != "" && cfg.TLSCert != "" {
-		cert, err := tls.LoadX509KeyPair(cfg.TLSCert, cfg.TLSKey)
-		if err != nil {
-			return nil, err
-		}
-
-		config := &tls.Config{Certificates: []tls.Certificate{cert}}
-		if cfg.TLSCA != "" {
-			// Load CA cert
-			ca, err := ioutil.ReadFile(cfg.TLSCA)
-			if err != nil {
-				return nil, err
-			}
-			caPool := x509.NewCertPool()
-			caPool.AppendCertsFromPEM(ca)
-			config.RootCAs = caPool
-		}
-
-		config.BuildNameToCertificate()
-		options.TLS = config
+	err := handleTLS(options, cfg)
+	if err != nil {
+		return nil, err
 	}
 
 	switch Backend(cfg.Datastore) {
