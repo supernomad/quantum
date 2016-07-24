@@ -22,9 +22,9 @@ type Config struct {
 	Retries      time.Duration
 	EnableCrypto bool
 
-	TlsCert string
-	TlsKey  string
-	TlsCA   string
+	TLSCert string
+	TLSKey  string
+	TLSCA   string
 
 	Datastore string
 	Endpoints []string
@@ -72,9 +72,9 @@ func New() *Config {
 		SyncInterval:  *syncInterval,
 		Retries:       *retries,
 		EnableCrypto:  *crypto,
-		TlsCert:       *tlsCert,
-		TlsKey:        *tlsKey,
-		TlsCA:         *tlsCA,
+		TLSCert:       *tlsCert,
+		TLSKey:        *tlsKey,
+		TLSCA:         *tlsCA,
 		Datastore:     *datastore,
 		Endpoints:     parsedEndpoints,
 		Username:      *username,

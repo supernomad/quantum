@@ -149,16 +149,16 @@ func New(privateKey []byte, mapping *common.Mapping, cfg *config.Config) (*Datas
 		Password:          cfg.Password,
 	}
 
-	if cfg.TlsKey != "" && cfg.TlsCert != "" {
-		cert, err := tls.LoadX509KeyPair(cfg.TlsCert, cfg.TlsKey)
+	if cfg.TLSKey != "" && cfg.TLSCert != "" {
+		cert, err := tls.LoadX509KeyPair(cfg.TLSCert, cfg.TLSKey)
 		if err != nil {
 			return nil, err
 		}
 
 		config := &tls.Config{Certificates: []tls.Certificate{cert}}
-		if cfg.TlsCA != "" {
+		if cfg.TLSCA != "" {
 			// Load CA cert
-			ca, err := ioutil.ReadFile(cfg.TlsCA)
+			ca, err := ioutil.ReadFile(cfg.TLSCA)
 			if err != nil {
 				return nil, err
 			}
