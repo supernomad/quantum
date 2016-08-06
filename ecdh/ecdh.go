@@ -10,17 +10,13 @@ const (
 )
 
 // GenerateECKeyPair - Generates a new eliptical curve key-pair
-func GenerateECKeyPair() ([]byte, []byte, error) {
+func GenerateECKeyPair() ([]byte, []byte) {
 	var pub, priv [keyLength]byte
 
-	_, err := rand.Read(priv[:])
-	if err != nil {
-		return nil, nil, err
-	}
-
+	rand.Read(priv[:])
 	curve25519.ScalarBaseMult(&pub, &priv)
 
-	return pub[:], priv[:], nil
+	return pub[:], priv[:]
 }
 
 // GenerateSharedSecret - Generates a shared secret based on the supplied public/private keys

@@ -11,22 +11,33 @@ import (
 	"github.com/docker/libkv/store/consul"
 	"github.com/docker/libkv/store/etcd"
 	"io/ioutil"
+	"net"
 	"path"
 	"time"
 )
 
-// Backend - The type of datastore to use
-type Backend string
+// Need to register the backends with libkv
+func init() {
+	consul.Register()
+	etcd.Register()
+}
+
+// Type of datastore backend to utilize
+type Type string
 
 const (
-	etcdBackend   Backend = "etcd"
-	consulBackend Backend = "consul"
+	// ETCD datastore backend
+	ETCD Type = "etcd"
+	// CONSUL datastore backend
+	CONSUL Type = "consul"
 
-	updateAction int = 0
-	removeAction int = 1
+	LOCK_TTL time.Duration = time.Duration(5)
+
+	update int = 0
+	remove int = 1
 )
 
-// Datastore - The datastore object handles syncing the mappings from the configured backend
+// Datastore object which handles syncronization of mapping and network configuration
 type Datastore struct {
 	store  store.Store
 	prefix string
@@ -35,24 +46,43 @@ type Datastore struct {
 	privateIP  string
 	mapping    *common.Mapping
 
-	syncInterval time.Duration
-	leaseTime    time.Duration
-	retries      time.Duration
+	syncInterval    time.Duration
+	leaseTime       time.Duration
+	refreshInterval time.Duration
 
 	Mappings map[uint32]*common.Mapping
+	Network  string
+
+	stop chan struct{}
 }
 
 func (datastore *Datastore) mappingHandler(action int, key string, value []byte) {
 	switch action {
-	case updateAction:
+	case update:
 		mapping, err := common.ParseMapping(value, datastore.privateKey)
 		if err != nil {
 			return
 		}
 		datastore.Mappings[common.IPtoInt(key)] = mapping
-	case removeAction:
+	case remove:
 		delete(datastore.Mappings, common.IPtoInt(key))
 	}
+}
+
+func (datastore *Datastore) locker() (store.Locker, error) {
+	lockOps := &store.LockOptions{TTL: LOCK_TTL * time.Second}
+	locker, err := datastore.store.NewLock(path.Join(datastore.prefix, "/lock"), lockOps)
+	if err != nil {
+		return nil, err
+	}
+	return locker, nil
+}
+
+func (datastore *Datastore) set() error {
+	return datastore.store.Put(
+		path.Join(datastore.prefix, "/mappings/", datastore.privateIP),
+		datastore.mapping.Bytes(),
+		&store.WriteOptions{TTL: datastore.leaseTime * time.Second})
 }
 
 func (datastore *Datastore) sync() error {
@@ -63,40 +93,23 @@ func (datastore *Datastore) sync() error {
 
 	for _, keyVal := range nodes {
 		_, key := path.Split(keyVal.Key)
-		datastore.mappingHandler(updateAction, key, keyVal.Value)
+		datastore.mappingHandler(update, key, keyVal.Value)
 	}
 	return nil
 }
 
-func (datastore *Datastore) set() error {
-	return datastore.store.Put(
-		path.Join(datastore.prefix, "/mappings/", datastore.privateIP),
-		datastore.mapping.Bytes(),
-		&store.WriteOptions{TTL: datastore.leaseTime * time.Second})
-}
-
-func toDatastore(privateKey []byte, mapping *common.Mapping, store store.Store, cfg *config.Config) (*Datastore, error) {
-	datastore := &Datastore{
-		store:  store,
-		prefix: cfg.Prefix,
-
-		privateKey: privateKey,
-		privateIP:  cfg.PrivateIP,
-		mapping:    mapping,
-
-		syncInterval: cfg.SyncInterval,
-		leaseTime:    cfg.LeaseTime,
-		retries:      cfg.Retries,
-
-		Mappings: make(map[uint32]*common.Mapping),
+func (datastore *Datastore) syncNetwork() error {
+	config, err := datastore.store.Get(path.Join(datastore.prefix, "config"))
+	if err != nil {
+		return err
 	}
 
-	err := datastore.set()
-	return datastore, err
+	datastore.Network = string(config.Value)
+	return nil
 }
 
 func (datastore *Datastore) watch() {
-	events, err := datastore.store.WatchTree(path.Join(datastore.prefix, "/mappings/"), nil)
+	events, err := datastore.store.WatchTree(path.Join(datastore.prefix, "/mappings/"), datastore.stop)
 	if err != nil {
 		return
 	}
@@ -107,9 +120,9 @@ func (datastore *Datastore) watch() {
 			for _, keyVal := range pairs {
 				_, key := path.Split(keyVal.Key)
 				if len(keyVal.Value) == 0 {
-					datastore.mappingHandler(removeAction, key, keyVal.Value)
+					datastore.mappingHandler(remove, key, keyVal.Value)
 				} else {
-					datastore.mappingHandler(updateAction, key, keyVal.Value)
+					datastore.mappingHandler(update, key, keyVal.Value)
 				}
 			}
 		}
@@ -117,18 +130,16 @@ func (datastore *Datastore) watch() {
 }
 
 // Start handling the datastore backend sync and watch
-func (datastore *Datastore) Start() error {
-	err := datastore.sync()
-	if err != nil {
-		return err
-	}
-	refresh := time.NewTicker(datastore.leaseTime / datastore.retries * time.Second)
+func (datastore *Datastore) Start() {
+	refresh := time.NewTicker(datastore.refreshInterval * time.Second)
 	sync := time.NewTicker(datastore.syncInterval * time.Second)
 
 	go datastore.watch()
 	go func() {
 		for {
 			select {
+			case <-datastore.stop:
+				break
 			case <-refresh.C:
 				datastore.set()
 			case <-sync.C:
@@ -136,68 +147,146 @@ func (datastore *Datastore) Start() error {
 			}
 		}
 	}()
-	return nil
 }
 
-func handleTLS(options *store.Config, cfg *config.Config) error {
-	if cfg.TLSKey != "" && cfg.TLSCert != "" {
-		cert, err := tls.LoadX509KeyPair(cfg.TLSCert, cfg.TLSKey)
-		if err != nil {
-			return err
-		}
-
-		config := &tls.Config{Certificates: []tls.Certificate{cert}}
-		if cfg.TLSCA != "" {
-			// Load CA cert
-			ca, err := ioutil.ReadFile(cfg.TLSCA)
-			if err != nil {
-				return err
-			}
-			caPool := x509.NewCertPool()
-			caPool.AppendCertsFromPEM(ca)
-			config.RootCAs = caPool
-		}
-
-		config.BuildNameToCertificate()
-		options.TLS = config
-	}
-	return nil
+func (datastore *Datastore) Stop() {
+	go func() {
+		datastore.stop <- struct{}{}
+	}()
 }
 
-// New datastore
-func New(privateKey []byte, mapping *common.Mapping, cfg *config.Config) (*Datastore, error) {
-	options := &store.Config{
-		//TODO:: ConnectionTimeout: connTimeout,
-		//TODO:: Bucket: "quantum",
-		PersistConnection: true,
-		Username:          cfg.Username,
-		Password:          cfg.Password,
+func nextIP(ip net.IP) {
+	for i := len(ip) - 1; i >= 0; i-- {
+		ip[i]++
+		if ip[i] > 0 {
+			break
+		}
+	}
+}
+
+func (datastore *Datastore) getFreeIP() (string, error) {
+	ip, ipnet, err := net.ParseCIDR(datastore.Network)
+	if err != nil {
+		return "", err
+	}
+	for ip = ip.Mask(ipnet.Mask); ipnet.Contains(ip); nextIP(ip) {
+		if _, exists := datastore.Mappings[common.IPtoInt(ip.String())]; !exists {
+			break
+		}
+	}
+	return ip.String(), nil
+}
+
+func newDatastore(store store.Store, cfg *config.Config) (*Datastore, error) {
+	datastore := &Datastore{
+		store:           store,
+		prefix:          cfg.Prefix,
+		privateKey:      cfg.PrivateKey,
+		syncInterval:    cfg.SyncInterval,
+		leaseTime:       cfg.LeaseTime,
+		refreshInterval: cfg.RefreshInterval,
+		Mappings:        make(map[uint32]*common.Mapping),
+		stop:            make(chan struct{}),
 	}
 
-	err := handleTLS(options, cfg)
+	locker, err := datastore.locker()
 	if err != nil {
 		return nil, err
 	}
 
-	switch Backend(cfg.Datastore) {
-	case etcdBackend:
-		store, err := libkv.NewStore(store.ETCD, cfg.Endpoints, options)
-		if err != nil {
-			return nil, err
-		}
-		return toDatastore(privateKey, mapping, store, cfg)
-	case consulBackend:
-		store, err := libkv.NewStore(store.CONSUL, cfg.Endpoints, options)
-		if err != nil {
-			return nil, err
-		}
-		return toDatastore(privateKey, mapping, store, cfg)
-	default:
-		return nil, errors.New("The specified 'Backend' is not supported.")
+	_, err = locker.Lock(nil)
+	if err != nil {
+		return nil, err
 	}
+
+	err = datastore.sync()
+	if err != nil {
+		return nil, err
+	}
+	err = datastore.syncNetwork()
+	if err != nil {
+		return nil, err
+	}
+
+	if cfg.PrivateIP == "" {
+		free, err := datastore.getFreeIP()
+		if err != nil {
+			return nil, err
+		}
+		cfg.PrivateIP = free
+	}
+
+	datastore.privateIP = cfg.PrivateIP
+	datastore.mapping = common.NewMapping(cfg.PublicAddress, cfg.PublicKey)
+
+	err = datastore.set()
+	if err != nil {
+		return nil, err
+	}
+
+	err = locker.Unlock()
+	if err != nil {
+		return nil, err
+	}
+	return datastore, nil
 }
 
-func init() {
-	consul.Register()
-	etcd.Register()
+func newStoreConfig(cfg *config.Config) (*store.Config, error) {
+	storeCfg := &store.Config{PersistConnection: true}
+	if cfg.Username != "" && cfg.Password != "" {
+		storeCfg.Username = cfg.Username
+		storeCfg.Password = cfg.Password
+	}
+
+	if cfg.TLSEnabled {
+		storeCfg.TLS = &tls.Config{}
+
+		if cfg.TLSKey != "" && cfg.TLSCert != "" {
+			cert, err := tls.LoadX509KeyPair(cfg.TLSCert, cfg.TLSKey)
+
+			if err != nil {
+				return nil, err
+			}
+
+			storeCfg.TLS.Certificates = []tls.Certificate{cert}
+		}
+
+		if cfg.TLSCA != "" {
+			cert, err := ioutil.ReadFile(cfg.TLSCA)
+
+			if err != nil {
+				return nil, err
+			}
+
+			storeCfg.TLS.RootCAs = x509.NewCertPool()
+			storeCfg.TLS.RootCAs.AppendCertsFromPEM(cert)
+		}
+
+		storeCfg.TLS.BuildNameToCertificate()
+	}
+	return storeCfg, nil
+}
+
+func New(cfg *config.Config) (*Datastore, error) {
+	storeCfg, err := newStoreConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	switch Type(cfg.Datastore) {
+	case ETCD:
+		store, err := libkv.NewStore(store.ETCD, cfg.Endpoints, storeCfg)
+		if err != nil {
+			return nil, err
+		}
+		return newDatastore(store, cfg)
+	case CONSUL:
+		store, err := libkv.NewStore(store.CONSUL, cfg.Endpoints, storeCfg)
+		if err != nil {
+			return nil, err
+		}
+		return newDatastore(store, cfg)
+	default:
+		return nil, errors.New("The specified datastore backend is not supported.")
+	}
 }

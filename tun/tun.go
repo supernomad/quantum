@@ -4,6 +4,7 @@ import (
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/logger"
 	"github.com/vishvananda/netlink"
+	"net"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -57,7 +58,7 @@ func (tun *Tun) Write(payload *common.Payload, queue int) bool {
 }
 
 // New tun
-func New(ifPattern string, cidr string, numWorkers int, log *logger.Logger) (*Tun, error) {
+func New(ifPattern, src, network string, numWorkers int, log *logger.Logger) (*Tun, error) {
 	queues := make([]int, numWorkers)
 	first := true
 	name := ifPattern
@@ -75,7 +76,7 @@ func New(ifPattern string, cidr string, numWorkers int, log *logger.Logger) (*Tu
 		}
 	}
 
-	err := initTun(name, cidr)
+	err := initTun(name, src, network)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +84,7 @@ func New(ifPattern string, cidr string, numWorkers int, log *logger.Logger) (*Tu
 	return &Tun{Name: name, queues: queues, log: log}, nil
 }
 
-func initTun(name, cidr string) error {
+func initTun(name, src, network string) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return err
@@ -96,11 +97,26 @@ func initTun(name, cidr string) error {
 	if err != nil {
 		return err
 	}
-	addr, err := netlink.ParseAddr(cidr)
+	addr, err := netlink.ParseAddr(src + "/32")
 	if err != nil {
 		return err
 	}
-	return netlink.AddrAdd(link, addr)
+	err = netlink.AddrAdd(link, addr)
+	if err != nil {
+		return err
+	}
+	_, dst, err := net.ParseCIDR(network)
+	if err != nil {
+		return nil
+	}
+	route := &netlink.Route{
+		LinkIndex: link.Attrs().Index,
+		Scope:     netlink.SCOPE_LINK,
+		Protocol:  2,
+		Src:       net.ParseIP(src),
+		Dst:       dst,
+	}
+	return netlink.RouteAdd(route)
 }
 
 func createTun(name string) (string, int, error) {
