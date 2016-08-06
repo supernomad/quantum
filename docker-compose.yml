@@ -2,8 +2,8 @@ version: "2"
 services:
   quantum0:
     container_name: quantum0
-    depends_on: [etcd]
-    image: networkstatic/iperf3
+    build:
+      context: "."
     extra_hosts:
       - "etcd.quantum.dev:172.18.0.4"
     cap_add:
@@ -16,11 +16,11 @@ services:
     networks:
       perf_net:
         ipv4_address: 172.18.0.2
-    entrypoint: ["/bin/quantum", "-endpoints", "etcd.quantum.dev:2379", "-private-ip", "10.8.0.1", "-public-ip", "172.18.0.2", "--tls-cert", "/etc/quantum/certs/quantum0.quantum.dev.crt", "--tls-key", "/etc/quantum/certs/quantum0.quantum.dev.key", "--tls-ca-cert", "/etc/quantum/certs/ca.crt"]
+    entrypoint: ["/bin/quantum", "-endpoints", "etcd.quantum.dev:2379", "-public-ip", "172.18.0.2", "--tls-cert", "/etc/quantum/certs/quantum0.quantum.dev.crt", "--tls-key", "/etc/quantum/certs/quantum0.quantum.dev.key", "--tls-ca-cert", "/etc/quantum/certs/ca.crt"]
   quantum1:
     container_name: quantum1
-    depends_on: [etcd]
-    image: networkstatic/iperf3
+    build:
+      context: "."
     extra_hosts:
       - "etcd.quantum.dev:172.18.0.4"
     cap_add:
@@ -33,7 +33,7 @@ services:
     networks:
       perf_net:
         ipv4_address: 172.18.0.3
-    entrypoint: ["/bin/quantum", "-endpoints", "etcd.quantum.dev:2379", "-private-ip", "10.8.0.2", "-public-ip", "172.18.0.3", "--tls-cert", "/etc/quantum/certs/quantum1.quantum.dev.crt", "--tls-key", "/etc/quantum/certs/quantum1.quantum.dev.key", "--tls-ca-cert", "/etc/quantum/certs/ca.crt"]
+    entrypoint: ["/bin/quantum", "-endpoints", "etcd.quantum.dev:2379", "-public-ip", "172.18.0.3", "--tls-cert", "/etc/quantum/certs/quantum1.quantum.dev.crt", "--tls-key", "/etc/quantum/certs/quantum1.quantum.dev.key", "--tls-ca-cert", "/etc/quantum/certs/ca.crt"]
   etcd:
     container_name: etcd
     image: quay.io/coreos/etcd
