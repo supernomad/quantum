@@ -41,3 +41,9 @@ func IPtoInt(IP string) uint32 {
 	buf := net.ParseIP(IP).To4()
 	return binary.LittleEndian.Uint32(buf)
 }
+
+func InttoIP(IP uint32) string {
+	buf := make([]byte, 4)
+	binary.LittleEndian.PutUint32(buf, IP)
+	return string(buf)
+}
