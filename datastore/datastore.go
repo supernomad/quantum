@@ -31,7 +31,7 @@ const (
 	// CONSUL datastore backend
 	CONSUL Type = "consul"
 
-	LOCK_TTL time.Duration = time.Duration(5)
+	lockTTL time.Duration = time.Duration(5)
 
 	update int = 0
 	remove int = 1
@@ -70,7 +70,7 @@ func (datastore *Datastore) mappingHandler(action int, key string, value []byte)
 }
 
 func (datastore *Datastore) locker() (store.Locker, error) {
-	lockOps := &store.LockOptions{TTL: LOCK_TTL * time.Second}
+	lockOps := &store.LockOptions{TTL: lockTTL * time.Second}
 	locker, err := datastore.store.NewLock(path.Join(datastore.prefix, "/lock"), lockOps)
 	if err != nil {
 		return nil, err
@@ -149,6 +149,7 @@ func (datastore *Datastore) Start() {
 	}()
 }
 
+// Stop handling the datastore backend sync and watch
 func (datastore *Datastore) Stop() {
 	go func() {
 		datastore.stop <- struct{}{}
@@ -203,6 +204,7 @@ func newDatastore(store store.Store, cfg *config.Config) (*Datastore, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	err = datastore.syncNetwork()
 	if err != nil {
 		return nil, err
@@ -228,6 +230,7 @@ func newDatastore(store store.Store, cfg *config.Config) (*Datastore, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return datastore, nil
 }
 
@@ -267,6 +270,7 @@ func newStoreConfig(cfg *config.Config) (*store.Config, error) {
 	return storeCfg, nil
 }
 
+// New datastore object
 func New(cfg *config.Config) (*Datastore, error) {
 	storeCfg, err := newStoreConfig(cfg)
 	if err != nil {
