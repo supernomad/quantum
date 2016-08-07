@@ -101,7 +101,7 @@ func (backend *Backend) handleLocalMapping() error {
 		}
 	}
 
-	mapping := common.NewMapping(backend.cfg.PrivateIP, backend.cfg.PublicAddress, backend.cfg.PublicKey)
+	mapping := common.NewMapping(backend.cfg.PrivateIP, backend.cfg.PublicAddress, backend.cfg.MachineID, backend.cfg.PublicKey)
 	key := path.Join("/nodes/", backend.cfg.MachineID)
 
 	err := backend.set(key, mapping.Bytes(), backend.NetworkCfg.LeaseTime)
@@ -118,7 +118,7 @@ func (backend *Backend) syncMappings() error {
 		if err != store.ErrKeyNotFound {
 			return err
 		}
-		return nil
+		nodes = make([]*store.KVPair, 0)
 	}
 
 	mappings := make(map[uint32]*common.Mapping)
@@ -163,23 +163,20 @@ func (backend *Backend) set(key string, value []byte, leaseTime time.Duration) e
 }
 
 func (backend *Backend) watch() {
-	events, err := backend.store.WatchTree(backend.getKey("/mappings/"), backend.stop)
+	events, err := backend.store.WatchTree(backend.getKey("/nodes/"), backend.stop)
 	if err != nil {
+		log.Error("Error during watch:", err)
 		return
 	}
 
 	for {
 		select {
-		case nodes := <-events:
-			for _, node := range nodes {
-				if len(node.Value) != 0 {
-					mapping, err := common.ParseMapping(node.Value, backend.cfg.PrivateKey)
-					if err != nil {
-						return
-					}
-					backend.mappings[common.IPtoInt(mapping.PrivateIP)] = mapping
-				}
-				// TODO actually remove items
+		case <-backend.stop:
+			break
+		case <-events:
+			err := backend.syncMappings()
+			if err != nil {
+				log.Error("Error during watch:", err)
 			}
 		}
 	}
