@@ -24,6 +24,7 @@ const (
 	lockTTL     time.Duration = 10
 )
 
+// Backend datastore object which is responsible for managing state between the local node and the real backend datastore.
 type Backend struct {
 	store  store.Store
 	locker store.Locker
@@ -184,11 +185,13 @@ func (backend *Backend) watch() {
 	}
 }
 
+// GetMapping which will either be a mapping in the current network or nil and the bool will be false, indicating that the mapping does not exist.
 func (backend *Backend) GetMapping(ip uint32) (*common.Mapping, bool) {
 	mapping, ok := backend.mappings[ip]
 	return mapping, ok
 }
 
+// Init the backend datastore.
 func (backend *Backend) Init() error {
 	err := backend.lock()
 	if err != nil {
@@ -217,6 +220,7 @@ func (backend *Backend) Init() error {
 	return err
 }
 
+// Start watching the backend and updating mappings.
 func (backend *Backend) Start() {
 	refresh := time.NewTicker(backend.cfg.RefreshInterval * time.Second)
 	sync := time.NewTicker(backend.cfg.SyncInterval * time.Second)
@@ -243,12 +247,14 @@ func (backend *Backend) Start() {
 	}()
 }
 
+// Stop watching the backend and updating mappings
 func (backend *Backend) Stop() {
 	go func() {
 		backend.stop <- struct{}{}
 	}()
 }
 
+// New Backend object
 func New(cfg *config.Config) (*Backend, error) {
 	var backendStore store.Store
 

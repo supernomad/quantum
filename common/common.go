@@ -49,6 +49,7 @@ func InttoIP(IP uint32) string {
 	return string(buf)
 }
 
+// IncrementIP will increment the given ip in place.
 func IncrementIP(ip net.IP) {
 	for i := len(ip) - 1; i >= 0; i-- {
 		ip[i]++
