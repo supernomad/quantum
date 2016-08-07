@@ -2,25 +2,25 @@ package workers
 
 import (
 	"encoding/binary"
+	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
-	"github.com/Supernomad/quantum/logger"
 	"github.com/Supernomad/quantum/socket"
 	"github.com/Supernomad/quantum/tun"
 )
 
 // Incoming external packet interface which handles reading packets off of a Socket object
 type Incoming struct {
-	tunnel   *tun.Tun
-	sock     *socket.Socket
-	Mappings map[uint32]*common.Mapping
-	quit     chan bool
+	tunnel *tun.Tun
+	sock   *socket.Socket
+	store  *backend.Backend
+	quit   chan bool
 }
 
 // Resolve the incoming payload
 func (incoming *Incoming) Resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
 	dip := binary.LittleEndian.Uint32(payload.IPAddress)
 
-	if mapping, ok := incoming.Mappings[dip]; ok {
+	if mapping, ok := incoming.store.GetMapping(dip); ok {
 		return payload, mapping, true
 	}
 
@@ -67,11 +67,11 @@ func (incoming *Incoming) Stop() {
 }
 
 // NewIncoming object
-func NewIncoming(log *logger.Logger, privateIP string, mappings map[uint32]*common.Mapping, tunnel *tun.Tun, sock *socket.Socket) *Incoming {
+func NewIncoming(privateIP string, store *backend.Backend, tunnel *tun.Tun, sock *socket.Socket) *Incoming {
 	return &Incoming{
-		tunnel:   tunnel,
-		sock:     sock,
-		Mappings: mappings,
-		quit:     make(chan bool),
+		tunnel: tunnel,
+		sock:   sock,
+		store:  store,
+		quit:   make(chan bool),
 	}
 }

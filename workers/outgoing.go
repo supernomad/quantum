@@ -3,8 +3,8 @@ package workers
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
-	"github.com/Supernomad/quantum/logger"
 	"github.com/Supernomad/quantum/socket"
 	"github.com/Supernomad/quantum/tun"
 	"net"
@@ -15,7 +15,7 @@ type Outgoing struct {
 	tunnel    *tun.Tun
 	sock      *socket.Socket
 	privateIP []byte
-	Mappings  map[uint32]*common.Mapping
+	store     *backend.Backend
 	quit      chan bool
 }
 
@@ -23,7 +23,7 @@ type Outgoing struct {
 func (outgoing *Outgoing) Resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
 	dip := binary.LittleEndian.Uint32(payload.Packet[16:20])
 
-	if mapping, ok := outgoing.Mappings[dip]; ok {
+	if mapping, ok := outgoing.store.GetMapping(dip); ok {
 		copy(payload.IPAddress, outgoing.privateIP)
 		return payload, mapping, true
 	}
@@ -72,12 +72,12 @@ func (outgoing *Outgoing) Stop() {
 }
 
 // NewOutgoing object
-func NewOutgoing(log *logger.Logger, privateIP string, mappings map[uint32]*common.Mapping, tunnel *tun.Tun, sock *socket.Socket) *Outgoing {
+func NewOutgoing(privateIP string, store *backend.Backend, tunnel *tun.Tun, sock *socket.Socket) *Outgoing {
 	return &Outgoing{
 		tunnel:    tunnel,
 		sock:      sock,
 		privateIP: net.ParseIP(privateIP).To4(),
-		Mappings:  mappings,
+		store:     store,
 		quit:      make(chan bool),
 	}
 }
