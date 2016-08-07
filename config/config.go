@@ -52,8 +52,6 @@ type Config struct {
 	AuthEnabled bool
 	Username    string
 	Password    string
-
-	fileData map[string]string
 }
 
 func (cfg *Config) handleDefaultString(name, def string) string {
