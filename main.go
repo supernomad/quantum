@@ -29,7 +29,8 @@ func main() {
 	cores := runtime.NumCPU()
 	runtime.GOMAXPROCS(cores * 2)
 
-	cfg := config.New()
+	cfg, err := config.New()
+	handleError(err)
 
 	store, err := backend.New(cfg)
 	handleError(err)
