@@ -1,8 +1,13 @@
 package config
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"flag"
 	"github.com/Supernomad/quantum/ecdh"
+	"io/ioutil"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -11,6 +16,7 @@ import (
 // Config handles marshalling user supplied configuration data
 type Config struct {
 	InterfaceName string
+	MachineID     string
 
 	PrivateIP string
 	PublicIP  string
@@ -34,10 +40,11 @@ type Config struct {
 	TLSKey     string
 	TLSCA      string
 
-	Datastore string
-	Endpoints []string
-	Username  string
-	Password  string
+	Datastore   string
+	Endpoints   []string
+	AuthEnabled bool
+	Username    string
+	Password    string
 }
 
 // New generates a new config object
@@ -51,7 +58,7 @@ func New() *Config {
 	lport := flag.Int("listen-port", 1099, "The ip port to listen on for forwarded packets.")
 
 	prefix := flag.String("prefix", "quantum", "The etcd key that quantum information is stored under.")
-
+	dataDir := flag.String("data-dir", "/var/lib/quantum", "The data directory for quantum to use for persistent state.")
 	leaseTime := flag.Duration("lease-time", 300, "Lease time for the private ip address.")
 	syncInterval := flag.Duration("sync-interval", 30, "The backend sync interval")
 	refreshInterval := flag.Duration("refresh-interval", 60, "The backend lease refresh interval.")
@@ -71,12 +78,29 @@ func New() *Config {
 	pubkey, privkey := ecdh.GenerateECKeyPair()
 
 	tlsEnabled := false
-	if *tlsCert != "" || *tlsKey != "" || *tlsCA != "" {
+	if (*tlsCert != "" && *tlsKey != "") || *tlsCA != "" {
 		tlsEnabled = true
+	}
+
+	authEnabled := false
+	if *username != "" {
+		authEnabled = true
+	}
+
+	os.MkdirAll(*dataDir, os.ModeDir)
+	machineID := make([]byte, 32)
+	machineIDPath := path.Join(*dataDir, "machine-id")
+	if _, err := os.Stat(machineIDPath); os.IsNotExist(err) {
+		rand.Read(machineID)
+		ioutil.WriteFile(machineIDPath, machineID, os.ModePerm)
+	} else {
+		buf, _ := ioutil.ReadFile(machineIDPath)
+		machineID = buf
 	}
 
 	return &Config{
 		InterfaceName:   *ifaceName,
+		MachineID:       hex.EncodeToString(machineID),
 		PrivateIP:       *privateIP,
 		PublicIP:        *publicIP,
 		PublicAddress:   *publicIP + ":" + strconv.Itoa(*lport),
@@ -94,6 +118,7 @@ func New() *Config {
 		TLSEnabled:      tlsEnabled,
 		Datastore:       *datastore,
 		Endpoints:       parsedEndpoints,
+		AuthEnabled:     authEnabled,
 		Username:        *username,
 		Password:        *password,
 	}
