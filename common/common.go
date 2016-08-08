@@ -48,3 +48,13 @@ func InttoIP(IP uint32) string {
 	binary.LittleEndian.PutUint32(buf, IP)
 	return string(buf)
 }
+
+// IncrementIP will increment the given ip in place.
+func IncrementIP(ip net.IP) {
+	for i := len(ip) - 1; i >= 0; i-- {
+		ip[i]++
+		if ip[i] > 0 {
+			break
+		}
+	}
+}

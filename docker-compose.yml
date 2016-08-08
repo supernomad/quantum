@@ -13,6 +13,7 @@ services:
       - /dev/net/tun:/dev/net/tun
       - $GOPATH/bin/quantum:/bin/quantum
       - ./certs/:/etc/quantum/certs/:ro
+      - quantum0:/var/lib/quantum
     networks:
       perf_net:
         ipv4_address: 172.18.0.2
@@ -30,6 +31,7 @@ services:
       - /dev/net/tun:/dev/net/tun
       - $GOPATH/bin/quantum:/bin/quantum
       - ./certs/:/etc/quantum/certs/:ro
+      - quantum1:/var/lib/quantum
     networks:
       perf_net:
         ipv4_address: 172.18.0.3
@@ -64,4 +66,8 @@ networks:
         gateway: 172.18.0.1
 volumes:
   etcd:
+    driver: local
+  quantum0:
+    driver: local
+  quantum1:
     driver: local

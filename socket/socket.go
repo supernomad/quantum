@@ -2,7 +2,6 @@ package socket
 
 import (
 	"github.com/Supernomad/quantum/common"
-	"github.com/Supernomad/quantum/logger"
 	"net"
 	"syscall"
 )
@@ -10,7 +9,6 @@ import (
 // Socket is a generic socket interface based on socket fd's and syscalls
 type Socket struct {
 	queues []int
-	log    *logger.Logger
 }
 
 // Close the socket
@@ -42,7 +40,7 @@ func (sock *Socket) Write(payload *common.Payload, to syscall.Sockaddr, queue in
 }
 
 // New socket
-func New(address string, port int, numWorkers int, log *logger.Logger) (*Socket, error) {
+func New(address string, port int, numWorkers int) (*Socket, error) {
 	var addr [4]byte
 	copy(addr[:], net.ParseIP(address).To4())
 
@@ -66,7 +64,7 @@ func New(address string, port int, numWorkers int, log *logger.Logger) (*Socket,
 
 		queues[i] = queue
 	}
-	return &Socket{queues: queues, log: log}, nil
+	return &Socket{queues: queues}, nil
 }
 
 func initSocket(queue int, sa *syscall.SockaddrInet4) error {
