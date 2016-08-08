@@ -14,6 +14,8 @@ import (
 // Mapping represents the relationship between a public/private address and encryption metadata
 type Mapping struct {
 	Address   string
+	MachineID string
+	PrivateIP string
 	PublicKey []byte
 	Sockaddr  *syscall.SockaddrInet4 `json:"-"`
 	SecretKey []byte                 `json:"-"`
@@ -64,9 +66,11 @@ func ParseMapping(data []byte, privkey []byte) (*Mapping, error) {
 }
 
 // NewMapping generates a new basic Mapping
-func NewMapping(address string, pubkey []byte) *Mapping {
+func NewMapping(privateIP, address, machineID string, pubkey []byte) *Mapping {
 	return &Mapping{
 		Address:   address,
+		MachineID: machineID,
+		PrivateIP: privateIP,
 		PublicKey: pubkey,
 	}
 }
