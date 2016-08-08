@@ -13,7 +13,7 @@ services:
       - /dev/net/tun:/dev/net/tun
       - $GOPATH/bin/quantum:/bin/quantum
       - ./certs/:/etc/quantum/certs/:ro
-      - quantum0:/var/lib/quantum
+      - quantum0:/var/lib/quantum/
     networks:
       perf_net:
         ipv4_address: 172.18.0.2
@@ -31,11 +31,38 @@ services:
       - /dev/net/tun:/dev/net/tun
       - $GOPATH/bin/quantum:/bin/quantum
       - ./certs/:/etc/quantum/certs/:ro
-      - quantum1:/var/lib/quantum
+      - quantum1:/var/lib/quantum/
+    environment:
+      QUANTUM_ENDPOINTS: "etcd.quantum.dev:2379"
+      QUANTUM_PUBLIC_IP: "172.18.0.3"
+      QUANTUM_TLS_CA_CERT: "/etc/quantum/certs/ca.crt"
+      QUANTUM_TLS_CERT: "/etc/quantum/certs/quantum1.quantum.dev.crt"
+      QUANTUM_TLS_KEY: "/etc/quantum/certs/quantum1.quantum.dev.key"
     networks:
       perf_net:
         ipv4_address: 172.18.0.3
-    entrypoint: ["/bin/quantum", "-endpoints", "etcd.quantum.dev:2379", "-public-ip", "172.18.0.3", "--tls-cert", "/etc/quantum/certs/quantum1.quantum.dev.crt", "--tls-key", "/etc/quantum/certs/quantum1.quantum.dev.key", "--tls-ca-cert", "/etc/quantum/certs/ca.crt"]
+    entrypoint: ["/bin/quantum"]
+  quantum2:
+    container_name: quantum2
+    build:
+      context: "."
+    extra_hosts:
+      - "etcd.quantum.dev:172.18.0.4"
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - /dev/net/tun:/dev/net/tun
+      - $GOPATH/bin/quantum:/bin/quantum
+      - ./bin/quantum.yml:/etc/quantum/quantum.yml:ro
+      - ./certs/:/etc/quantum/certs/:ro
+      - quantum2:/var/lib/quantum/
+    environment:
+      QUANTUM_CONF_FILE: "/etc/quantum/quantum.yml"
+    networks:
+      perf_net:
+        ipv4_address: 172.18.0.5
+    entrypoint: ["/bin/quantum"]
   etcd:
     container_name: etcd
     image: quay.io/coreos/etcd
@@ -70,4 +97,6 @@ volumes:
   quantum0:
     driver: local
   quantum1:
+    driver: local
+  quantum2:
     driver: local
