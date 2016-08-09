@@ -60,9 +60,6 @@ func (cfg *Config) handleDefaultString(name, def string) string {
 	env := "QUANTUM_" + strings.ToUpper(strings.Replace(name, "-", "_", 10))
 	output := os.Getenv(env)
 	if output == "" {
-		if output, ok := cfg.fileData[name]; ok {
-			return output
-		}
 		return def
 	}
 	return output
@@ -86,14 +83,8 @@ func (cfg *Config) handleDefaultDuration(name string, def time.Duration) time.Du
 	return output
 }
 
-func (cfg *Config) handleCli() error {
+func (cfg *Config) handleCli() {
 	flag.StringVar(&cfg.ConfFile, "conf-file", cfg.handleDefaultString("conf-file", ""), "The json or yaml file to load configuration data from.")
-	flag.Parse()
-
-	err := cfg.handleFile()
-	if err != nil {
-		return err
-	}
 
 	flag.StringVar(&cfg.InterfaceName, "interface-name", cfg.handleDefaultString("interface-name", "quantum%d"), "The name for the TUN interface that will be used for forwarding. Use %d to have the OS pick an available interface name.")
 
@@ -104,7 +95,6 @@ func (cfg *Config) handleCli() error {
 	flag.IntVar(&cfg.ListenPort, "listen-port", cfg.handleDefaultInt("listen-port", 1099), "The ip port to listen on for forwarded packets.")
 
 	flag.StringVar(&cfg.Prefix, "prefix", cfg.handleDefaultString("prefix", "quantum"), "The etcd key that quantum information is stored under.")
-
 	flag.StringVar(&cfg.DataDir, "data-dir", cfg.handleDefaultString("data-dir", "/var/lib/quantum"), "The data directory for quantum to use for persistent state.")
 	flag.StringVar(&cfg.LogDir, "log-dir", cfg.handleDefaultString("log-dir", ""), "The log directory to write logs to, if this is ommited logs are written to stdout/stderr.")
 
@@ -116,13 +106,11 @@ func (cfg *Config) handleCli() error {
 	flag.StringVar(&cfg.TLSCA, "tls-ca-cert", cfg.handleDefaultString("tls-ca-cert", ""), "The CA certificate to authenticate the backend datastore.")
 
 	flag.StringVar(&cfg.Datastore, "datastore", cfg.handleDefaultString("datastore", "etcd"), "The datastore backend to use, either consul or etcd")
-
 	flag.StringVar(&cfg.endpoints, "endpoints", cfg.handleDefaultString("endpoints", "127.0.0.1:2379"), "A comma delimited list of datastore endpoints to use.")
 	flag.StringVar(&cfg.Username, "username", cfg.handleDefaultString("username", ""), "The datastore username to use for authentication.")
 	flag.StringVar(&cfg.Password, "password", cfg.handleDefaultString("password", ""), "The datastore password to use for authentication.")
 
 	flag.Parse()
-	return nil
 }
 
 func (cfg *Config) handleComputed() {
@@ -155,6 +143,62 @@ func (cfg *Config) handleComputed() {
 	cfg.PublicAddress = cfg.PublicIP + ":" + strconv.Itoa(cfg.ListenPort)
 }
 
+func (cfg *Config) parseFileData(data map[string]string) error {
+	for k, v := range data {
+		switch k {
+		case "conf-file":
+			cfg.ConfFile = v
+		case "interface-name":
+			cfg.InterfaceName = v
+		case "private-ip":
+			cfg.PrivateIP = v
+		case "public-ip":
+			cfg.PublicIP = v
+		case "listen-address":
+			cfg.ListenAddress = v
+		case "listen-port":
+			i, err := strconv.Atoi(v)
+			if err != nil {
+				return err
+			}
+			cfg.ListenPort = i
+		case "prefix":
+			cfg.Prefix = v
+		case "data-dir":
+			cfg.DataDir = v
+		case "log-dir":
+			cfg.LogDir = v
+		case "sync-interval":
+			dur, err := time.ParseDuration(v)
+			if err != nil {
+				return err
+			}
+			cfg.SyncInterval = dur
+		case "refresh-interval":
+			dur, err := time.ParseDuration(v)
+			if err != nil {
+				return err
+			}
+			cfg.RefreshInterval = dur
+		case "tls-cert":
+			cfg.TLSCert = v
+		case "tls-key":
+			cfg.TLSKey = v
+		case "tls-ca-cert":
+			cfg.TLSCA = v
+		case "datastore":
+			cfg.Datastore = v
+		case "endpoints":
+			cfg.endpoints = v
+		case "username":
+			cfg.Username = v
+		case "password":
+			cfg.Password = v
+		}
+	}
+	return nil
+}
+
 func (cfg *Config) handleFile() error {
 	if cfg.ConfFile != "" {
 		buf, err := ioutil.ReadFile(cfg.ConfFile)
@@ -164,29 +208,25 @@ func (cfg *Config) handleFile() error {
 
 		data := make(map[string]string)
 		ext := path.Ext(cfg.ConfFile)
-		switch ext {
-		case ".json":
+		switch {
+		case ".json" == ext:
 			err = json.Unmarshal(buf, &data)
-		case ".yaml":
-			err = yaml.Unmarshal(buf, &data)
-		case ".yml":
+		case ".yaml" == ext || ".yml" == ext:
 			err = yaml.Unmarshal(buf, &data)
 		default:
 			return errors.New("The configuration file is not in a supported format.")
 		}
 
-		cfg.fileData = data
-	} else {
-		cfg.fileData = make(map[string]string)
+		return cfg.parseFileData(data)
 	}
-
 	return nil
 }
 
 // New generates a new config object
 func New() (*Config, error) {
 	cfg := &Config{}
-	err := cfg.handleCli()
+	cfg.handleCli()
+	err := cfg.handleFile()
 	if err != nil {
 		log.Error("Error handling config:", err)
 		return nil, err
