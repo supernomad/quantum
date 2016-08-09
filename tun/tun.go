@@ -2,7 +2,6 @@ package tun
 
 import (
 	"github.com/Supernomad/quantum/common"
-	"github.com/Supernomad/quantum/config"
 	"github.com/vishvananda/netlink"
 	"net"
 	"strings"
@@ -57,7 +56,7 @@ func (tun *Tun) Write(payload *common.Payload, queue int) bool {
 }
 
 // New tun
-func New(ifPattern, src string, networkCfg *config.NetworkConfig, numWorkers int) (*Tun, error) {
+func New(ifPattern, src string, networkCfg *common.NetworkConfig, numWorkers int) (*Tun, error) {
 	queues := make([]int, numWorkers)
 	first := true
 	name := ifPattern
@@ -83,7 +82,7 @@ func New(ifPattern, src string, networkCfg *config.NetworkConfig, numWorkers int
 	return &Tun{Name: name, queues: queues}, nil
 }
 
-func initTun(name, src string, networkCfg *config.NetworkConfig) error {
+func initTun(name, src string, networkCfg *common.NetworkConfig) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return err

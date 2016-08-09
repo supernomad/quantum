@@ -30,7 +30,7 @@ type Backend struct {
 	locker store.Locker
 
 	cfg        *config.Config
-	NetworkCfg *config.NetworkConfig
+	NetworkCfg *common.NetworkConfig
 
 	localMapping *common.Mapping
 	mappings     map[uint32]*common.Mapping
@@ -139,11 +139,11 @@ func (backend *Backend) fetchNetworkConfig() error {
 		if err != store.ErrKeyNotFound {
 			return err
 		}
-		backend.set("config", config.DefaultNetworkConfig.Bytes(), 0)
-		backend.NetworkCfg = config.DefaultNetworkConfig
+		backend.set("config", common.DefaultNetworkConfig.Bytes(), 0)
+		backend.NetworkCfg = common.DefaultNetworkConfig
 		return nil
 	}
-	networkCfg, err := config.ParseNetworkConfig(netCfg.Value)
+	networkCfg, err := common.ParseNetworkConfig(netCfg.Value)
 	if err != nil {
 		return err
 	}
