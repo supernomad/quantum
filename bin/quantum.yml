@@ -1,0 +1,8 @@
+---
+# Etcd endpoints
+endpoints: "etcd.quantum.dev:2379"
+public-ip: "172.18.0.5"
+
+tls-ca-cert: "/etc/quantum/certs/ca.crt"
+tls-cert: "/etc/quantum/certs/quantum1.quantum.dev.crt"
+tls-key: "/etc/quantum/certs/quantum1.quantum.dev.key"
