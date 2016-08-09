@@ -12,7 +12,7 @@ func TestNewMapping(t *testing.T) {
 
 	actual := NewMapping(privateIP, publicaddress, machineID, publicKey)
 	if actual.Address != publicaddress || actual.MachineID != machineID || actual.PrivateIP != privateIP || len(actual.PublicKey) != 32 {
-		t.Fatalf("NewMapping did not return the right value, got: %s", actual)
+		t.Fatalf("NewMapping did not return the right value, got: %v", actual)
 	}
 }
 
@@ -28,6 +28,6 @@ func TestParseMapping(t *testing.T) {
 		t.Fatalf("Error occured during test: %s", err)
 	}
 	if actual.Address != expected.Address || actual.MachineID != expected.MachineID || actual.PrivateIP != expected.PrivateIP || len(actual.PublicKey) != len(expected.PublicKey) {
-		t.Fatalf("ParseMapping did not return the right value, got: %s, expected: %s", actual, expected)
+		t.Fatalf("ParseMapping did not return the right value, got: %v, expected: %v", actual, expected)
 	}
 }

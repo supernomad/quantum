@@ -29,7 +29,7 @@ func testEq(a, b []byte) bool {
 }
 
 func TestIPtoInt(t *testing.T) {
-	var expected uint32 = 0
+	var expected uint32
 	actual := IPtoInt("0.0.0.0")
 	if expected != actual {
 		t.Fatalf("IPtoInt did not return the right value, got: %d, expected: %d", actual, expected)
