@@ -22,11 +22,6 @@ type Mapping struct {
 	Cipher    cipher.AEAD            `json:"-"`
 }
 
-// String returns the mapping as a string
-func (m *Mapping) String() string {
-	return string(m.Bytes())
-}
-
 // Bytes returns the mapping as a byte slice
 func (m *Mapping) Bytes() []byte {
 	buf, _ := json.Marshal(m)
