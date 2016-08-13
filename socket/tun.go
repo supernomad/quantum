@@ -1,4 +1,4 @@
-package tun
+package socket
 
 import (
 	"github.com/Supernomad/quantum/common"
@@ -23,8 +23,37 @@ type ifReq struct {
 
 // Tun interface
 type Tun struct {
-	Name   string
+	name   string
 	queues []int
+	cfg    *common.Config
+}
+
+// Name of the Tun device
+func (tun *Tun) Name() string {
+	return tun.name
+}
+
+// Open the Tun device for communication to begin
+func (tun *Tun) Open() error {
+	first := true
+	for i := 0; i < tun.cfg.NumWorkers; i++ {
+		ifName, queue, err := createTUN(tun.name)
+		if err != nil {
+			return err
+		}
+		tun.queues[i] = queue
+
+		if first {
+			first = false
+			tun.name = ifName
+		}
+	}
+
+	err := initTUN(tun.name, tun.cfg.PrivateIP, tun.cfg.NetworkConfig)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Close the tun
@@ -47,7 +76,7 @@ func (tun *Tun) Read(buf []byte, queue int) (*common.Payload, bool) {
 }
 
 // Write a packet to the tun
-func (tun *Tun) Write(payload *common.Payload, queue int) bool {
+func (tun *Tun) Write(payload *common.Payload, mapping *common.Mapping, queue int) bool {
 	_, err := syscall.Write(tun.queues[queue], payload.Packet)
 	if err != nil {
 		return false
@@ -55,34 +84,14 @@ func (tun *Tun) Write(payload *common.Payload, queue int) bool {
 	return true
 }
 
-// New tun
-func New(ifPattern, src string, networkCfg *common.NetworkConfig, numWorkers int) (*Tun, error) {
-	queues := make([]int, numWorkers)
-	first := true
-	name := ifPattern
+func newTUN(cfg *common.Config) Socket {
+	queues := make([]int, cfg.NumWorkers)
+	name := cfg.InterfaceName
 
-	for i := 0; i < numWorkers; i++ {
-		ifName, queue, err := createTun(name)
-		if err != nil {
-			return nil, err
-		}
-		queues[i] = queue
-
-		if first {
-			first = false
-			name = ifName
-		}
-	}
-
-	err := initTun(name, src, networkCfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Tun{Name: name, queues: queues}, nil
+	return &Tun{name: name, cfg: cfg, queues: queues}
 }
 
-func initTun(name, src string, networkCfg *common.NetworkConfig) error {
+func initTUN(name, src string, networkCfg *common.NetworkConfig) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return err
@@ -113,7 +122,7 @@ func initTun(name, src string, networkCfg *common.NetworkConfig) error {
 	return netlink.RouteAdd(route)
 }
 
-func createTun(name string) (string, int, error) {
+func createTUN(name string) (string, int, error) {
 	var req ifReq
 	req.Flags = iffTun | iffNoPi | iffMultiQueue
 

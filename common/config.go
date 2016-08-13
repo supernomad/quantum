@@ -1,4 +1,4 @@
-package config
+package common
 
 import (
 	"crypto/rand"
@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
-	"github.com/Supernomad/quantum/ecdh"
 	"github.com/go-playground/log"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"path"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -21,6 +21,8 @@ import (
 type Config struct {
 	InterfaceName string
 	MachineID     string
+	NumWorkers    int
+	StatsWindow   time.Duration
 
 	PrivateIP string
 	PublicIP  string
@@ -52,6 +54,8 @@ type Config struct {
 	AuthEnabled bool
 	Username    string
 	Password    string
+
+	NetworkConfig *NetworkConfig
 }
 
 func (cfg *Config) handleDefaultString(name, def string) string {
@@ -85,6 +89,7 @@ func (cfg *Config) handleCli() {
 	flag.StringVar(&cfg.ConfFile, "conf-file", cfg.handleDefaultString("conf-file", ""), "The json or yaml file to load configuration data from.")
 
 	flag.StringVar(&cfg.InterfaceName, "interface-name", cfg.handleDefaultString("interface-name", "quantum%d"), "The name for the TUN interface that will be used for forwarding. Use %d to have the OS pick an available interface name.")
+	flag.DurationVar(&cfg.StatsWindow, "stats-window", cfg.handleDefaultDuration("stats-window", 5), "The window of time to calculate bandwidth and packet per second information on.")
 
 	flag.StringVar(&cfg.PrivateIP, "private-ip", cfg.handleDefaultString("private-ip", ""), "The private ip address of this node.")
 	flag.StringVar(&cfg.PublicIP, "public-ip", cfg.handleDefaultString("public-ip", ""), "The public ip address of this node.")
@@ -114,7 +119,7 @@ func (cfg *Config) handleCli() {
 func (cfg *Config) handleComputed() {
 	cfg.Endpoints = strings.Split(cfg.endpoints, ",")
 
-	pubkey, privkey := ecdh.GenerateECKeyPair()
+	pubkey, privkey := GenerateECKeyPair()
 	cfg.PublicKey = pubkey
 	cfg.PrivateKey = privkey
 
@@ -139,6 +144,11 @@ func (cfg *Config) handleComputed() {
 	cfg.MachineID = hex.EncodeToString(machineID)
 
 	cfg.PublicAddress = cfg.PublicIP + ":" + strconv.Itoa(cfg.ListenPort)
+
+	cores := runtime.NumCPU()
+	runtime.GOMAXPROCS(cores * 2)
+
+	cfg.NumWorkers = cores
 }
 
 func (cfg *Config) parseFileData(data map[string]string) error {
@@ -166,6 +176,12 @@ func (cfg *Config) parseFileData(data map[string]string) error {
 			cfg.DataDir = v
 		case "log-dir":
 			cfg.LogDir = v
+		case "stats-window":
+			dur, err := time.ParseDuration(v)
+			if err != nil {
+				return err
+			}
+			cfg.StatsWindow = dur
 		case "sync-interval":
 			dur, err := time.ParseDuration(v)
 			if err != nil {
@@ -220,8 +236,8 @@ func (cfg *Config) handleFile() error {
 	return nil
 }
 
-// New generates a new config object
-func New() (*Config, error) {
+// NewConfig generates a new config object
+func NewConfig() (*Config, error) {
 	cfg := &Config{}
 	cfg.handleCli()
 	err := cfg.handleFile()

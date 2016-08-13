@@ -4,7 +4,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/json"
-	"github.com/Supernomad/quantum/ecdh"
 	"net"
 	"strconv"
 	"strings"
@@ -44,7 +43,7 @@ func ParseMapping(data []byte, privkey []byte) (*Mapping, error) {
 		Port: port,
 		Addr: addr,
 	}
-	mapping.SecretKey = ecdh.GenerateSharedSecret(mapping.PublicKey, privkey)
+	mapping.SecretKey = GenerateSharedSecret(mapping.PublicKey, privkey)
 
 	block, err := aes.NewCipher(mapping.SecretKey)
 	if err != nil {

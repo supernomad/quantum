@@ -3,12 +3,12 @@ package backend
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"github.com/Supernomad/quantum/config"
+	"github.com/Supernomad/quantum/common"
 	"github.com/docker/libkv/store"
 	"io/ioutil"
 )
 
-func generateStoreConfig(cfg *config.Config) (*store.Config, error) {
+func generateStoreConfig(cfg *common.Config) (*store.Config, error) {
 	storeCfg := &store.Config{PersistConnection: true}
 
 	if cfg.AuthEnabled {

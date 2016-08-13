@@ -6,17 +6,17 @@ import (
 	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/socket"
-	"github.com/Supernomad/quantum/tun"
 	"net"
 )
 
 // Outgoing internal packet interface which handles reading packets off of a TUN object
 type Outgoing struct {
-	tunnel    *tun.Tun
-	sock      *socket.Socket
-	privateIP []byte
-	store     *backend.Backend
-	quit      chan bool
+	tunnel     socket.Socket
+	sock       socket.Socket
+	privateIP  []byte
+	store      *backend.Backend
+	quit       chan bool
+	QueueStats []*common.Stats
 }
 
 // Resolve the outgoing payload
@@ -42,6 +42,22 @@ func (outgoing *Outgoing) Seal(payload *common.Payload, mapping *common.Mapping)
 	return payload, true
 }
 
+// Stats ingest for the outgoing packet
+func (outgoing *Outgoing) Stats(payload *common.Payload, mapping *common.Mapping, queue int) {
+	outgoing.QueueStats[queue].Packets++
+	outgoing.QueueStats[queue].Bytes += uint64(payload.Length)
+
+	if link, ok := outgoing.QueueStats[queue].Links[mapping.PrivateIP]; !ok {
+		outgoing.QueueStats[queue].Links[mapping.PrivateIP] = &common.Stats{
+			Packets: 1,
+			Bytes:   uint64(payload.Length),
+		}
+	} else {
+		link.Packets++
+		link.Bytes += uint64(payload.Length)
+	}
+}
+
 // Start handling packets
 func (outgoing *Outgoing) Start(queue int) {
 	go func() {
@@ -59,7 +75,8 @@ func (outgoing *Outgoing) Start(queue int) {
 			if !ok {
 				continue
 			}
-			outgoing.sock.Write(payload, mapping.Sockaddr, queue)
+			outgoing.Stats(payload, mapping, queue)
+			outgoing.sock.Write(payload, mapping, queue)
 		}
 	}()
 }
@@ -72,12 +89,17 @@ func (outgoing *Outgoing) Stop() {
 }
 
 // NewOutgoing object
-func NewOutgoing(privateIP string, store *backend.Backend, tunnel *tun.Tun, sock *socket.Socket) *Outgoing {
+func NewOutgoing(privateIP string, numWorkers int, store *backend.Backend, tunnel socket.Socket, sock socket.Socket) *Outgoing {
+	stats := make([]*common.Stats, numWorkers)
+	for i := 0; i < numWorkers; i++ {
+		stats[i] = common.NewStats()
+	}
 	return &Outgoing{
-		tunnel:    tunnel,
-		sock:      sock,
-		privateIP: net.ParseIP(privateIP).To4(),
-		store:     store,
-		quit:      make(chan bool),
+		tunnel:     tunnel,
+		sock:       sock,
+		privateIP:  net.ParseIP(privateIP).To4(),
+		store:      store,
+		quit:       make(chan bool),
+		QueueStats: stats,
 	}
 }

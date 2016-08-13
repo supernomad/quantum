@@ -3,7 +3,6 @@ package backend
 import (
 	"errors"
 	"github.com/Supernomad/quantum/common"
-	"github.com/Supernomad/quantum/config"
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/consul"
@@ -29,7 +28,7 @@ type Backend struct {
 	store  store.Store
 	locker store.Locker
 
-	cfg        *config.Config
+	cfg        *common.Config
 	NetworkCfg *common.NetworkConfig
 
 	localMapping *common.Mapping
@@ -80,6 +79,10 @@ func (backend *Backend) getMappingIfExists() (*common.Mapping, bool) {
 
 func (backend *Backend) getFreeIP() (string, error) {
 	for ip := backend.NetworkCfg.BaseIP.Mask(backend.NetworkCfg.IPNet.Mask); backend.NetworkCfg.IPNet.Contains(ip); common.IncrementIP(ip) {
+		if ip[3] == 0 {
+			continue
+		}
+
 		str := ip.String()
 		if _, exists := backend.mappings[common.IPtoInt(str)]; !exists {
 			return str, nil
@@ -141,6 +144,7 @@ func (backend *Backend) fetchNetworkConfig() error {
 		}
 		backend.set("config", common.DefaultNetworkConfig.Bytes(), 0)
 		backend.NetworkCfg = common.DefaultNetworkConfig
+		backend.cfg.NetworkConfig = common.DefaultNetworkConfig
 		return nil
 	}
 	networkCfg, err := common.ParseNetworkConfig(netCfg.Value)
@@ -148,6 +152,7 @@ func (backend *Backend) fetchNetworkConfig() error {
 		return err
 	}
 	backend.NetworkCfg = networkCfg
+	backend.cfg.NetworkConfig = networkCfg
 	return nil
 }
 
@@ -252,7 +257,7 @@ func (backend *Backend) Stop() {
 }
 
 // New Backend object
-func New(cfg *config.Config) (*Backend, error) {
+func New(cfg *common.Config) (*Backend, error) {
 	var backendStore store.Store
 
 	storeCfg, err := generateStoreConfig(cfg)

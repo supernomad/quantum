@@ -1,4 +1,6 @@
 #!/bin/bash
+echo "Running go install:"
+fgt go install github.com/Supernomad/quantum && echo "PASS"
 
 echo "Running go fmt:"
 fgt go fmt ./... && echo "PASS"

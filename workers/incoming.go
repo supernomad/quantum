@@ -5,15 +5,15 @@ import (
 	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/socket"
-	"github.com/Supernomad/quantum/tun"
 )
 
 // Incoming external packet interface which handles reading packets off of a Socket object
 type Incoming struct {
-	tunnel *tun.Tun
-	sock   *socket.Socket
-	store  *backend.Backend
-	quit   chan bool
+	tunnel     socket.Socket
+	sock       socket.Socket
+	store      *backend.Backend
+	quit       chan bool
+	QueueStats []*common.Stats
 }
 
 // Resolve the incoming payload
@@ -37,6 +37,22 @@ func (incoming *Incoming) Unseal(payload *common.Payload, mapping *common.Mappin
 	return payload, true
 }
 
+// Stats ingest for the incoming payload
+func (incoming *Incoming) Stats(payload *common.Payload, mapping *common.Mapping, queue int) {
+	incoming.QueueStats[queue].Packets++
+	incoming.QueueStats[queue].Bytes += uint64(payload.Length)
+
+	if link, ok := incoming.QueueStats[queue].Links[mapping.PrivateIP]; !ok {
+		incoming.QueueStats[queue].Links[mapping.PrivateIP] = &common.Stats{
+			Packets: 1,
+			Bytes:   uint64(payload.Length),
+		}
+	} else {
+		link.Packets++
+		link.Bytes += uint64(payload.Length)
+	}
+}
+
 // Start handling packets
 func (incoming *Incoming) Start(queue int) {
 	go func() {
@@ -54,7 +70,8 @@ func (incoming *Incoming) Start(queue int) {
 			if !ok {
 				continue
 			}
-			incoming.tunnel.Write(payload, queue)
+			incoming.Stats(payload, mapping, queue)
+			incoming.tunnel.Write(payload, mapping, queue)
 		}
 	}()
 }
@@ -67,11 +84,16 @@ func (incoming *Incoming) Stop() {
 }
 
 // NewIncoming object
-func NewIncoming(privateIP string, store *backend.Backend, tunnel *tun.Tun, sock *socket.Socket) *Incoming {
+func NewIncoming(privateIP string, numWorkers int, store *backend.Backend, tunnel socket.Socket, sock socket.Socket) *Incoming {
+	stats := make([]*common.Stats, numWorkers)
+	for i := 0; i < numWorkers; i++ {
+		stats[i] = common.NewStats()
+	}
 	return &Incoming{
-		tunnel: tunnel,
-		sock:   sock,
-		store:  store,
-		quit:   make(chan bool),
+		tunnel:     tunnel,
+		sock:       sock,
+		store:      store,
+		quit:       make(chan bool),
+		QueueStats: stats,
 	}
 }
