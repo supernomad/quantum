@@ -19,7 +19,6 @@ type Outgoing struct {
 	QueueStats []*common.Stats
 }
 
-// Resolve the outgoing payload
 func (outgoing *Outgoing) resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
 	dip := binary.LittleEndian.Uint32(payload.Packet[16:20])
 
@@ -31,7 +30,6 @@ func (outgoing *Outgoing) resolve(payload *common.Payload) (*common.Payload, *co
 	return payload, nil, false
 }
 
-// Seal the outgoing payload
 func (outgoing *Outgoing) seal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
 	_, err := rand.Read(payload.Nonce)
 	if err != nil {
@@ -42,7 +40,6 @@ func (outgoing *Outgoing) seal(payload *common.Payload, mapping *common.Mapping)
 	return payload, true
 }
 
-// Stats ingest for the outgoing packet
 func (outgoing *Outgoing) stats(payload *common.Payload, mapping *common.Mapping, queue int) {
 	outgoing.QueueStats[queue].Packets++
 	outgoing.QueueStats[queue].Bytes += uint64(payload.Length)

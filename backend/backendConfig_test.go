@@ -11,9 +11,9 @@ func TestGenerateStoreConfig(t *testing.T) {
 		Username:    "hello",
 		Password:    "goodbye",
 		TLSEnabled:  true,
-		TLSKey:      "../certs/quantum1.quantum.dev.key",
-		TLSCert:     "../certs/quantum1.quantum.dev.crt",
-		TLSCA:       "../certs/ca.crt",
+		TLSKey:      "../bin/certs/quantum1.quantum.dev.key",
+		TLSCert:     "../bin/certs/quantum1.quantum.dev.crt",
+		TLSCA:       "../bin/certs/ca.crt",
 	}
 	storeCfg, err := generateStoreConfig(cfg)
 	if err != nil {
