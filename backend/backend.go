@@ -7,6 +7,7 @@ import (
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/consul"
 	"github.com/docker/libkv/store/etcd"
+	"github.com/docker/libkv/store/mock"
 	"github.com/go-playground/log"
 	"path"
 	"time"
@@ -20,6 +21,7 @@ func init() {
 const (
 	consulStore string        = "consul"
 	etcdStore   string        = "etcd"
+	mockStore   string        = "mock"
 	lockTTL     time.Duration = 10
 )
 
@@ -271,6 +273,8 @@ func New(cfg *common.Config) (*Backend, error) {
 		backendStore, err = libkv.NewStore(store.CONSUL, cfg.Endpoints, storeCfg)
 	case etcdStore:
 		backendStore, err = libkv.NewStore(store.ETCD, cfg.Endpoints, storeCfg)
+	case mockStore:
+		backendStore, err = mock.New(cfg.Endpoints, storeCfg)
 	default:
 		log.Error("Configured 'Datastore' is not supported by quantum.")
 		return nil, errors.New("Configured 'Datastore' is not supported by quantum.")
