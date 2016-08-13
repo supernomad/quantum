@@ -56,12 +56,14 @@ type Config struct {
 	Password    string
 
 	NetworkConfig *NetworkConfig
+	notSet        map[string]bool
 }
 
 func (cfg *Config) handleDefaultString(name, def string) string {
 	env := "QUANTUM_" + strings.ToUpper(strings.Replace(name, "-", "_", 10))
 	output := os.Getenv(env)
 	if output == "" {
+		cfg.notSet[name] = true
 		return def
 	}
 	return output
@@ -153,61 +155,63 @@ func (cfg *Config) handleComputed() {
 
 func (cfg *Config) parseFileData(data map[string]string) error {
 	for k, v := range data {
-		switch k {
-		case "conf-file":
-			cfg.ConfFile = v
-		case "interface-name":
-			cfg.InterfaceName = v
-		case "private-ip":
-			cfg.PrivateIP = v
-		case "public-ip":
-			cfg.PublicIP = v
-		case "listen-address":
-			cfg.ListenAddress = v
-		case "listen-port":
-			i, err := strconv.Atoi(v)
-			if err != nil {
-				return err
+		if _, ok := cfg.notSet[k]; ok {
+			switch k {
+			case "conf-file":
+				cfg.ConfFile = v
+			case "interface-name":
+				cfg.InterfaceName = v
+			case "private-ip":
+				cfg.PrivateIP = v
+			case "public-ip":
+				cfg.PublicIP = v
+			case "listen-address":
+				cfg.ListenAddress = v
+			case "listen-port":
+				i, err := strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+				cfg.ListenPort = i
+			case "prefix":
+				cfg.Prefix = v
+			case "data-dir":
+				cfg.DataDir = v
+			case "log-dir":
+				cfg.LogDir = v
+			case "stats-window":
+				dur, err := time.ParseDuration(v)
+				if err != nil {
+					return err
+				}
+				cfg.StatsWindow = dur
+			case "sync-interval":
+				dur, err := time.ParseDuration(v)
+				if err != nil {
+					return err
+				}
+				cfg.SyncInterval = dur
+			case "refresh-interval":
+				dur, err := time.ParseDuration(v)
+				if err != nil {
+					return err
+				}
+				cfg.RefreshInterval = dur
+			case "tls-cert":
+				cfg.TLSCert = v
+			case "tls-key":
+				cfg.TLSKey = v
+			case "tls-ca-cert":
+				cfg.TLSCA = v
+			case "datastore":
+				cfg.Datastore = v
+			case "endpoints":
+				cfg.endpoints = v
+			case "username":
+				cfg.Username = v
+			case "password":
+				cfg.Password = v
 			}
-			cfg.ListenPort = i
-		case "prefix":
-			cfg.Prefix = v
-		case "data-dir":
-			cfg.DataDir = v
-		case "log-dir":
-			cfg.LogDir = v
-		case "stats-window":
-			dur, err := time.ParseDuration(v)
-			if err != nil {
-				return err
-			}
-			cfg.StatsWindow = dur
-		case "sync-interval":
-			dur, err := time.ParseDuration(v)
-			if err != nil {
-				return err
-			}
-			cfg.SyncInterval = dur
-		case "refresh-interval":
-			dur, err := time.ParseDuration(v)
-			if err != nil {
-				return err
-			}
-			cfg.RefreshInterval = dur
-		case "tls-cert":
-			cfg.TLSCert = v
-		case "tls-key":
-			cfg.TLSKey = v
-		case "tls-ca-cert":
-			cfg.TLSCA = v
-		case "datastore":
-			cfg.Datastore = v
-		case "endpoints":
-			cfg.endpoints = v
-		case "username":
-			cfg.Username = v
-		case "password":
-			cfg.Password = v
 		}
 	}
 	return nil
@@ -238,7 +242,7 @@ func (cfg *Config) handleFile() error {
 
 // NewConfig generates a new config object
 func NewConfig() (*Config, error) {
-	cfg := &Config{}
+	cfg := &Config{notSet: make(map[string]bool)}
 	cfg.handleCli()
 	err := cfg.handleFile()
 	if err != nil {

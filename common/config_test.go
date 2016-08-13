@@ -6,10 +6,13 @@ import (
 	"time"
 )
 
+const confFile = "../bin/quantum-test.yml"
+
 func TestNewConfig(t *testing.T) {
 	os.Setenv("QUANTUM_INTERFACE_NAME", "different")
 	os.Setenv("QUANTUM_STATS_WINDOW", "10s")
 	os.Setenv("QUANTUM_LISTEN_PORT", "1")
+	os.Setenv("QUANTUM_CONF_FILE", confFile)
 	cfg, err := NewConfig()
 	if err != nil {
 		t.Fatalf("NewConfig returned an error, %s", err)
