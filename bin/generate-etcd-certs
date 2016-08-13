@@ -1,22 +1,22 @@
 #!/bin/bash
 
-rm -r certs
-mkdir -p certs/newcerts
-cd certs
+rm -r $GOPATH/src/github.com/Supernomad/quantum/bin/certs
+mkdir -p $GOPATH/src/github.com/Supernomad/quantum/bin/certs/newcerts
+cp $GOPATH/src/github.com/Supernomad/quantum/bin/openssl.cnf $GOPATH/src/github.com/Supernomad/quantum/bin/certs/openssl.cnf
 
-# Grab the openssl config to use to generate the correct certificates
-wget https://raw.githubusercontent.com/kelseyhightower/etcd-production-setup/master/openssl.cnf
+cd $GOPATH/src/github.com/Supernomad/quantum/bin/certs
+
 touch index.txt
 echo '01' > serial
+
+export SAN="IP:127.0.0.1, IP:172.18.0.4"
 
 # Create CA cert
 openssl req -config openssl.cnf -new -x509 -extensions v3_ca -keyout ca.key -out ca.crt -subj "/C=US/ST=New York/L=New York City/O=quantum/OU=development/CN=ca.quantum.dev"
 
 # Create and sign etcd server certificate
-export SAN="IP:127.0.0.1, IP:172.18.0.4"
 openssl req -config openssl.cnf -new -nodes -keyout etcd.quantum.dev.key -out etcd.quantum.dev.csr -subj "/C=US/ST=New York/L=New York City/O=quantum/OU=development/CN=etcd.quantum.dev"
 openssl ca -config openssl.cnf -extensions etcd_server -keyfile ca.key -cert ca.crt -out etcd.quantum.dev.crt -infiles etcd.quantum.dev.csr
-unset SAN
 
 # Create and sign etcd client certificates
 openssl req -config openssl.cnf -new -nodes -keyout quantum0.quantum.dev.key -out quantum0.quantum.dev.csr -subj "/C=US/ST=New York/L=New York City/O=quantum/OU=development/CN=quantum0.quantum.dev"
@@ -24,3 +24,6 @@ openssl ca -config openssl.cnf -extensions etcd_client -keyfile ca.key -cert ca.
 
 openssl req -config openssl.cnf -new -nodes -keyout quantum1.quantum.dev.key -out quantum1.quantum.dev.csr -subj "/C=US/ST=New York/L=New York City/O=quantum/OU=development/CN=quantum1.quantum.dev"
 openssl ca -config openssl.cnf -extensions etcd_client -keyfile ca.key -cert ca.crt -out quantum1.quantum.dev.crt -infiles quantum1.quantum.dev.csr
+
+openssl req -config openssl.cnf -new -nodes -keyout quantum2.quantum.dev.key -out quantum2.quantum.dev.csr -subj "/C=US/ST=New York/L=New York City/O=quantum/OU=development/CN=quantum2.quantum.dev"
+openssl ca -config openssl.cnf -extensions etcd_client -keyfile ca.key -cert ca.crt -out quantum2.quantum.dev.crt -infiles quantum2.quantum.dev.csr

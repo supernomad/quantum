@@ -20,7 +20,7 @@ type Outgoing struct {
 }
 
 // Resolve the outgoing payload
-func (outgoing *Outgoing) Resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
+func (outgoing *Outgoing) resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
 	dip := binary.LittleEndian.Uint32(payload.Packet[16:20])
 
 	if mapping, ok := outgoing.store.GetMapping(dip); ok {
@@ -32,7 +32,7 @@ func (outgoing *Outgoing) Resolve(payload *common.Payload) (*common.Payload, *co
 }
 
 // Seal the outgoing payload
-func (outgoing *Outgoing) Seal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
+func (outgoing *Outgoing) seal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
 	_, err := rand.Read(payload.Nonce)
 	if err != nil {
 		return payload, false
@@ -43,7 +43,7 @@ func (outgoing *Outgoing) Seal(payload *common.Payload, mapping *common.Mapping)
 }
 
 // Stats ingest for the outgoing packet
-func (outgoing *Outgoing) Stats(payload *common.Payload, mapping *common.Mapping, queue int) {
+func (outgoing *Outgoing) stats(payload *common.Payload, mapping *common.Mapping, queue int) {
 	outgoing.QueueStats[queue].Packets++
 	outgoing.QueueStats[queue].Bytes += uint64(payload.Length)
 
@@ -67,15 +67,15 @@ func (outgoing *Outgoing) Start(queue int) {
 			if !ok {
 				continue
 			}
-			payload, mapping, ok := outgoing.Resolve(payload)
+			payload, mapping, ok := outgoing.resolve(payload)
 			if !ok {
 				continue
 			}
-			payload, ok = outgoing.Seal(payload, mapping)
+			payload, ok = outgoing.seal(payload, mapping)
 			if !ok {
 				continue
 			}
-			outgoing.Stats(payload, mapping, queue)
+			outgoing.stats(payload, mapping, queue)
 			outgoing.sock.Write(payload, mapping, queue)
 		}
 	}()

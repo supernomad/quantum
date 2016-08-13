@@ -16,8 +16,7 @@ type Incoming struct {
 	QueueStats []*common.Stats
 }
 
-// Resolve the incoming payload
-func (incoming *Incoming) Resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
+func (incoming *Incoming) resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
 	dip := binary.LittleEndian.Uint32(payload.IPAddress)
 
 	if mapping, ok := incoming.store.GetMapping(dip); ok {
@@ -27,8 +26,7 @@ func (incoming *Incoming) Resolve(payload *common.Payload) (*common.Payload, *co
 	return payload, nil, false
 }
 
-// Unseal the incoming payload
-func (incoming *Incoming) Unseal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
+func (incoming *Incoming) unseal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
 	_, err := mapping.Cipher.Open(payload.Packet[:0], payload.Nonce, payload.Packet, nil)
 	if err != nil {
 		return payload, false
@@ -37,8 +35,7 @@ func (incoming *Incoming) Unseal(payload *common.Payload, mapping *common.Mappin
 	return payload, true
 }
 
-// Stats ingest for the incoming payload
-func (incoming *Incoming) Stats(payload *common.Payload, mapping *common.Mapping, queue int) {
+func (incoming *Incoming) stats(payload *common.Payload, mapping *common.Mapping, queue int) {
 	incoming.QueueStats[queue].Packets++
 	incoming.QueueStats[queue].Bytes += uint64(payload.Length)
 
@@ -62,15 +59,15 @@ func (incoming *Incoming) Start(queue int) {
 			if !ok {
 				continue
 			}
-			payload, mapping, ok := incoming.Resolve(payload)
+			payload, mapping, ok := incoming.resolve(payload)
 			if !ok {
 				continue
 			}
-			payload, ok = incoming.Unseal(payload, mapping)
+			payload, ok = incoming.unseal(payload, mapping)
 			if !ok {
 				continue
 			}
-			incoming.Stats(payload, mapping, queue)
+			incoming.stats(payload, mapping, queue)
 			incoming.tunnel.Write(payload, mapping, queue)
 		}
 	}()
