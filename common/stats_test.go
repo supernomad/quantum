@@ -21,4 +21,8 @@ func TestNewStats(t *testing.T) {
 	if stats.Links == nil {
 		t.Fatalf("NewStats did not return the correct default for Links, got: %v, expected: %v", stats.Links, make(map[string]*Stats))
 	}
+	str := stats.String()
+	if str == "" {
+		t.Fatalf("String didn't return the correct value.")
+	}
 }
