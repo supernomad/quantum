@@ -8,11 +8,8 @@ const (
 	// UDPSock socket type
 	UDPSock int = 0
 	// TCPSock socket type
-	TCPSock int = 1
-	// TUNSock socket type
-	TUNSock int = 2
-	// TAPSock socket type
-	TAPSock int = 3
+	TCPSock  int = 1
+	mockSock int = 2
 )
 
 // Socket is a generic multi-queue socket interface
@@ -29,8 +26,8 @@ func New(kind int, cfg *common.Config) Socket {
 	switch kind {
 	case UDPSock:
 		return newUDP(cfg)
-	case TUNSock:
-		return newTUN(cfg)
+	case mockSock:
+		return newMock(cfg)
 	}
 	return nil
 }

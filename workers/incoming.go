@@ -4,12 +4,13 @@ import (
 	"encoding/binary"
 	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
+	"github.com/Supernomad/quantum/inet"
 	"github.com/Supernomad/quantum/socket"
 )
 
 // Incoming external packet interface which handles reading packets off of a Socket object
 type Incoming struct {
-	tunnel     socket.Socket
+	tunnel     inet.Interface
 	sock       socket.Socket
 	store      *backend.Backend
 	quit       chan bool
@@ -68,7 +69,7 @@ func (incoming *Incoming) Start(queue int) {
 				continue
 			}
 			incoming.stats(payload, mapping, queue)
-			incoming.tunnel.Write(payload, mapping, queue)
+			incoming.tunnel.Write(payload, queue)
 		}
 	}()
 }
@@ -81,7 +82,7 @@ func (incoming *Incoming) Stop() {
 }
 
 // NewIncoming object
-func NewIncoming(privateIP string, numWorkers int, store *backend.Backend, tunnel socket.Socket, sock socket.Socket) *Incoming {
+func NewIncoming(privateIP string, numWorkers int, store *backend.Backend, tunnel inet.Interface, sock socket.Socket) *Incoming {
 	stats := make([]*common.Stats, numWorkers)
 	for i := 0; i < numWorkers; i++ {
 		stats[i] = common.NewStats()

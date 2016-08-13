@@ -4,6 +4,7 @@ import (
 	"github.com/Supernomad/quantum/agg"
 	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
+	"github.com/Supernomad/quantum/inet"
 	"github.com/Supernomad/quantum/socket"
 	"github.com/Supernomad/quantum/workers"
 	"github.com/go-playground/log"
@@ -35,7 +36,7 @@ func main() {
 	handleError(err)
 	defer store.Stop()
 
-	tunnel := socket.New(socket.TUNSock, cfg)
+	tunnel := inet.New(inet.TUNInterface, cfg)
 	err = tunnel.Open()
 	handleError(err)
 	defer tunnel.Close()

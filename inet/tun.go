@@ -1,4 +1,4 @@
-package socket
+package inet
 
 import (
 	"github.com/Supernomad/quantum/common"
@@ -76,7 +76,7 @@ func (tun *Tun) Read(buf []byte, queue int) (*common.Payload, bool) {
 }
 
 // Write a packet to the tun
-func (tun *Tun) Write(payload *common.Payload, mapping *common.Mapping, queue int) bool {
+func (tun *Tun) Write(payload *common.Payload, queue int) bool {
 	_, err := syscall.Write(tun.queues[queue], payload.Packet)
 	if err != nil {
 		return false
@@ -84,7 +84,7 @@ func (tun *Tun) Write(payload *common.Payload, mapping *common.Mapping, queue in
 	return true
 }
 
-func newTUN(cfg *common.Config) Socket {
+func newTUN(cfg *common.Config) Interface {
 	queues := make([]int, cfg.NumWorkers)
 	name := cfg.InterfaceName
 
