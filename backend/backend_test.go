@@ -25,6 +25,9 @@ func TestNew(t *testing.T) {
 	var err error
 	backend, err = New(cfg)
 	if err != nil {
-		t.Fatalf("generateStoreConfig returned an error: %v", err)
+		t.Fatalf("New returned an error: %v", err)
+	}
+	if backend == nil {
+		t.Fatal("New returned an empty backend.")
 	}
 }
