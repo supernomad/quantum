@@ -115,6 +115,27 @@ func (agg *Agg) sendData(statsl *StatsLog) error {
 	return nil
 }
 
+func (agg *Agg) pipeline() {
+	elapsed := time.Since(agg.start)
+	elapsedSec := elapsed.Seconds()
+
+	incomingStats, outgoingStats := agg.aggData()
+	agg.diffData(elapsedSec, incomingStats, outgoingStats)
+
+	statsl := &StatsLog{
+		TimeSpan: elapsedSec,
+
+		TxStats: outgoingStats,
+		RxStats: incomingStats,
+	}
+
+	agg.lastIncomingStats = incomingStats
+	agg.lastOutgoingStats = outgoingStats
+
+	agg.sendData(statsl)
+	agg.start = time.Now()
+}
+
 // Start aggregating and sending stats data
 func (agg *Agg) Start() {
 	go func() {
@@ -123,24 +144,7 @@ func (agg *Agg) Start() {
 			case <-agg.stop:
 				return
 			case <-agg.ticker.C:
-				elapsed := time.Since(agg.start)
-				elapsedSec := elapsed.Seconds()
-
-				incomingStats, outgoingStats := agg.aggData()
-				agg.diffData(elapsedSec, incomingStats, outgoingStats)
-
-				statsl := &StatsLog{
-					TimeSpan: elapsedSec,
-
-					TxStats: outgoingStats,
-					RxStats: incomingStats,
-				}
-
-				agg.lastIncomingStats = incomingStats
-				agg.lastOutgoingStats = outgoingStats
-
-				agg.sendData(statsl)
-				agg.start = time.Now()
+				agg.pipeline()
 			}
 		}
 	}()
