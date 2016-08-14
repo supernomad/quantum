@@ -12,7 +12,7 @@ import (
 type Incoming struct {
 	tunnel     inet.Interface
 	sock       socket.Socket
-	store      *backend.Backend
+	store      backend.Backend
 	quit       chan bool
 	QueueStats []*common.Stats
 }
@@ -24,13 +24,13 @@ func (incoming *Incoming) resolve(payload *common.Payload) (*common.Payload, *co
 		return payload, mapping, true
 	}
 
-	return payload, nil, false
+	return nil, nil, false
 }
 
 func (incoming *Incoming) unseal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
 	_, err := mapping.Cipher.Open(payload.Packet[:0], payload.Nonce, payload.Packet, nil)
 	if err != nil {
-		return payload, false
+		return nil, false
 	}
 
 	return payload, true
@@ -51,25 +51,29 @@ func (incoming *Incoming) stats(payload *common.Payload, mapping *common.Mapping
 	}
 }
 
+func (incoming *Incoming) pipeline(buf []byte, queue int) {
+	payload, ok := incoming.sock.Read(buf, queue)
+	if !ok {
+		return
+	}
+	payload, mapping, ok := incoming.resolve(payload)
+	if !ok {
+		return
+	}
+	payload, ok = incoming.unseal(payload, mapping)
+	if !ok {
+		return
+	}
+	incoming.stats(payload, mapping, queue)
+	incoming.tunnel.Write(payload, queue)
+}
+
 // Start handling packets
 func (incoming *Incoming) Start(queue int) {
 	go func() {
 		buf := make([]byte, common.MaxPacketLength)
 		for {
-			payload, ok := incoming.sock.Read(buf, queue)
-			if !ok {
-				continue
-			}
-			payload, mapping, ok := incoming.resolve(payload)
-			if !ok {
-				continue
-			}
-			payload, ok = incoming.unseal(payload, mapping)
-			if !ok {
-				continue
-			}
-			incoming.stats(payload, mapping, queue)
-			incoming.tunnel.Write(payload, queue)
+			incoming.pipeline(buf, queue)
 		}
 	}()
 }
@@ -82,7 +86,7 @@ func (incoming *Incoming) Stop() {
 }
 
 // NewIncoming object
-func NewIncoming(privateIP string, numWorkers int, store *backend.Backend, tunnel inet.Interface, sock socket.Socket) *Incoming {
+func NewIncoming(privateIP string, numWorkers int, store backend.Backend, tunnel inet.Interface, sock socket.Socket) *Incoming {
 	stats := make([]*common.Stats, numWorkers)
 	for i := 0; i < numWorkers; i++ {
 		stats[i] = common.NewStats()

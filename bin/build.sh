@@ -1,4 +1,8 @@
 #!/bin/bash
+echo "Exporting GOMAXPROCS=1"
+LASTGOMAXPROCS=$GOMAXPROCS
+export GOMAXPROCS=1
+
 echo "Running go install:"
 fgt go install github.com/Supernomad/quantum && echo "PASS"
 
@@ -13,3 +17,6 @@ fgt golint ./... && echo "PASS"
 
 echo "Running go test:"
 go test -bench . -benchmem ./...
+
+echo "Reseting GOMAXPROCS to $LASTGOMAXPROCS"
+export GOMAXPROCS=$LASTGOMAXPROCS

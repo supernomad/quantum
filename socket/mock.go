@@ -15,12 +15,12 @@ func (mock *Mock) Name() string {
 
 // Read a packet off the socket
 func (mock *Mock) Read(buf []byte, queue int) (*common.Payload, bool) {
-	return nil, false
+	return common.NewSockPayload(buf, len(buf)), true
 }
 
 // Write a packet to the socket
 func (mock *Mock) Write(payload *common.Payload, mapping *common.Mapping, queue int) bool {
-	return false
+	return true
 }
 
 // Open the socket

@@ -2,24 +2,10 @@ package inet
 
 import (
 	"github.com/Supernomad/quantum/common"
-	"github.com/vishvananda/netlink"
-	"net"
 	"strings"
 	"syscall"
 	"unsafe"
 )
-
-const (
-	ifNameSize    = 16
-	iffTun        = 0x0001
-	iffNoPi       = 0x1000
-	iffMultiQueue = 0x0100
-)
-
-type ifReq struct {
-	Name  [ifNameSize]byte
-	Flags uint16
-}
 
 // Tun interface
 type Tun struct {
@@ -49,7 +35,7 @@ func (tun *Tun) Open() error {
 		}
 	}
 
-	err := initTUN(tun.name, tun.cfg.PrivateIP, tun.cfg.NetworkConfig)
+	err := initInterface(tun.name, tun.cfg.PrivateIP, tun.cfg.NetworkConfig)
 	if err != nil {
 		return err
 	}
@@ -89,37 +75,6 @@ func newTUN(cfg *common.Config) Interface {
 	name := cfg.InterfaceName
 
 	return &Tun{name: name, cfg: cfg, queues: queues}
-}
-
-func initTUN(name, src string, networkCfg *common.NetworkConfig) error {
-	link, err := netlink.LinkByName(name)
-	if err != nil {
-		return err
-	}
-	err = netlink.LinkSetUp(link)
-	if err != nil {
-		return err
-	}
-	err = netlink.LinkSetMTU(link, common.MTU)
-	if err != nil {
-		return err
-	}
-	addr, err := netlink.ParseAddr(src + "/32")
-	if err != nil {
-		return err
-	}
-	err = netlink.AddrAdd(link, addr)
-	if err != nil {
-		return err
-	}
-	route := &netlink.Route{
-		LinkIndex: link.Attrs().Index,
-		Scope:     netlink.SCOPE_LINK,
-		Protocol:  2,
-		Src:       net.ParseIP(src),
-		Dst:       networkCfg.IPNet,
-	}
-	return netlink.RouteAdd(route)
 }
 
 func createTUN(name string) (string, int, error) {

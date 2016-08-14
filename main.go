@@ -29,7 +29,7 @@ func main() {
 	cfg, err := common.NewConfig()
 	handleError(err)
 
-	store, err := backend.New(cfg)
+	store, err := backend.New(backend.LIBKV, cfg)
 	handleError(err)
 
 	err = store.Init()
@@ -41,7 +41,7 @@ func main() {
 	handleError(err)
 	defer tunnel.Close()
 
-	sock := socket.New(socket.UDPSock, cfg)
+	sock := socket.New(socket.UDPSocket, cfg)
 	err = sock.Open()
 	handleError(err)
 	defer sock.Close()
@@ -63,7 +63,7 @@ func main() {
 	}
 
 	log.Info("Listening on TUN device:  ", tunnel.Name())
-	log.Info("TUN network space:        ", store.NetworkCfg.Network)
+	log.Info("TUN network space:        ", cfg.NetworkConfig.Network)
 	log.Info("TUN private IP address:   ", cfg.PrivateIP)
 	log.Info("TUN public IP address:    ", cfg.PublicIP)
 	log.Info("Listening on UDP address: ", cfg.ListenAddress+":"+strconv.Itoa(cfg.ListenPort))

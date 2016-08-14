@@ -15,12 +15,12 @@ func (mock *Mock) Name() string {
 
 // Read a packet off the interface
 func (mock *Mock) Read(buf []byte, queue int) (*common.Payload, bool) {
-	return nil, false
+	return common.NewTunPayload(buf, common.MTU), true
 }
 
 // Write a packet to the interface
 func (mock *Mock) Write(payload *common.Payload, queue int) bool {
-	return false
+	return true
 }
 
 // Open the interface

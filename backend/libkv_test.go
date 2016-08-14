@@ -5,9 +5,9 @@ import (
 	"testing"
 )
 
-var backend *Backend
+var backend Backend
 
-func TestNew(t *testing.T) {
+func TestNewLibkv(t *testing.T) {
 	cfg := &common.Config{
 		Datastore:   "mock",
 		Prefix:      "quantum",
@@ -23,11 +23,11 @@ func TestNew(t *testing.T) {
 		TLSCA:       "../bin/certs/ca.crt",
 	}
 	var err error
-	backend, err = New(cfg)
+	backend, err = newLibkv(cfg)
 	if err != nil {
-		t.Fatalf("New returned an error: %v", err)
+		t.Fatalf("newLibkv returned an error: %v", err)
 	}
 	if backend == nil {
-		t.Fatal("New returned an empty backend.")
+		t.Fatal("newLibkv returned an empty backend.")
 	}
 }

@@ -15,7 +15,7 @@ type Outgoing struct {
 	tunnel     inet.Interface
 	sock       socket.Socket
 	privateIP  []byte
-	store      *backend.Backend
+	store      backend.Backend
 	quit       chan bool
 	QueueStats []*common.Stats
 }
@@ -28,13 +28,13 @@ func (outgoing *Outgoing) resolve(payload *common.Payload) (*common.Payload, *co
 		return payload, mapping, true
 	}
 
-	return payload, nil, false
+	return nil, nil, false
 }
 
 func (outgoing *Outgoing) seal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
 	_, err := rand.Read(payload.Nonce)
 	if err != nil {
-		return payload, false
+		return nil, false
 	}
 
 	mapping.Cipher.Seal(payload.Packet[:0], payload.Nonce, payload.Packet, nil)
@@ -56,25 +56,29 @@ func (outgoing *Outgoing) stats(payload *common.Payload, mapping *common.Mapping
 	}
 }
 
+func (outgoing *Outgoing) pipeline(buf []byte, queue int) bool {
+	payload, ok := outgoing.tunnel.Read(buf, queue)
+	if !ok {
+		return ok
+	}
+	payload, mapping, ok := outgoing.resolve(payload)
+	if !ok {
+		return ok
+	}
+	payload, ok = outgoing.seal(payload, mapping)
+	if !ok {
+		return ok
+	}
+	outgoing.stats(payload, mapping, queue)
+	return outgoing.sock.Write(payload, mapping, queue)
+}
+
 // Start handling packets
 func (outgoing *Outgoing) Start(queue int) {
 	go func() {
 		buf := make([]byte, common.MaxPacketLength)
 		for {
-			payload, ok := outgoing.tunnel.Read(buf, queue)
-			if !ok {
-				continue
-			}
-			payload, mapping, ok := outgoing.resolve(payload)
-			if !ok {
-				continue
-			}
-			payload, ok = outgoing.seal(payload, mapping)
-			if !ok {
-				continue
-			}
-			outgoing.stats(payload, mapping, queue)
-			outgoing.sock.Write(payload, mapping, queue)
+			outgoing.pipeline(buf, queue)
 		}
 	}()
 }
@@ -87,7 +91,7 @@ func (outgoing *Outgoing) Stop() {
 }
 
 // NewOutgoing object
-func NewOutgoing(privateIP string, numWorkers int, store *backend.Backend, tunnel inet.Interface, sock socket.Socket) *Outgoing {
+func NewOutgoing(privateIP string, numWorkers int, store backend.Backend, tunnel inet.Interface, sock socket.Socket) *Outgoing {
 	stats := make([]*common.Stats, numWorkers)
 	for i := 0; i < numWorkers; i++ {
 		stats[i] = common.NewStats()

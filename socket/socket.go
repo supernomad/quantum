@@ -5,11 +5,12 @@ import (
 )
 
 const (
-	// UDPSock socket type
-	UDPSock int = 0
-	// TCPSock socket type
-	TCPSock  int = 1
-	mockSock int = 2
+	// UDPSocket socket type
+	UDPSocket int = 0
+	// TCPSocket socket type
+	TCPSocket int = 1
+	// MOCKSocket socket type
+	MOCKSocket int = 2
 )
 
 // Socket is a generic multi-queue socket interface
@@ -24,9 +25,9 @@ type Socket interface {
 // New Socket object
 func New(kind int, cfg *common.Config) Socket {
 	switch kind {
-	case UDPSock:
+	case UDPSocket:
 		return newUDP(cfg)
-	case mockSock:
+	case MOCKSocket:
 		return newMock(cfg)
 	}
 	return nil
