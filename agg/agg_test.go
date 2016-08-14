@@ -3,6 +3,7 @@ package agg
 import (
 	"github.com/Supernomad/quantum/common"
 	"testing"
+	"time"
 )
 
 func TestAgg(t *testing.T) {
@@ -11,8 +12,10 @@ func TestAgg(t *testing.T) {
 		stats[i] = common.NewStats()
 	}
 	agg := New(&common.Config{
-		StatsWindow: 10,
+		StatsWindow: 1,
 		NumWorkers:  3,
 	}, stats, stats)
-	agg.pipeline()
+	agg.Start()
+	time.Sleep(2 * time.Second)
+	agg.Stop()
 }
