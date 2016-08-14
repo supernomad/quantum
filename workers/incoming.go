@@ -51,21 +51,21 @@ func (incoming *Incoming) stats(payload *common.Payload, mapping *common.Mapping
 	}
 }
 
-func (incoming *Incoming) pipeline(buf []byte, queue int) {
+func (incoming *Incoming) pipeline(buf []byte, queue int) bool {
 	payload, ok := incoming.sock.Read(buf, queue)
 	if !ok {
-		return
+		return ok
 	}
 	payload, mapping, ok := incoming.resolve(payload)
 	if !ok {
-		return
+		return ok
 	}
 	payload, ok = incoming.unseal(payload, mapping)
 	if !ok {
-		return
+		return ok
 	}
 	incoming.stats(payload, mapping, queue)
-	incoming.tunnel.Write(payload, queue)
+	return incoming.tunnel.Write(payload, queue)
 }
 
 // Start handling packets

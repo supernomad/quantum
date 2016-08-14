@@ -96,3 +96,19 @@ func BenchmarkIncomingPipeline(b *testing.B) {
 	}
 
 }
+
+func TestIncomingPipeline(t *testing.T) {
+	buf := make([]byte, common.MaxPacketLength)
+	rand.Read(buf)
+
+	payload := common.NewTunPayload(buf, common.MTU)
+	binary.LittleEndian.PutUint32(payload.IPAddress, intLocalIP)
+
+	if sealed, pass := outgoing.seal(payload, testMapping); pass {
+		if !incoming.pipeline(sealed.Raw, 0) {
+			panic("Somthing is wrong.")
+		}
+	} else {
+		panic("Seal failed something is wrong")
+	}
+}

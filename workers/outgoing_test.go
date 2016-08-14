@@ -83,3 +83,11 @@ func BenchmarkOutgoingPipeline(b *testing.B) {
 
 	benchmarkOutgoingPipeline(buf, 0, b)
 }
+
+func TestOutgoingPipeline(t *testing.T) {
+	buf := make([]byte, common.MaxPacketLength)
+	binary.LittleEndian.PutUint32(buf[common.PacketStart+16:common.PacketStart+20], intRemoteIP)
+	if !outgoing.pipeline(buf, 0) {
+		panic("Somthing is wrong.")
+	}
+}
