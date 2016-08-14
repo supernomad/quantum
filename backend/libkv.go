@@ -1,6 +1,8 @@
 package backend
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"github.com/Supernomad/quantum/common"
 	"github.com/docker/libkv"
@@ -9,6 +11,7 @@ import (
 	"github.com/docker/libkv/store/etcd"
 	"github.com/docker/libkv/store/mock"
 	"github.com/go-playground/log"
+	"io/ioutil"
 	"path"
 	"time"
 )
@@ -37,6 +40,38 @@ type Libkv struct {
 	mappings     map[uint32]*common.Mapping
 
 	stop chan struct{}
+}
+
+func generateStoreConfig(cfg *common.Config) (*store.Config, error) {
+	storeCfg := &store.Config{PersistConnection: true}
+
+	if cfg.AuthEnabled {
+		storeCfg.Username = cfg.Username
+		storeCfg.Password = cfg.Password
+	}
+
+	if cfg.TLSEnabled {
+		storeCfg.TLS = &tls.Config{}
+		if cfg.TLSKey != "" && cfg.TLSCert != "" {
+			cert, err := tls.LoadX509KeyPair(cfg.TLSCert, cfg.TLSKey)
+			if err != nil {
+				return nil, err
+			}
+			storeCfg.TLS.Certificates = []tls.Certificate{cert}
+			storeCfg.TLS.BuildNameToCertificate()
+		}
+		if cfg.TLSCA != "" {
+			cert, err := ioutil.ReadFile(cfg.TLSCA)
+			if err != nil {
+				return nil, err
+			}
+			storeCfg.TLS.RootCAs = x509.NewCertPool()
+			storeCfg.TLS.RootCAs.AppendCertsFromPEM(cert)
+			storeCfg.TLS.BuildNameToCertificate()
+		}
+	}
+
+	return storeCfg, nil
 }
 
 func (libkv *Libkv) getKey(key string) string {
