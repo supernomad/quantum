@@ -9,7 +9,6 @@ import (
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/consul"
 	"github.com/docker/libkv/store/etcd"
-	"github.com/docker/libkv/store/mock"
 	"github.com/go-playground/log"
 	"io/ioutil"
 	"path"
@@ -308,8 +307,6 @@ func newLibkv(cfg *common.Config) (Backend, error) {
 		libkvStore, err = libkv.NewStore(store.CONSUL, cfg.Endpoints, storeCfg)
 	case etcdStore:
 		libkvStore, err = libkv.NewStore(store.ETCD, cfg.Endpoints, storeCfg)
-	case mockStore:
-		libkvStore, err = mock.New(cfg.Endpoints, storeCfg)
 	default:
 		log.Error("Configured 'Datastore' is not supported by quantum.")
 		return nil, errors.New("Configured 'Datastore' is not supported by quantum.")

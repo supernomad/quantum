@@ -8,7 +8,6 @@ before_install:
   - go get github.com/mattn/goveralls
   - go get github.com/golang/lint/golint
   - go get github.com/GeertJohan/fgt
-  - go get github.com/stretchr/testify/mock
 
 script:
   - fgt go install github.com/Supernomad/quantum
