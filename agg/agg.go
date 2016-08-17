@@ -26,84 +26,46 @@ type StatSink interface {
 	SendStats(statsl *StatsLog) error
 }
 
-func (agg *Agg) aggData() (incomingStats *common.Stats, outgoingStats *common.Stats) {
-	incomingStats = common.NewStats()
-	outgoingStats = common.NewStats()
+func aggregateStats(stats []*common.Stats) *common.Stats {
+	aggStats := common.NewStats()
+	for i := 0; i < len(stats); i++ {
+		aggStats.Packets += stats[i].Packets
+		aggStats.Bytes += stats[i].Bytes
 
-	for i := 0; i < agg.cfg.NumWorkers; i++ {
-		incomingStats.Packets += agg.incomingStats[i].Packets
-		incomingStats.Bytes += agg.incomingStats[i].Bytes
-
-		for k, v := range agg.incomingStats[i].Links {
-			if link, ok := incomingStats.Links[k]; !ok {
-				incomingStats.Links[k] = &common.Stats{
-					Packets: v.Packets,
-					Bytes:   v.Bytes,
+		for k, statLink := range stats[i].Links {
+			if aggLink, ok := aggStats.Links[k]; !ok {
+				aggStats.Links[k] = &common.Stats{
+					Packets: statLink.Packets,
+					Bytes:   statLink.Bytes,
 				}
 			} else {
-				link.Packets += v.Packets
-				link.Bytes += v.Bytes
-			}
-		}
-
-		outgoingStats.Packets += agg.outgoingStats[i].Packets
-		outgoingStats.Bytes += agg.outgoingStats[i].Bytes
-
-		for k, v := range agg.outgoingStats[i].Links {
-			if link, ok := outgoingStats.Links[k]; !ok {
-				outgoingStats.Links[k] = &common.Stats{
-					Packets: v.Packets,
-					Bytes:   v.Bytes,
-				}
-			} else {
-				link.Packets += v.Packets
-				link.Bytes += v.Bytes
+				aggLink.Packets += statLink.Packets
+				aggLink.Bytes += statLink.Bytes
 			}
 		}
 	}
-	return
+	return aggStats
 }
 
-func (agg *Agg) diffData(elapsed float64, incomingStats *common.Stats, outgoingStats *common.Stats) {
-	incomingStats.PacketsDiff = incomingStats.Packets - agg.lastIncomingStats.Packets
-	incomingStats.PPS = float64(incomingStats.PacketsDiff) / elapsed
-	incomingStats.BytesDiff = incomingStats.Bytes - agg.lastIncomingStats.Bytes
-	incomingStats.Bandwidth = float64(incomingStats.BytesDiff) / elapsed
+func diffStats(elapsed float64, current, last *common.Stats) {
+	current.PacketsDiff = current.Packets - last.Packets
+	current.PPS = float64(current.PacketsDiff) / elapsed
 
-	for key, incomingLink := range incomingStats.Links {
-		if lastIncomingLink, exists := agg.lastIncomingStats.Links[key]; exists {
-			incomingLink.PacketsDiff = incomingLink.Packets - lastIncomingLink.Packets
-			incomingLink.PPS = float64(incomingLink.PacketsDiff) / elapsed
-			incomingLink.BytesDiff = incomingLink.Bytes - lastIncomingLink.Bytes
-			incomingLink.Bandwidth = float64(incomingLink.BytesDiff) / elapsed
+	current.BytesDiff = current.Bytes - last.Bytes
+	current.Bandwidth = float64(current.BytesDiff) / elapsed
+
+	for k, currentLink := range current.Links {
+		if lastLink, ok := last.Links[k]; ok {
+			currentLink.PacketsDiff = currentLink.Packets - lastLink.Packets
+			currentLink.BytesDiff = currentLink.Bytes - lastLink.Bytes
 		} else {
-			incomingLink.PacketsDiff = incomingLink.Packets
-			incomingLink.PPS = float64(incomingLink.PacketsDiff) / elapsed
-			incomingLink.BytesDiff = incomingLink.Bytes
-			incomingLink.Bandwidth = float64(incomingLink.BytesDiff) / elapsed
+			currentLink.PacketsDiff = currentLink.Packets
+			currentLink.BytesDiff = currentLink.Bytes
 		}
+
+		currentLink.PPS = float64(currentLink.PacketsDiff) / elapsed
+		currentLink.Bandwidth = float64(currentLink.BytesDiff) / elapsed
 	}
-
-	outgoingStats.PacketsDiff = outgoingStats.Packets - agg.lastOutgoingStats.Packets
-	outgoingStats.PPS = float64(outgoingStats.PacketsDiff) / elapsed
-	outgoingStats.BytesDiff = outgoingStats.Bytes - agg.lastOutgoingStats.Bytes
-	outgoingStats.Bandwidth = float64(outgoingStats.BytesDiff) / elapsed
-
-	for key, outgoingLink := range outgoingStats.Links {
-		if lastOutgoingLink, exists := agg.lastOutgoingStats.Links[key]; exists {
-			outgoingLink.PacketsDiff = outgoingLink.Packets - lastOutgoingLink.Packets
-			outgoingLink.PPS = float64(outgoingLink.PacketsDiff) / elapsed
-			outgoingLink.BytesDiff = outgoingLink.Bytes - lastOutgoingLink.Bytes
-			outgoingLink.Bandwidth = float64(outgoingLink.BytesDiff) / elapsed
-		} else {
-			outgoingLink.PacketsDiff = outgoingLink.Packets
-			outgoingLink.PPS = float64(outgoingLink.PacketsDiff) / elapsed
-			outgoingLink.BytesDiff = outgoingLink.Bytes
-			outgoingLink.Bandwidth = float64(outgoingLink.BytesDiff) / elapsed
-		}
-	}
-
-	return
 }
 
 func (agg *Agg) sendData(statsl *StatsLog) error {
@@ -119,8 +81,11 @@ func (agg *Agg) pipeline() {
 	elapsed := time.Since(agg.start)
 	elapsedSec := elapsed.Seconds()
 
-	incomingStats, outgoingStats := agg.aggData()
-	agg.diffData(elapsedSec, incomingStats, outgoingStats)
+	incomingStats := aggregateStats(agg.incomingStats)
+	outgoingStats := aggregateStats(agg.outgoingStats)
+
+	diffStats(elapsedSec, incomingStats, agg.lastIncomingStats)
+	diffStats(elapsedSec, outgoingStats, agg.lastOutgoingStats)
 
 	statsl := &StatsLog{
 		TimeSpan: elapsedSec,
