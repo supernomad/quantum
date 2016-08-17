@@ -4,7 +4,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/json"
-	"github.com/Supernomad/quantum/ecdh"
 	"net"
 	"strconv"
 	"strings"
@@ -20,11 +19,6 @@ type Mapping struct {
 	Sockaddr  *syscall.SockaddrInet4 `json:"-"`
 	SecretKey []byte                 `json:"-"`
 	Cipher    cipher.AEAD            `json:"-"`
-}
-
-// String returns the mapping as a string
-func (m *Mapping) String() string {
-	return string(m.Bytes())
 }
 
 // Bytes returns the mapping as a byte slice
@@ -49,7 +43,7 @@ func ParseMapping(data []byte, privkey []byte) (*Mapping, error) {
 		Port: port,
 		Addr: addr,
 	}
-	mapping.SecretKey = ecdh.GenerateSharedSecret(mapping.PublicKey, privkey)
+	mapping.SecretKey = GenerateSharedSecret(mapping.PublicKey, privkey)
 
 	block, err := aes.NewCipher(mapping.SecretKey)
 	if err != nil {

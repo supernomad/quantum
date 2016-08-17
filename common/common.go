@@ -42,13 +42,6 @@ func IPtoInt(IP string) uint32 {
 	return binary.LittleEndian.Uint32(buf)
 }
 
-// InttoIP takes a uint32 and returns an ip in the form '0.0.0.0'
-func InttoIP(IP uint32) string {
-	buf := make([]byte, 4)
-	binary.LittleEndian.PutUint32(buf, IP)
-	return string(buf)
-}
-
 // IncrementIP will increment the given ip in place.
 func IncrementIP(ip net.IP) {
 	for i := len(ip) - 1; i >= 0; i-- {

@@ -1,4 +1,4 @@
-package ecdh
+package common
 
 import (
 	"crypto/rand"
