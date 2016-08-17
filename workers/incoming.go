@@ -73,7 +73,12 @@ func (incoming *Incoming) Start(queue int) {
 	go func() {
 		buf := make([]byte, common.MaxPacketLength)
 		for {
-			incoming.pipeline(buf, queue)
+			select {
+			case <-incoming.quit:
+				return
+			default:
+				incoming.pipeline(buf, queue)
+			}
 		}
 	}()
 }

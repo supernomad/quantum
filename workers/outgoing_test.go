@@ -5,6 +5,7 @@ import (
 	"github.com/Supernomad/quantum/common"
 	"math/rand"
 	"testing"
+	"time"
 )
 
 func benchmarkOutgoingResolve(payload *common.Payload, b *testing.B) {
@@ -90,4 +91,10 @@ func TestOutgoingPipeline(t *testing.T) {
 	if !outgoing.pipeline(buf, 0) {
 		panic("Somthing is wrong.")
 	}
+}
+
+func TestOutgoing(t *testing.T) {
+	outgoing.Start(0)
+	time.Sleep(2 * time.Second)
+	outgoing.Stop()
 }

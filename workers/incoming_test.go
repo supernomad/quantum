@@ -5,6 +5,7 @@ import (
 	"github.com/Supernomad/quantum/common"
 	"math/rand"
 	"testing"
+	"time"
 )
 
 func benchmarkIncomingResolve(payload *common.Payload, b *testing.B) {
@@ -111,4 +112,10 @@ func TestIncomingPipeline(t *testing.T) {
 	} else {
 		panic("Seal failed something is wrong")
 	}
+}
+
+func TestIncoming(t *testing.T) {
+	incoming.Start(0)
+	time.Sleep(2 * time.Second)
+	incoming.Stop()
 }
