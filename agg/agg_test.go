@@ -10,7 +10,10 @@ func TestAgg(t *testing.T) {
 	stats := make([]*common.Stats, 3)
 	for i := 0; i < 3; i++ {
 		stats[i] = common.NewStats()
+		stats[i].Links["10.0.0.0"] = common.NewStats()
 	}
+	stats[0].Links["10.0.0.1"] = common.NewStats()
+
 	agg := New(&common.Config{
 		StatsWindow: 1,
 		NumWorkers:  3,
