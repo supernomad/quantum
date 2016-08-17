@@ -5,22 +5,22 @@ import (
 	"encoding/binary"
 	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
+	"github.com/Supernomad/quantum/inet"
 	"github.com/Supernomad/quantum/socket"
-	"github.com/Supernomad/quantum/tun"
 	"net"
 )
 
 // Outgoing internal packet interface which handles reading packets off of a TUN object
 type Outgoing struct {
-	tunnel    *tun.Tun
-	sock      *socket.Socket
-	privateIP []byte
-	store     *backend.Backend
-	quit      chan bool
+	tunnel     inet.Interface
+	sock       socket.Socket
+	privateIP  []byte
+	store      backend.Backend
+	quit       chan bool
+	QueueStats []*common.Stats
 }
 
-// Resolve the outgoing payload
-func (outgoing *Outgoing) Resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
+func (outgoing *Outgoing) resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
 	dip := binary.LittleEndian.Uint32(payload.Packet[16:20])
 
 	if mapping, ok := outgoing.store.GetMapping(dip); ok {
@@ -28,18 +28,49 @@ func (outgoing *Outgoing) Resolve(payload *common.Payload) (*common.Payload, *co
 		return payload, mapping, true
 	}
 
-	return payload, nil, false
+	return nil, nil, false
 }
 
-// Seal the outgoing payload
-func (outgoing *Outgoing) Seal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
+func (outgoing *Outgoing) seal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
 	_, err := rand.Read(payload.Nonce)
 	if err != nil {
-		return payload, false
+		return nil, false
 	}
 
 	mapping.Cipher.Seal(payload.Packet[:0], payload.Nonce, payload.Packet, nil)
 	return payload, true
+}
+
+func (outgoing *Outgoing) stats(payload *common.Payload, mapping *common.Mapping, queue int) {
+	outgoing.QueueStats[queue].Packets++
+	outgoing.QueueStats[queue].Bytes += uint64(payload.Length)
+
+	if link, ok := outgoing.QueueStats[queue].Links[mapping.PrivateIP]; !ok {
+		outgoing.QueueStats[queue].Links[mapping.PrivateIP] = &common.Stats{
+			Packets: 1,
+			Bytes:   uint64(payload.Length),
+		}
+	} else {
+		link.Packets++
+		link.Bytes += uint64(payload.Length)
+	}
+}
+
+func (outgoing *Outgoing) pipeline(buf []byte, queue int) bool {
+	payload, ok := outgoing.tunnel.Read(buf, queue)
+	if !ok {
+		return ok
+	}
+	payload, mapping, ok := outgoing.resolve(payload)
+	if !ok {
+		return ok
+	}
+	payload, ok = outgoing.seal(payload, mapping)
+	if !ok {
+		return ok
+	}
+	outgoing.stats(payload, mapping, queue)
+	return outgoing.sock.Write(payload, mapping, queue)
 }
 
 // Start handling packets
@@ -47,19 +78,12 @@ func (outgoing *Outgoing) Start(queue int) {
 	go func() {
 		buf := make([]byte, common.MaxPacketLength)
 		for {
-			payload, ok := outgoing.tunnel.Read(buf, queue)
-			if !ok {
-				continue
+			select {
+			case <-outgoing.quit:
+				return
+			default:
+				outgoing.pipeline(buf, queue)
 			}
-			payload, mapping, ok := outgoing.Resolve(payload)
-			if !ok {
-				continue
-			}
-			payload, ok = outgoing.Seal(payload, mapping)
-			if !ok {
-				continue
-			}
-			outgoing.sock.Write(payload, mapping.Sockaddr, queue)
 		}
 	}()
 }
@@ -72,12 +96,17 @@ func (outgoing *Outgoing) Stop() {
 }
 
 // NewOutgoing object
-func NewOutgoing(privateIP string, store *backend.Backend, tunnel *tun.Tun, sock *socket.Socket) *Outgoing {
+func NewOutgoing(privateIP string, numWorkers int, store backend.Backend, tunnel inet.Interface, sock socket.Socket) *Outgoing {
+	stats := make([]*common.Stats, numWorkers)
+	for i := 0; i < numWorkers; i++ {
+		stats[i] = common.NewStats()
+	}
 	return &Outgoing{
-		tunnel:    tunnel,
-		sock:      sock,
-		privateIP: net.ParseIP(privateIP).To4(),
-		store:     store,
-		quit:      make(chan bool),
+		tunnel:     tunnel,
+		sock:       sock,
+		privateIP:  net.ParseIP(privateIP).To4(),
+		store:      store,
+		quit:       make(chan bool),
+		QueueStats: stats,
 	}
 }

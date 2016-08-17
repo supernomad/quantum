@@ -22,6 +22,3 @@ _testmain.go
 *.exe
 *.test
 *.prof
-
-# Computer specifics certs for testing
-certs/

@@ -1,0 +1,96 @@
+package socket
+
+import (
+	"github.com/Supernomad/quantum/common"
+	"net"
+	"syscall"
+)
+
+// UDP is a generic multique socket
+type UDP struct {
+	queues []int
+	cfg    *common.Config
+	sa     *syscall.SockaddrInet4
+}
+
+// Name address of the socket
+func (sock *UDP) Name() string {
+	return sock.cfg.ListenAddress
+}
+
+// Open the socket
+func (sock *UDP) Open() error {
+	for i := 0; i < sock.cfg.NumWorkers; i++ {
+		queue, err := createUDP()
+		if err != nil {
+			return err
+		}
+
+		err = initUDP(queue, sock.sa)
+		if err != nil {
+			return err
+		}
+
+		sock.queues[i] = queue
+	}
+	return nil
+}
+
+// Close the socket
+func (sock *UDP) Close() error {
+	for i := 0; i < len(sock.queues); i++ {
+		if err := syscall.Close(sock.queues[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Read a packet from the socket
+func (sock *UDP) Read(buf []byte, queue int) (*common.Payload, bool) {
+	n, _, err := syscall.Recvfrom(sock.queues[queue], buf, 0)
+	if err != nil {
+		return nil, false
+	}
+	return common.NewSockPayload(buf, n), true
+}
+
+// Write a packet to the socket
+func (sock *UDP) Write(payload *common.Payload, mapping *common.Mapping, queue int) bool {
+	err := syscall.Sendto(sock.queues[queue], payload.Raw[:payload.Length], 0, mapping.Sockaddr)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func newUDP(cfg *common.Config) *UDP {
+	var addr [4]byte
+	copy(addr[:], net.ParseIP(cfg.ListenAddress).To4())
+	sa := &syscall.SockaddrInet4{
+		Port: cfg.ListenPort,
+		Addr: addr,
+	}
+
+	queues := make([]int, cfg.NumWorkers)
+
+	return &UDP{queues: queues, cfg: cfg, sa: sa}
+}
+
+func initUDP(queue int, sa *syscall.SockaddrInet4) error {
+	err := syscall.SetsockoptInt(queue, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
+	if err != nil {
+		return err
+	}
+
+	err = syscall.Bind(queue, sa)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createUDP() (int, error) {
+	return syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, 0)
+}
