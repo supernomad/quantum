@@ -16,7 +16,7 @@
 - Designed with global distributions in mind.
   - Ability to scale to thousands of nodes spanning any geographic region.
 
-For more detailed information take a look at the [wiki](https://github.com/Supernomad/quantum/wiki).
+> For more detailed information take a look at the [wiki](https://github.com/Supernomad/quantum/wiki).
 
 ##### Supported Data stores
 - Consul
