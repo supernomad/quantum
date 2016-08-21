@@ -72,6 +72,25 @@ The precedence of the configuration methods is as follows:
 - Environment variables override their corresponding configuration file entries and defaults
 - Configuration file entries override their corresponding defaults
 
+The naming of the arguments are all based on the cli arguments:
+
+- Environment variables replace the prefixed `-` or `--` with `QUANTUM_`, replace any internal `-` with `_`, and convert the case to all upper for each cli argument.
+  - Example: `conf-file` converts to `QUANTUM_CONF_FILE`.
+- Configuration file entires take the form of a flat `yaml` or `json` object, and drop the prefiexed `-` or `--` from each cli argument.
+  - Example:
+    ``` yaml
+    ---
+    conf-file: "/etc/quantum/quantum.conf"
+    public-ip: 1.1.1.1
+    ```
+    ``` json
+    {
+        "conf-file": "/etc/quantum/quantum.conf",
+        "public-ip": "1.1.1.1"
+    }
+    ```
+
+
 Run `quantum --help` for a current list of configuration options or see the [wiki](https://github.com/Supernomad/quantum/wiki).
 
 #### Testing
