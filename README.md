@@ -14,22 +14,24 @@
 - Designed with global distributions in mind.
   - Ability to scale to thousands of nodes spanning any geographic region.
 
-#### Supported Datastores
+##### Supported Datastores
 - Consul
 - Etcd
 
-#### Supported OS's
+##### Supported OS's
 - Linux
 
-##### Soon to be supported:
+###### Soon to be supported:
 - BSD
 - Darwin
 
 ## Development Requirements
-Currently `quantum` development is entirely in go and BASH. Most development has been done on ubuntu server 14.04, however any recent linux distribution with the following dependancies should be sufficent.
+Currently `quantum` development is entirely in go and utilizes a few BASH scripts to facilitate builds and setup. Development has been mostly done on ubuntu server 14.04, however any recent linux distribution with the following dependancies should be sufficent to develop or run `quantum`.
 
-### Dependacies
+### Development Dependacies
 - bash
+- tun kernel module must be enabled
+  - please see your distributions information on how to enable it.
 - docker
 - docker-compose
 - go 1.6
@@ -71,7 +73,7 @@ $ cd $GOPATH/src/github.com/Supernomad/quantum
 $ bin/build.sh
 ```
 
-To do bandwidth based testing the `quantum` containers all have iperf3 installed. For example to test how much through put quantum0 can handle from both quantum1/quantum2
+To do bandwidth based testing the `quantum` containers all have iperf3 installed. For example to test how much through put `quantum0` can handle from both `quantum1`/`quantum2`:
 
 ``` shell
 # Assumeing the three development quantum instances are started
