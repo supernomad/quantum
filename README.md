@@ -78,11 +78,13 @@ The naming of the arguments are all based on the cli arguments:
   - Example: `conf-file` converts to `QUANTUM_CONF_FILE`.
 - Configuration file entires take the form of a flat `yaml` or `json` object, and drop the prefiexed `-` or `--` from each cli argument.
   - Example:
+
     ``` yaml
     ---
     conf-file: "/etc/quantum/quantum.conf"
     public-ip: 1.1.1.1
     ```
+
     ``` json
     {
         "conf-file": "/etc/quantum/quantum.conf",
