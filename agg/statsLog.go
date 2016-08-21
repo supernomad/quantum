@@ -15,6 +15,6 @@ type StatsLog struct {
 
 // String the StatsLog object
 func (statsl *StatsLog) String() string {
-	data, _ := json.MarshalIndent(statsl, "", "    ")
+	data, _ := json.Marshal(statsl)
 	return string(data)
 }

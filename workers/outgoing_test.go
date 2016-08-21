@@ -56,6 +56,19 @@ func BenchmarkOutgoingSeal(b *testing.B) {
 	benchmarkOutgoingSeal(payload, testMapping, b)
 }
 
+func benchmarkOutgoingDroppedStats(payload *common.Payload, mapping *common.Mapping, b *testing.B) {
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		outgoing.droppedStats(payload, mapping, 0)
+	}
+}
+
+func BenchmarkOutgoingDroppedStats(b *testing.B) {
+	buf := make([]byte, common.MaxPacketLength)
+	payload := common.NewTunPayload(buf, common.MTU)
+	benchmarkOutgoingDroppedStats(payload, testMapping, b)
+}
+
 func benchmarkOutgoingStats(payload *common.Payload, mapping *common.Mapping, b *testing.B) {
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {

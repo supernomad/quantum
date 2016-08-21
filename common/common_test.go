@@ -229,3 +229,13 @@ func TestNewStats(t *testing.T) {
 		t.Fatalf("String didn't return the correct value.")
 	}
 }
+
+func TestNewLogger(t *testing.T) {
+	log := NewLogger()
+	if log.Error == nil {
+		t.Fatal("NewLogger returned a nil Error log.")
+	}
+	if log.Info == nil {
+		t.Fatal("NewLogger returned a nil Error log.")
+	}
+}

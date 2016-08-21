@@ -36,6 +36,30 @@ func (incoming *Incoming) unseal(payload *common.Payload, mapping *common.Mappin
 	return payload, true
 }
 
+func (incoming *Incoming) droppedStats(payload *common.Payload, mapping *common.Mapping, queue int) {
+	incoming.QueueStats[queue].DroppedPackets++
+
+	if payload == nil {
+		return
+	}
+
+	incoming.QueueStats[queue].DroppedBytes += uint64(payload.Length)
+
+	if mapping == nil {
+		return
+	}
+
+	if link, ok := incoming.QueueStats[queue].Links[mapping.PrivateIP]; !ok {
+		incoming.QueueStats[queue].Links[mapping.PrivateIP] = &common.Stats{
+			DroppedPackets: 1,
+			DroppedBytes:   uint64(payload.Length),
+		}
+	} else {
+		link.DroppedPackets++
+		link.DroppedBytes += uint64(payload.Length)
+	}
+}
+
 func (incoming *Incoming) stats(payload *common.Payload, mapping *common.Mapping, queue int) {
 	incoming.QueueStats[queue].Packets++
 	incoming.QueueStats[queue].Bytes += uint64(payload.Length)
@@ -54,14 +78,17 @@ func (incoming *Incoming) stats(payload *common.Payload, mapping *common.Mapping
 func (incoming *Incoming) pipeline(buf []byte, queue int) bool {
 	payload, ok := incoming.sock.Read(buf, queue)
 	if !ok {
+		incoming.droppedStats(payload, nil, queue)
 		return ok
 	}
 	payload, mapping, ok := incoming.resolve(payload)
 	if !ok {
+		incoming.droppedStats(payload, mapping, queue)
 		return ok
 	}
 	payload, ok = incoming.unseal(payload, mapping)
 	if !ok {
+		incoming.droppedStats(payload, mapping, queue)
 		return ok
 	}
 	incoming.stats(payload, mapping, queue)
