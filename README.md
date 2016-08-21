@@ -26,7 +26,7 @@
 - Darwin
 
 ## Development
-Currently `quantum` development is entirely in go and utilizes a few BASH scripts to facilitate builds and setup. Development has been mostly done on ubuntu server 14.04, however any recent linux distribution with the following dependencies should be sufficient to develop or run `quantum`.
+Currently `quantum` development is entirely in go and utilizes a few BASH scripts to facilitate builds and setup. Development has been mostly done on ubuntu server 14.04, however any recent linux distribution with the following dependencies should be sufficient to develop `quantum`.
 
 #### Development Dependencies
 - bash
@@ -99,3 +99,23 @@ $ docker exec -it quantum1 iperf3 -c 10.9.0.1 -P 2 -t 50
 $ cd $GOPATH/src/github.com/Supernomad/quantum
 $ docker exec -it quantum2 iperf3 -c 10.9.0.1 -P 2 -t 50
 ```
+
+## Contributing
+Contributions are definitely welcome, if you are looking for something to contribute check out the current [road map](https://github.com/Supernomad/quantum/milestones) and grab an open issue.
+
+Workflow:
+
+- Fork `quantum` develop
+- Make your changes
+- Open a PR against `quantum` develop
+- Get your PR merged
+- Rinse and Repeat
+
+There are a few rules:
+
+- All travis builds must successfully complete before a PR will be considered.
+  - Changes to travis to get builds working are ok, if they are within reason.
+- The `bin/build.sh` script must be run before the PR is open.
+- Documentation is added for new user facing functionality
+
+> An aside any PR can be closed with or without explanation.
