@@ -63,6 +63,19 @@ func BenchmarkIncomingUnseal(b *testing.B) {
 	}
 }
 
+func benchmarkIncomingDroppedStats(payload *common.Payload, mapping *common.Mapping, b *testing.B) {
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		incoming.droppedStats(payload, mapping, 0)
+	}
+}
+
+func BenchmarkIncomingDroppedStats(b *testing.B) {
+	buf := make([]byte, common.MaxPacketLength)
+	payload := common.NewTunPayload(buf, common.MTU)
+	benchmarkIncomingDroppedStats(payload, testMapping, b)
+}
+
 func benchmarkIncomingStats(payload *common.Payload, mapping *common.Mapping, b *testing.B) {
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {

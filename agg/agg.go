@@ -29,17 +29,23 @@ type StatSink interface {
 func aggregateStats(stats []*common.Stats) *common.Stats {
 	aggStats := common.NewStats()
 	for i := 0; i < len(stats); i++ {
+		aggStats.DroppedPackets += stats[i].DroppedPackets
 		aggStats.Packets += stats[i].Packets
+		aggStats.DroppedBytes += stats[i].DroppedBytes
 		aggStats.Bytes += stats[i].Bytes
 
 		for k, statLink := range stats[i].Links {
 			if aggLink, ok := aggStats.Links[k]; !ok {
 				aggStats.Links[k] = &common.Stats{
-					Packets: statLink.Packets,
-					Bytes:   statLink.Bytes,
+					DroppedPackets: statLink.DroppedPackets,
+					Packets:        statLink.Packets,
+					DroppedBytes:   statLink.DroppedBytes,
+					Bytes:          statLink.Bytes,
 				}
 			} else {
+				aggLink.DroppedPackets += statLink.DroppedPackets
 				aggLink.Packets += statLink.Packets
+				aggLink.DroppedBytes += statLink.DroppedBytes
 				aggLink.Bytes += statLink.Bytes
 			}
 		}
@@ -48,22 +54,34 @@ func aggregateStats(stats []*common.Stats) *common.Stats {
 }
 
 func diffStats(elapsed float64, current, last *common.Stats) {
+	current.DroppedPacketsDiff = current.DroppedPackets - last.DroppedPackets
+	current.DroppedPPS = float64(current.DroppedPacketsDiff) / elapsed
+
 	current.PacketsDiff = current.Packets - last.Packets
 	current.PPS = float64(current.PacketsDiff) / elapsed
+
+	current.DroppedBytesDiff = current.DroppedBytes - last.DroppedBytes
+	current.DroppedBandwidth = float64(current.DroppedBytesDiff) / elapsed
 
 	current.BytesDiff = current.Bytes - last.Bytes
 	current.Bandwidth = float64(current.BytesDiff) / elapsed
 
 	for k, currentLink := range current.Links {
 		if lastLink, ok := last.Links[k]; ok {
+			currentLink.DroppedPacketsDiff = currentLink.DroppedPackets - lastLink.DroppedPackets
 			currentLink.PacketsDiff = currentLink.Packets - lastLink.Packets
+			currentLink.DroppedBytesDiff = currentLink.DroppedBytes - lastLink.DroppedBytes
 			currentLink.BytesDiff = currentLink.Bytes - lastLink.Bytes
 		} else {
+			currentLink.DroppedPacketsDiff = currentLink.DroppedPackets
 			currentLink.PacketsDiff = currentLink.Packets
+			currentLink.DroppedBytesDiff = currentLink.DroppedBytes
 			currentLink.BytesDiff = currentLink.Bytes
 		}
 
+		currentLink.DroppedPPS = float64(currentLink.DroppedPacketsDiff) / elapsed
 		currentLink.PPS = float64(currentLink.PacketsDiff) / elapsed
+		currentLink.DroppedBandwidth = float64(currentLink.DroppedBytesDiff) / elapsed
 		currentLink.Bandwidth = float64(currentLink.BytesDiff) / elapsed
 	}
 }
