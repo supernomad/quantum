@@ -25,10 +25,10 @@
 - BSD
 - Darwin
 
-## Development Requirements
+## Development
 Currently `quantum` development is entirely in go and utilizes a few BASH scripts to facilitate builds and setup. Development has been mostly done on ubuntu server 14.04, however any recent linux distribution with the following dependancies should be sufficent to develop or run `quantum`.
 
-### Development Dependacies
+### Development Dependancies
 - bash
 - tun kernel module must be enabled
   - please see your distributions information on how to enable it.
@@ -91,5 +91,3 @@ $ docker exec -it quantum1 iperf3 -c 10.9.0.1 -P 2 -t 50
 $ cd $GOPATH/src/github.com/Supernomad/quantum
 $ docker exec -it quantum2 iperf3 -c 10.9.0.1 -P 2 -t 50
 ```
-
-## Useful links
