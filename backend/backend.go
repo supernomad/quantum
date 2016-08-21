@@ -19,10 +19,10 @@ type Backend interface {
 }
 
 // New Bakend object
-func New(kind int, cfg *common.Config) (Backend, error) {
+func New(kind int, log *common.Logger, cfg *common.Config) (Backend, error) {
 	switch kind {
 	case LIBKV:
-		return newLibkv(cfg)
+		return newLibkv(log, cfg)
 	default:
 		return nil, errors.New("Non compatible backend specified.")
 	}

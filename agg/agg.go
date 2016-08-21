@@ -123,11 +123,11 @@ func (agg *Agg) Stop() {
 }
 
 // New Agg instance pointer
-func New(cfg *common.Config, incomingStats []*common.Stats, outgoingStats []*common.Stats) *Agg {
+func New(log *common.Logger, cfg *common.Config, incomingStats []*common.Stats, outgoingStats []*common.Stats) *Agg {
 	return &Agg{
 		cfg:               cfg,
 		start:             time.Now(),
-		sinks:             []StatSink{&ConsoleSink{}},
+		sinks:             []StatSink{&ConsoleSink{log: log}},
 		ticker:            time.NewTicker(cfg.StatsWindow * time.Second),
 		stop:              make(chan struct{}),
 		lastIncomingStats: common.NewStats(),

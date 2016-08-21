@@ -9,7 +9,6 @@ import (
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/consul"
 	"github.com/docker/libkv/store/etcd"
-	"github.com/go-playground/log"
 	"io/ioutil"
 	"path"
 	"time"
@@ -29,6 +28,8 @@ const (
 
 // Libkv datastore object which is responsible for managing state between the local node and the real libkv datastore.
 type Libkv struct {
+	log *common.Logger
+
 	store  store.Store
 	locker store.Locker
 
@@ -59,7 +60,9 @@ func generateStoreConfig(cfg *common.Config) (*store.Config, error) {
 			storeCfg.TLS.Certificates = []tls.Certificate{cert}
 			storeCfg.TLS.BuildNameToCertificate()
 		}
-		if cfg.TLSCA != "" {
+		if cfg.TLSSkipVerify {
+			storeCfg.TLS.InsecureSkipVerify = true
+		} else if cfg.TLSCA != "" {
 			cert, err := ioutil.ReadFile(cfg.TLSCA)
 			if err != nil {
 				return nil, err
@@ -151,13 +154,16 @@ func (libkv *Libkv) handleLocalMapping() error {
 	return nil
 }
 
-func (libkv *Libkv) syncMappings() error {
-	nodes, err := libkv.store.List(libkv.getKey("/nodes/"))
-	if err != nil {
-		if err != store.ErrKeyNotFound {
-			return err
+func (libkv *Libkv) syncMappings(nodes []*store.KVPair) error {
+	var err error
+	if nodes == nil {
+		nodes, err = libkv.store.List(libkv.getKey("/nodes/"))
+		if err != nil {
+			if err != store.ErrKeyNotFound {
+				return err
+			}
+			nodes = make([]*store.KVPair, 0)
 		}
-		nodes = make([]*store.KVPair, 0)
 	}
 
 	mappings := make(map[uint32]*common.Mapping)
@@ -203,26 +209,6 @@ func (libkv *Libkv) set(key string, value []byte, leaseTime time.Duration) error
 		writeOps)
 }
 
-func (libkv *Libkv) watch() {
-	events, err := libkv.store.WatchTree(libkv.getKey("/nodes/"), libkv.stop)
-	if err != nil {
-		log.Error("Error during watch:", err)
-		return
-	}
-
-	for {
-		select {
-		case <-libkv.stop:
-			break
-		case <-events:
-			err := libkv.syncMappings()
-			if err != nil {
-				log.Error("Error during watch:", err)
-			}
-		}
-	}
-}
-
 // GetMapping which will either be a mapping in the current network or nil and the bool will be false, indicating that the mapping does not exist.
 func (libkv *Libkv) GetMapping(ip uint32) (*common.Mapping, bool) {
 	mapping, ok := libkv.mappings[ip]
@@ -233,29 +219,21 @@ func (libkv *Libkv) GetMapping(ip uint32) (*common.Mapping, bool) {
 func (libkv *Libkv) Init() error {
 	err := libkv.lock()
 	if err != nil {
-		log.Error("Error acquiring libkv store lock:", err)
 		return err
 	}
 	err = libkv.fetchNetworkConfig()
 	if err != nil {
-		log.Error("Error getting network configuration:", err)
 		return err
 	}
-	err = libkv.syncMappings()
+	err = libkv.syncMappings(nil)
 	if err != nil {
-		log.Error("Error synchronizing the network mappings with the libkv store:", err)
 		return err
 	}
 	err = libkv.handleLocalMapping()
 	if err != nil {
-		log.Error("Error handling the local node mapping:", err)
 		return err
 	}
-	err = libkv.unlock()
-	if err != nil {
-		log.Error("Error releasing libkv store lock:", err)
-	}
-	return err
+	return libkv.unlock()
 }
 
 // Start watching the libkv and updating mappings.
@@ -264,21 +242,32 @@ func (libkv *Libkv) Start() {
 	sync := time.NewTicker(libkv.cfg.SyncInterval * time.Second)
 	key := path.Join("/nodes/", libkv.cfg.MachineID)
 
-	go libkv.watch()
+	stopWatching := make(chan struct{})
+	events, err := libkv.store.WatchTree(libkv.getKey("/nodes/"), stopWatching)
+	if err != nil {
+		libkv.log.Error.Println("[BACKEND]", "Error setting up watch:", err)
+	}
+
 	go func() {
 		for {
 			select {
-			case <-libkv.stop:
+			case stop := <-libkv.stop:
+				stopWatching <- stop
 				break
 			case <-refresh.C:
 				err := libkv.set(key, libkv.localMapping.Bytes(), libkv.NetworkCfg.LeaseTime)
 				if err != nil {
-					log.Error("Error during refresh of the ip address lease:", err)
+					libkv.log.Error.Println("[BACKEND]", "Error during refresh of the ip address lease:", err)
 				}
 			case <-sync.C:
-				err := libkv.syncMappings()
+				err := libkv.syncMappings(nil)
 				if err != nil {
-					log.Error("Error during resync of the ip address mappings:", err)
+					libkv.log.Error.Println("[BACKEND]", "Error during resync of the ip address mappings:", err)
+				}
+			case nodes := <-events:
+				err := libkv.syncMappings(nodes)
+				if err != nil {
+					libkv.log.Error.Println("[BACKEND]", "Error while watching of the ip address mappings for changes:", err)
 				}
 			}
 		}
@@ -287,18 +276,15 @@ func (libkv *Libkv) Start() {
 
 // Stop watching the libkv and updating mappings
 func (libkv *Libkv) Stop() {
-	go func() {
-		libkv.stop <- struct{}{}
-	}()
+	libkv.stop <- struct{}{}
 }
 
 // New Libkv object
-func newLibkv(cfg *common.Config) (Backend, error) {
+func newLibkv(log *common.Logger, cfg *common.Config) (Backend, error) {
 	var libkvStore store.Store
 
 	storeCfg, err := generateStoreConfig(cfg)
 	if err != nil {
-		log.Error("Error generating the libkv store configuration:", err)
 		return nil, err
 	}
 
@@ -308,16 +294,15 @@ func newLibkv(cfg *common.Config) (Backend, error) {
 	case etcdStore:
 		libkvStore, err = libkv.NewStore(store.ETCD, cfg.Endpoints, storeCfg)
 	default:
-		log.Error("Configured 'Datastore' is not supported by quantum.")
-		return nil, errors.New("Configured 'Datastore' is not supported by quantum.")
+		err = errors.New("Configured 'Datastore' is not supported by quantum.")
 	}
 
 	if err != nil {
-		log.Error("Error connecting to the libkv store:", err)
 		return nil, err
 	}
 
 	return &Libkv{
+		log:      log,
 		store:    libkvStore,
 		cfg:      cfg,
 		mappings: make(map[uint32]*common.Mapping),
