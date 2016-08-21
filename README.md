@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/Supernomad/quantum.svg?branch=develop)](https://travis-ci.org/Supernomad/quantum) [![Coverage Status](https://coveralls.io/repos/github/Supernomad/quantum/badge.svg?branch=develop)](https://coveralls.io/github/Supernomad/quantum?branch=develop) [![Go Report Card](https://goreportcard.com/badge/github.com/Supernomad/quantum)](https://goreportcard.com/report/github.com/Supernomad/quantum) [![GoDoc](https://godoc.org/github.com/Supernomad/quantum?status.png)](https://godoc.org/github.com/Supernomad/quantum)
 
 ## Description
-`quantum` is a software defined network device written in go with global networking, security, and auto-configuration at its heart. It leverages the latest distributed datastores and state of the art encryption to offer fully secured end to end global networking over a single cohesive network.
+`quantum` is a software defined network device written in go with global networking, security, and auto-configuration at its heart. It leverages the latest distributed data stores and state of the art encryption to offer fully secured end to end global networking over a single cohesive network.
 
 - Encrypted with [AES-256-GCM](http://crypto.stackexchange.com/questions/17999/aes256-gcm-can-someone-explain-how-to-use-it-securely-ruby).
   - Ensuring both confidentiality of all network traffic but also authentication of both the recipient and sender.
@@ -14,7 +14,7 @@
 - Designed with global distributions in mind.
   - Ability to scale to thousands of nodes spanning any geographic region.
 
-##### Supported Datastores
+##### Supported Data stores
 - Consul
 - Etcd
 
@@ -26,9 +26,9 @@
 - Darwin
 
 ## Development
-Currently `quantum` development is entirely in go and utilizes a few BASH scripts to facilitate builds and setup. Development has been mostly done on ubuntu server 14.04, however any recent linux distribution with the following dependancies should be sufficent to develop or run `quantum`.
+Currently `quantum` development is entirely in go and utilizes a few BASH scripts to facilitate builds and setup. Development has been mostly done on ubuntu server 14.04, however any recent linux distribution with the following dependencies should be sufficient to develop or run `quantum`.
 
-#### Development Dependancies
+#### Development Dependencies
 - bash
 - tun kernel module must be enabled
   - please see your distributions information on how to enable it.
@@ -41,7 +41,7 @@ To get started developing `quantum`, run the following shell commands to get you
 
 ``` shell
 $ cd $GOPATH/src/github.com/Supernomad/quantum
-# Get build dependancies
+# Get build dependencies
 $ go get -t -v ./...
 $ go get golang.org/x/tools/cmd/cover
 $ go get github.com/mattn/goveralls
@@ -67,9 +67,9 @@ After running the above you will have a single etcd instance and three quantum i
 #### Configuration
 `quantum` can be configured in any combination of four ways, cli arguments, environment variables, configuration file entries, and finally falling back to defaults. The precedence of which is as follows:
 
-- Cli arguments override environment variables, configuration file entries, and defaults
-- Environment variables override configuration file entries and defaults
-- Configuration file entires override defaults
+- Cli arguments override their corresponding environment variables, configuration file entries, and defaults
+- Environment variables override their corresponding configuration file entries and defaults
+- Configuration file entries override their corresponding defaults
 
 Run `quantum --help` for a current list of configuration options or see the [wiki](https://github.com/Supernomad/quantum/wiki).
 
@@ -84,7 +84,7 @@ $ bin/build.sh
 To do bandwidth based testing the `quantum` containers all have iperf3 installed. For example to test how much through put `quantum0` can handle from both `quantum1`/`quantum2`:
 
 ``` shell
-# Assumeing the three development quantum instances are started
+# Assuming the three development quantum instances are started
 # Start three shells
 
 # In first shell start iperf3 server
