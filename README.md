@@ -101,7 +101,7 @@ $ cd $GOPATH/src/github.com/Supernomad/quantum
 $ docker exec -it quantum2 iperf3 -c 10.9.0.1 -P 2 -t 50
 ```
 
-## Contributing
+### Contributing
 Contributions are definitely welcome, if you are looking for something to contribute check out the current [road map](https://github.com/Supernomad/quantum/milestones) and grab an open issue.
 
 Workflow:
