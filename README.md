@@ -30,9 +30,16 @@ For more detailed information take a look at the [wiki](https://github.com/Super
 - Darwin
 
 ### Running
-`quantum` is designed to be pretty plug and play, currently the only required parameter is the `public-ip` argument (This will change _very_ soon). Unfortunately this is sort of a lie, unless you run your datastore on each of the nodes that you run `quantum` on and aren't worried about security. In reality `quantum` _needs_ to be run with TLS fully setup and configured, in order to guarantee safe operation. This does not perclude you from running with self signed certificates, as long as those certificates are kept safe. The certificates in use are all standard TLS certificates so standard authorities can and will sign certificates if you want to up the level of security even more.
+`quantum` is designed to be plug and play, and currently the only required parameter is the `public-ip` argument (This will change _very_ soon). Unfortunately this will run `quantum` in insecure mode and assumes each node has its own data store.
 
-One thing to keep in mind is that while `quantum` will ensure that packets are delivered safely and securely, it cannot guarantee that a server in the network has been compromised.
+##### Most used arguments
+- endpoints, a comma delimited string of backend endpoints, in the form `ip:port,ip:port`.
+- public-ip, the public ip address to have other nodes in the network forward packets to.
+- tls-cert, the client tls certificate for the node.
+- tls-key, the client tls key for the node.
+- tls-ca-cert, the ca certificate to use to validate the server certificates.
+
+In reality `quantum` _needs_ to be run with TLS fully setup and configured, in order to guarantee safe operation. This does not preclude you from running with self signed certificates, as long as those certificates are kept safe and handled correctly. One thing to keep in mind is that while `quantum` can ensure that packets are delivered safely and securely between servers, it cannot guarantee that a server within the network is not compromised.
 
 ### Development
 Currently `quantum` development is entirely in go and utilizes a few BASH scripts to facilitate builds and setup. Development has been mostly done on ubuntu server 14.04, however any recent linux distribution with the following dependencies should be sufficient to develop `quantum`.
@@ -86,7 +93,7 @@ The naming of the environment variables and configuration file entries are all b
 
 - Environment variables replace the prefixed `-` or `--` with `QUANTUM_`, replace any internal `-` with `_`, and convert the case to all upper for each cli argument.
   - Example: `conf-file` converts to `QUANTUM_CONF_FILE` and `tls-skip-verify` converts to `QUANTUM_TLS_SKIP_VERIFY`.
-- Configuration file entires take the form of a flat `yaml` or `json` object, and drop the prefiexed `-` or `--` from each cli argument.
+- Configuration file entries take the form of a flat `yaml` or `json` object, and drop the prefixed `-` or `--` from each cli argument.
   - Example files:
 
     ``` yaml
@@ -135,7 +142,7 @@ $ docker exec -it quantum2 iperf3 -c 10.9.0.1 -P 2 -t 50
 ### Contributing
 Contributions are definitely welcome, if you are looking for something to contribute check out the current [road map](https://github.com/Supernomad/quantum/milestones) and grab an open issue.
 
-Workflow:
+Work flow:
 
 - Fork `quantum` develop
 - Make your changes
