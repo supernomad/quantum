@@ -28,7 +28,7 @@
 ## Development
 Currently `quantum` development is entirely in go and utilizes a few BASH scripts to facilitate builds and setup. Development has been mostly done on ubuntu server 14.04, however any recent linux distribution with the following dependancies should be sufficent to develop or run `quantum`.
 
-### Development Dependancies
+#### Development Dependancies
 - bash
 - tun kernel module must be enabled
   - please see your distributions information on how to enable it.
@@ -36,12 +36,8 @@ Currently `quantum` development is entirely in go and utilizes a few BASH script
 - docker-compose
 - go 1.6
 
-### Basic operation
-The basic operation of `quantum` is as simple as starting a consul or etcd server instance, and starting a few `quantum` instances pointing at it.
-
-For more information on operating quantum in a staging/production setting please see the [wiki](https://github.com/Supernomad/quantum/wiki).
-
-To get started developing `quantum`, run the following shell commands to get your environment up and running.
+#### Getting started
+To get started developing `quantum`, run the following shell commands to get your environment configured and running.
 
 ``` shell
 $ cd $GOPATH/src/github.com/Supernomad/quantum
@@ -66,6 +62,18 @@ $ docker-compose logs quantum0 quantum1 quantum2
 ```
 After running the above you will have a single etcd instance and three quantum instances running. The three quantum instances are configured to run a quantum network `10.9.0.0/16`, with `quantum0` having a statically defined private ip `10.9.0.1` and `quantum1`/`quantum2` having DHCP defined private ip addresses.
 
+> A note about TLS, there are included TLS certificates in this repo that should not be for any reason reused for anything but testing quantum in a lab setting. There is an included script `generate-etcd-certs` that was used to create the certs in this repo if you are interested in reproducing them.
+
+#### Configuration
+`quantum` can be configured in any combination of four ways, cli arguments, environment variables, configuration file entries, and finally falling back to defaults. The precedence of which is as follows:
+
+- Cli arguments override environment variables, configuration file entries, and defaults
+- Environment variables override configuration file entries and defaults
+- Configuration file entires override defaults
+
+Run `quantum --help` for a current list of configuration options or see the [wiki](https://github.com/Supernomad/quantum/wiki).
+
+#### Testing
 To run basic unit testing and builds run:
 
 ``` shell
