@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/Supernomad/quantum.svg?branch=develop)](https://travis-ci.org/Supernomad/quantum) [![Coverage Status](https://coveralls.io/repos/github/Supernomad/quantum/badge.svg?branch=develop)](https://coveralls.io/github/Supernomad/quantum?branch=develop) [![Go Report Card](https://goreportcard.com/badge/github.com/Supernomad/quantum)](https://goreportcard.com/report/github.com/Supernomad/quantum) [![GoDoc](https://godoc.org/github.com/Supernomad/quantum?status.png)](https://godoc.org/github.com/Supernomad/quantum)
 
 ## Description
-`quantum` is an sdn written in go with global networking, security, and auto-configuration at its heart. It leverages distributed datastores and state of the art encryption to offer fully secured end to end global networking over a single cohesive network.
+`quantum` is a software defined network device written in go with global networking, security, and auto-configuration at its heart. It leverages the latest distributed datastores and state of the art encryption to offer fully secured end to end global networking over a single cohesive network.
 
 - Encrypted with [AES-256-GCM](http://crypto.stackexchange.com/questions/17999/aes256-gcm-can-someone-explain-how-to-use-it-securely-ruby).
   - Ensuring both confidentiality of all network traffic but also authentication of both the recipient and sender.
@@ -13,13 +13,6 @@
 - Lightweight and designed to run on systems with limited available resources.
 - Designed with global distributions in mind.
   - Ability to scale to thousands of nodes spanning any geographic region.
-
-#### The theory of operation
-The `quantum` application revolves around three things, starting up a multi-queue TUN interface, starting up a series of UDP sockets, and initializing the backend datastore. The multi-queue TUN interface is created and configured on the fly, and is torn down on application shutdown. There is one UDP sockets generated for each TUN queue generated, creating a one to one mapping between the TUN interface and the UDP sockets. The backend datastore is managed via a series of watches and syncs that ensure that the local cache is always, as up to date as possible with the master records stored in the backend.
-
-The TUN interface interacts with the kernel reading packets that are sent to a private network that its assigned. The UDP sockets are utilized to facilitate sending the encrypted packets to the public address of the destination. So when a client/server application generates a network packet bound for one of the private ip addresses in the `quantum` network, the TUN interface will capture that packet and pass it off to the `quantum` process. Once `quantum` recieves a packet off the TUN interface it will determine the destination server, encrypt the data with the unique key between the sender and the recipient, then send it via the UDP socket to the recipeint server. The recipeint server will then determine the mapping of the sending server, and unencrypt the data with the unique key between the sender and the recipient, then send it via the TUN interface to the client/server application that is waiting for the packet.
-
-When new nodes are added to the network, each will add themselves as a mapping to the datastore on startup, which triggers the current members of the network to resync the mapping data.
 
 #### Supported Datastores
 - Consul
@@ -41,7 +34,7 @@ Currently `quantum` development is entirely in go and BASH. Most development has
 - docker-compose
 - go 1.6
 
-## Basic operation
+### Basic operation
 The basic operation of `quantum` is as simple as starting a consul or etcd server instance, and starting a few `quantum` instances pointing at it.
 
 For more information on operating quantum in a staging/production setting please see the [wiki](https://github.com/Supernomad/quantum/wiki).
