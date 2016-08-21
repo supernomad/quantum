@@ -27,6 +27,9 @@
 - BSD
 - Darwin
 
+### Running `quantum`
+
+
 ### Development
 Currently `quantum` development is entirely in go and utilizes a few BASH scripts to facilitate builds and setup. Development has been mostly done on ubuntu server 14.04, however any recent linux distribution with the following dependencies should be sufficient to develop `quantum`.
 
@@ -96,7 +99,7 @@ The naming of the environment variables and configuration file entries are all b
     ```
 
 
-Run `quantum --help` for a current list of configuration options or see the [wiki](https://github.com/Supernomad/quantum/wiki).
+Run `quantum --help` for a current list of configuration options or see the [wiki](https://github.com/Supernomad/quantum/wiki/Configuration).
 
 #### Testing
 To run basic unit testing and builds run:
