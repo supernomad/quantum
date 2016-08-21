@@ -29,8 +29,10 @@ For more detailed information take a look at the [wiki](https://github.com/Super
 - BSD
 - Darwin
 
-### Running `quantum`
+### Running
+`quantum` is designed to be pretty plug and play, currently the only required parameter is the `public-ip` argument (This will change _very_ soon). Unfortunately this is sort of a lie, unless you run your datastore on each of the nodes that you run `quantum` on and aren't worried about security. In reality `quantum` _needs_ to be run with TLS fully setup and configured, in order to guarantee safe operation. This does not perclude you from running with self signed certificates, as long as those certificates are kept safe. The certificates in use are all standard TLS certificates so standard authorities can and will sign certificates if you want to up the level of security even more.
 
+One thing to keep in mind is that while `quantum` will ensure that packets are delivered safely and securely, it cannot guarantee that a server in the network has been compromised.
 
 ### Development
 Currently `quantum` development is entirely in go and utilizes a few BASH scripts to facilitate builds and setup. Development has been mostly done on ubuntu server 14.04, however any recent linux distribution with the following dependencies should be sufficient to develop `quantum`.
