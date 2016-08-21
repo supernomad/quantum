@@ -65,7 +65,9 @@ After running the above you will have a single etcd instance and three quantum i
 > A note about TLS, there are included TLS certificates in this repo that should not be for any reason reused for anything but testing quantum in a lab setting. There is an included script `generate-etcd-certs` that was used to create the certs in this repo if you are interested in reproducing them.
 
 #### Configuration
-`quantum` can be configured in any combination of four ways, cli arguments, environment variables, configuration file entries, and finally falling back to defaults. The precedence of which is as follows:
+`quantum` can be configured in any combination of four ways, cli arguments, environment variables, configuration file entries, and finally falling back to defaults. Regardless of which way `quantum` is configured all of the configuration options are available.
+
+The precedence of the configuration methods is as follows:
 
 - Cli arguments override their corresponding environment variables, configuration file entries, and defaults
 - Environment variables override their corresponding configuration file entries and defaults
