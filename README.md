@@ -9,6 +9,9 @@
   - Ensuring secret generation/transmission is always as secure as possible.
 - Fully peer to peer communication.
   - Minimizing bottlenecks and maximizing performance.
+- Full DHCP and static ip address designation.
+  - Internal private ip network must be ipv4.
+  - External public ip network can be any combination of ipv4/ipv6.
 - Lightweight and designed to run on systems with limited available resources.
 - Designed with global distributions in mind.
   - Ability to scale to thousands of nodes spanning any geographic region.
@@ -72,12 +75,12 @@ The precedence of the configuration methods is as follows:
 - Environment variables override their corresponding configuration file entries and defaults
 - Configuration file entries override their corresponding defaults
 
-The naming of the arguments are all based on the cli arguments:
+The naming of the environment variables and configuration file entries are all based on the cli argument names:
 
 - Environment variables replace the prefixed `-` or `--` with `QUANTUM_`, replace any internal `-` with `_`, and convert the case to all upper for each cli argument.
-  - Example: `conf-file` converts to `QUANTUM_CONF_FILE`.
+  - Example: `conf-file` converts to `QUANTUM_CONF_FILE` and `tls-skip-verify` converts to `QUANTUM_TLS_SKIP_VERIFY`.
 - Configuration file entires take the form of a flat `yaml` or `json` object, and drop the prefiexed `-` or `--` from each cli argument.
-  - Example:
+  - Example files:
 
     ``` yaml
     ---
