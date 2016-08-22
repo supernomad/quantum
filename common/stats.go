@@ -6,13 +6,23 @@ import (
 
 // Stats object for incoming/outgoing statistics
 type Stats struct {
+	DroppedPackets     uint64
+	DroppedPacketsDiff uint64
+	DroppedPPS         float64
+
 	Packets     uint64
 	PacketsDiff uint64
 	PPS         float64
-	Bytes       uint64
-	BytesDiff   uint64
-	Bandwidth   float64
-	Links       map[string]*Stats `json:",omitempty"`
+
+	DroppedBytes     uint64
+	DroppedBytesDiff uint64
+	DroppedBandwidth float64
+
+	Bytes     uint64
+	BytesDiff uint64
+	Bandwidth float64
+
+	Links map[string]*Stats `json:",omitempty"`
 }
 
 // String the Stats object

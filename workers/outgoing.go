@@ -41,6 +41,29 @@ func (outgoing *Outgoing) seal(payload *common.Payload, mapping *common.Mapping)
 	return payload, true
 }
 
+func (outgoing *Outgoing) droppedStats(payload *common.Payload, mapping *common.Mapping, queue int) {
+	outgoing.QueueStats[queue].DroppedPackets++
+	if payload == nil {
+		return
+	}
+
+	outgoing.QueueStats[queue].DroppedBytes += uint64(payload.Length)
+
+	if mapping == nil {
+		return
+	}
+
+	if link, ok := outgoing.QueueStats[queue].Links[mapping.PrivateIP]; !ok {
+		outgoing.QueueStats[queue].Links[mapping.PrivateIP] = &common.Stats{
+			DroppedPackets: 1,
+			DroppedBytes:   uint64(payload.Length),
+		}
+	} else {
+		link.DroppedPackets++
+		link.DroppedBytes += uint64(payload.Length)
+	}
+}
+
 func (outgoing *Outgoing) stats(payload *common.Payload, mapping *common.Mapping, queue int) {
 	outgoing.QueueStats[queue].Packets++
 	outgoing.QueueStats[queue].Bytes += uint64(payload.Length)
@@ -59,14 +82,17 @@ func (outgoing *Outgoing) stats(payload *common.Payload, mapping *common.Mapping
 func (outgoing *Outgoing) pipeline(buf []byte, queue int) bool {
 	payload, ok := outgoing.tunnel.Read(buf, queue)
 	if !ok {
+		outgoing.droppedStats(payload, nil, queue)
 		return ok
 	}
 	payload, mapping, ok := outgoing.resolve(payload)
 	if !ok {
+		outgoing.droppedStats(payload, mapping, queue)
 		return ok
 	}
 	payload, ok = outgoing.seal(payload, mapping)
 	if !ok {
+		outgoing.droppedStats(payload, mapping, queue)
 		return ok
 	}
 	outgoing.stats(payload, mapping, queue)

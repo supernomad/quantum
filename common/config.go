@@ -43,10 +43,11 @@ type Config struct {
 	SyncInterval    time.Duration
 	RefreshInterval time.Duration
 
-	TLSEnabled bool
-	TLSCert    string
-	TLSKey     string
-	TLSCA      string
+	TLSEnabled    bool
+	TLSSkipVerify bool
+	TLSCert       string
+	TLSKey        string
+	TLSCA         string
 
 	Datastore   string
 	endpoints   string
@@ -87,6 +88,15 @@ func (cfg *Config) handleDefaultDuration(name string, def time.Duration) time.Du
 	return output
 }
 
+func (cfg *Config) handleDefaultBool(name string, def bool) bool {
+	str := strconv.FormatBool(def)
+	output, err := strconv.ParseBool(cfg.handleDefaultString(name, str))
+	if err != nil {
+		panic(err)
+	}
+	return output
+}
+
 func (cfg *Config) handleCli() {
 	flag.StringVar(&cfg.ConfFile, "conf-file", cfg.handleDefaultString("conf-file", ""), "The json or yaml file to load configuration data from.")
 
@@ -109,6 +119,7 @@ func (cfg *Config) handleCli() {
 	flag.StringVar(&cfg.TLSCert, "tls-cert", cfg.handleDefaultString("tls-cert", ""), "The client certificate to use for authentication with the backend datastore.")
 	flag.StringVar(&cfg.TLSKey, "tls-key", cfg.handleDefaultString("tls-key", ""), "The client key to use for authentication with the backend datastore.")
 	flag.StringVar(&cfg.TLSCA, "tls-ca-cert", cfg.handleDefaultString("tls-ca-cert", ""), "The CA certificate to authenticate the backend datastore.")
+	flag.BoolVar(&cfg.TLSSkipVerify, "tls-skip-verify", cfg.handleDefaultBool("tls-skip-verify", false), "The CA certificate to authenticate the backend datastore.")
 
 	flag.StringVar(&cfg.Datastore, "datastore", cfg.handleDefaultString("datastore", "etcd"), "The datastore backend to use, either consul or etcd")
 	flag.StringVar(&cfg.endpoints, "endpoints", cfg.handleDefaultString("endpoints", "127.0.0.1:2379"), "A comma delimited list of datastore endpoints to use.")
@@ -197,6 +208,12 @@ func (cfg *Config) parseFileData(data map[string]string) error {
 					return err
 				}
 				cfg.RefreshInterval = dur
+			case "tls-skip-verify":
+				b, err := strconv.ParseBool(v)
+				if err != nil {
+					return err
+				}
+				cfg.TLSSkipVerify = b
 			case "tls-cert":
 				cfg.TLSCert = v
 			case "tls-key":
