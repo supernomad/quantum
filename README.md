@@ -16,7 +16,7 @@
 - Designed with global distributions in mind.
   - Ability to scale to thousands of nodes spanning any geographic region.
 
-For more detailed information take a look at the [wiki](https://github.com/Supernomad/quantum/wiki).
+> For more detailed information take a look at the [wiki](https://github.com/Supernomad/quantum/wiki).
 
 ##### Supported Data stores
 - Consul
@@ -36,7 +36,6 @@ For more detailed information take a look at the [wiki](https://github.com/Super
 
 ##### Most used arguments
 - `endpoints`, a comma delimited string of backend endpoints, in the form `ip:port,ip:port`.
-- `public-ip`, the public ip address to have other nodes in the network forward packets to.
 - `tls-cert`, the signed client tls certificate for the node.
 - `tls-key`, the client tls key for the node.
 - `tls-ca-cert`, the ca certificate to use to validate the server certificates.
@@ -67,18 +66,15 @@ $ go get github.com/GeertJohan/fgt
 $ bin/build.sh
 # Build the container to run quantum in.
 $ docker-compose build
-# Start up etcd
-$ docker-compose up -d etcd
-# Start up quantum
-$ docker-compose up -d quantum0
-$ docker-compose up -d quantum1
-$ docker-compose up -d quantum2
+# Start up docker test bench
+$ docker-compose up -d
+# Wait a few seconds for initialization to complete
 # Check on the status of the different quantum instances
 $ docker-compose logs quantum0 quantum1 quantum2
 ```
 After running the above you will have a single etcd instance and three quantum instances running. The three quantum instances are configured to run a quantum network `10.9.0.0/16`, with `quantum0` having a statically defined private ip `10.9.0.1` and `quantum1`/`quantum2` having DHCP defined private ip addresses.
 
-> A note about TLS, there are included TLS certificates in this repo that should not be for any reason reused for anything but testing quantum in a lab setting. There is an included script `generate-etcd-certs` that was used to create the certs in this repo if you are interested in reproducing them.
+> A note about TLS, there are included TLS certificates in this repo that should only used for testing quantum in a lab setting. These certificates should not be in anyway considered secure. There is an included script `generate-etcd-certs` that was used to create the certificates, if you wish to replicate them.
 
 #### Configuration
 `quantum` can be configured in any combination of four ways, cli arguments, environment variables, configuration file entries, and finally falling back to defaults. Regardless of which way `quantum` is configured all of the configuration options are available.
@@ -110,7 +106,7 @@ The naming of the environment variables and configuration file entries are all b
     ```
 
 
-Run `quantum --help` for a current list of configuration options or see the [wiki](https://github.com/Supernomad/quantum/wiki/Configuration).
+Run `quantum -h|--help` for a current list of configuration options or see the [wiki on configuration](https://github.com/Supernomad/quantum/wiki/Configuration).
 
 #### Testing
 To run basic unit testing and builds run:
@@ -120,7 +116,7 @@ $ cd $GOPATH/src/github.com/Supernomad/quantum
 $ bin/build.sh
 ```
 
-To do bandwidth based testing the `quantum` containers all have iperf3 installed. For example to test how much through put `quantum0` can handle from both `quantum1`/`quantum2`:
+To do basic bandwidth based testing the `quantum` containers all have iperf3 installed. For example to test how much through put `quantum0` can handle from both `quantum1`/`quantum2`:
 
 ``` shell
 # Assuming the three development quantum instances are started
@@ -140,13 +136,13 @@ $ docker exec -it quantum2 iperf3 -c 10.9.0.1 -P 2 -t 50
 ```
 
 ### Contributing
-Contributions are definitely welcome, if you are looking for something to contribute check out the current [road map](https://github.com/Supernomad/quantum/milestones) and grab an open issue.
+Contributions are definitely welcome, if you are looking for something to contribute check out the current [road map](https://github.com/Supernomad/quantum/milestones) and grab an open issue in the next release.
 
 Work flow:
 
-- Fork `quantum` develop
+- Fork `quantum` from develop
 - Make your changes
-- Open a PR against `quantum` develop
+- Open a PR against `quantum` on to develop
 - Get your PR merged
 - Rinse and Repeat
 
@@ -157,4 +153,4 @@ There are a few rules:
 - The `bin/build.sh` script must be run before the PR is open.
 - Documentation is added for new user facing functionality
 
-> An aside any PR can be closed with or without explanation.
+> An aside any PR can be closed with or without explanation or justification.

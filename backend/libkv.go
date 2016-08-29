@@ -23,7 +23,7 @@ const (
 	consulStore string        = "consul"
 	etcdStore   string        = "etcd"
 	mockStore   string        = "mock"
-	lockTTL     time.Duration = 10
+	lockTTL     time.Duration = 10 * time.Second
 )
 
 // Libkv datastore object which is responsible for managing state between the local node and the real libkv datastore.
@@ -81,13 +81,21 @@ func (libkv *Libkv) getKey(key string) string {
 }
 
 func (libkv *Libkv) lock() error {
-	lockOps := &store.LockOptions{TTL: lockTTL * time.Second}
-	locker, err := libkv.store.NewLock(libkv.getKey("/lock"), lockOps)
+	stopWaiting := make(chan struct{})
+	ticker := time.NewTicker(lockTTL)
+	locker, err := libkv.store.NewLock(libkv.getKey("/lock"), &store.LockOptions{Value: []byte(libkv.cfg.MachineID), TTL: lockTTL})
 	if err != nil {
 		return err
 	}
 
-	_, err = locker.Lock(nil)
+	go func() {
+		<-ticker.C
+		stopWaiting <- struct{}{}
+		ticker.Stop()
+		close(stopWaiting)
+	}()
+
+	_, err = locker.Lock(stopWaiting)
 	if err != nil {
 		return err
 	}
@@ -118,7 +126,7 @@ func (libkv *Libkv) getMappingIfExists() (*common.Mapping, bool) {
 
 func (libkv *Libkv) getFreeIP() (string, error) {
 	for ip := libkv.NetworkCfg.BaseIP.Mask(libkv.NetworkCfg.IPNet.Mask); libkv.NetworkCfg.IPNet.Contains(ip); common.IncrementIP(ip) {
-		if ip[3] == 0 {
+		if ip[3] == 0 || libkv.NetworkCfg.ReservedIPNet.Contains(ip) {
 			continue
 		}
 
