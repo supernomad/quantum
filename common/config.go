@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-var google net.IP = net.ParseIP("8.8.8.8")
+var google = net.ParseIP("8.8.8.8")
 
 // Config handles marshalling user supplied configuration data
 type Config struct {
