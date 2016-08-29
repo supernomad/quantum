@@ -10,7 +10,7 @@
 
 | Supported Backend Datastores | Supported OS's | Supported Providers |
 |:------------------:|:----:|:---------:|
-|[consul](https://consul.io)  | linux | AWS, GCE, Azue |
+|[consul](https://consul.io)  | linux | AWS, GCE, Azure |
 |[etcd](https://github.com/coreos/etcd)  | | Packet, Digital Ocean, Rackspace |
 | | | Private datacenters, Private co-locations, and many more |
 
