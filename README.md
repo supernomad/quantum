@@ -10,8 +10,9 @@
 
 > One thing to keep in mind is that while `quantum` can ensure that packets are delivered safely and securely between servers, it cannot guarantee that there are no compromised servers given access to the network by a user.
 
-### Supported Datastores and OS's
-
+### Supported Backend Datastores and OS's
+| Backend Datastores | OS's |
+|:------------------:|:----:|
 |[consul](https://consul.io)  | linux |
 |[etcd](https://github.com/coreos/etcd)  | |
 
