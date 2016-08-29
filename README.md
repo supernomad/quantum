@@ -22,33 +22,6 @@
 #### Configuration
 `quantum` can be configured in any combination of four ways, cli arguments, environment variables, configuration file entries, and finally falling back to defaults. Regardless of which way `quantum` is configured all of the configuration options are available.
 
-The precedence of the configuration methods is as follows:
-
-- Cli arguments override their corresponding environment variables, configuration file entries, and defaults
-- Environment variables override their corresponding configuration file entries and defaults
-- Configuration file entries override their corresponding defaults
-
-The naming of the environment variables and configuration file entries are all based on the cli argument names:
-
-- Environment variables replace the prefixed `-` or `--` with `QUANTUM_`, replace any internal `-` with `_`, and convert the case to all upper for each cli argument.
-  - Example: `conf-file` converts to `QUANTUM_CONF_FILE` and `tls-skip-verify` converts to `QUANTUM_TLS_SKIP_VERIFY`.
-- Configuration file entries take the form of a flat `yaml` or `json` object, and drop the prefixed `-` or `--` from each cli argument.
-  - Example files:
-
-    ``` yaml
-    ---
-    conf-file: "/etc/quantum/quantum.conf"
-    public-ip: 1.1.1.1
-    ```
-
-    ``` json
-    {
-        "conf-file": "/etc/quantum/quantum.conf",
-        "public-ip": "1.1.1.1"
-    }
-    ```
-
-
 Run `quantum -h|--help` for a current list of configuration options or see the [wiki on configuration](https://github.com/Supernomad/quantum/wiki/Configuration).
 
 ### Development
