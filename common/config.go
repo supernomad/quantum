@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
-	"github.com/go-playground/log"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
@@ -263,7 +262,6 @@ func NewConfig() (*Config, error) {
 	cfg.handleCli()
 	err := cfg.handleFile()
 	if err != nil {
-		log.Error("Error handling config:", err)
 		return nil, err
 	}
 	cfg.handleComputed()

@@ -23,7 +23,7 @@ const (
 	consulStore string        = "consul"
 	etcdStore   string        = "etcd"
 	mockStore   string        = "mock"
-	lockTTL     time.Duration = 10
+	lockTTL     time.Duration = 10 * time.Second
 )
 
 // Libkv datastore object which is responsible for managing state between the local node and the real libkv datastore.
@@ -81,8 +81,7 @@ func (libkv *Libkv) getKey(key string) string {
 }
 
 func (libkv *Libkv) lock() error {
-	lockOps := &store.LockOptions{TTL: lockTTL * time.Second}
-	locker, err := libkv.store.NewLock(libkv.getKey("/lock"), lockOps)
+	locker, err := libkv.store.NewLock(libkv.getKey("/lock"), &store.LockOptions{Value: []byte(libkv.cfg.MachineID), TTL: lockTTL})
 	if err != nil {
 		return err
 	}
