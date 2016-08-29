@@ -1,14 +1,12 @@
-# quantum
+# [quantum](https://github.com/Supernomad/quantum/wiki)
 [![Build Status](https://travis-ci.org/Supernomad/quantum.svg?branch=develop)](https://travis-ci.org/Supernomad/quantum) [![Coverage Status](https://coveralls.io/repos/github/Supernomad/quantum/badge.svg?branch=develop)](https://coveralls.io/github/Supernomad/quantum?branch=develop) [![Go Report Card](https://goreportcard.com/badge/github.com/Supernomad/quantum)](https://goreportcard.com/report/github.com/Supernomad/quantum) [![GoDoc](https://godoc.org/github.com/Supernomad/quantum?status.png)](https://godoc.org/github.com/Supernomad/quantum)
 
 `quantum` is a software defined network device written in go with global networking, security, and auto-configuration at its heart. It leverages the latest distributed data stores and state of the art encryption to offer fully secured end to end global networking over a single cohesive network.
 
-> For more detailed information take a look at the [wiki](https://github.com/Supernomad/quantum/wiki).
+> For more detailed information on the operation and configuration of `quantum` take a look at the [wiki](https://github.com/Supernomad/quantum/wiki).
 
 ### Running
 `quantum` is designed to be plug and play, however the default configuration will run `quantum` in insecure mode and assumes each node has its own data store. In reality `quantum` _needs_ to be run with TLS fully setup and configured, in order to guarantee safe operation. In general it is best practice to obtain client and server certificates signed by a legitmate authority. However this does not preclude you from running with self signed certificates, as long as those certificates are kept safe and handled correctly.
-
-> One thing to keep in mind is that while `quantum` can ensure that packets are delivered safely and securely between servers, it cannot guarantee that there are no compromised servers given access to the network by a user.
 
 | Supported Backend Datastores | Supported OS's | Supported Providers |
 |:------------------:|:----:|:---------:|
@@ -19,7 +17,7 @@
 #### Configuration
 `quantum` can be configured in any combination of four ways, cli arguments, environment variables, configuration file entries, and finally falling back to defaults. Regardless of which way `quantum` is configured all of the configuration options are available.
 
-Run `quantum -h|--help` for a current list of configuration options or see the [wiki on configuration](https://github.com/Supernomad/quantum/wiki/Configuration).
+Run `quantum -h|--help` for a current list of configuration options or see the [wiki on configuration](https://github.com/Supernomad/quantum/wiki/Configuration) for further information.
 
 ### Development
 Currently `quantum` development is entirely in go and utilizes a few BASH scripts to facilitate builds and setup. Development has been mostly done on ubuntu server 14.04, however any recent linux distribution with the following dependencies should be sufficient to develop `quantum`.
