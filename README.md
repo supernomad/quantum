@@ -10,14 +10,11 @@
 
 > One thing to keep in mind is that while `quantum` can ensure that packets are delivered safely and securely between servers, it cannot guarantee that there are no compromised servers given access to the network by a user.
 
-#### Supported Backend Datastores, OS's, and Providers
-
-| Backend Datastores | OS's | Providers |
+| Supported Backend Datastores | Supported OS's | Supported Providers |
 |:------------------:|:----:|:---------:|
 |[consul](https://consul.io)  | linux | AWS, GCE, Azue |
 |[etcd](https://github.com/coreos/etcd)  | | Packet, Digital Ocean, Rackspace |
 | | | Private datacenters, Private co-locations, and many more |
-
 
 #### Configuration
 `quantum` can be configured in any combination of four ways, cli arguments, environment variables, configuration file entries, and finally falling back to defaults. Regardless of which way `quantum` is configured all of the configuration options are available.
