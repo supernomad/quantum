@@ -17,7 +17,7 @@ services:
     networks:
       perf_net:
         ipv4_address: 172.18.0.2
-    entrypoint: ["/bin/start_quantum.sh", "-endpoints", "etcd.quantum.dev:2379", "-private-ip", "10.9.0.1", "-public-ip", "172.18.0.2", "--tls-cert", "/etc/quantum/certs/quantum0.quantum.dev.crt", "--tls-key", "/etc/quantum/certs/quantum0.quantum.dev.key", "--tls-ca-cert", "/etc/quantum/certs/ca.crt"]
+    entrypoint: ["/bin/start_quantum.sh", "-endpoints", "etcd.quantum.dev:2379", "-private-ip", "10.9.0.1", "--tls-cert", "/etc/quantum/certs/quantum0.quantum.dev.crt", "--tls-key", "/etc/quantum/certs/quantum0.quantum.dev.key", "--tls-ca-cert", "/etc/quantum/certs/ca.crt"]
   quantum1:
     container_name: quantum1
     build:

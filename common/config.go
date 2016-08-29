@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"github.com/vishvananda/netlink"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"net"
 	"os"
 	"path"
 	"runtime"
@@ -15,6 +17,8 @@ import (
 	"strings"
 	"time"
 )
+
+var google = net.ParseIP("8.8.8.8")
 
 // Config handles marshalling user supplied configuration data
 type Config struct {
@@ -128,7 +132,7 @@ func (cfg *Config) handleCli() {
 	flag.Parse()
 }
 
-func (cfg *Config) handleComputed() {
+func (cfg *Config) handleComputed() error {
 	cfg.Endpoints = strings.Split(cfg.endpoints, ",")
 
 	pubkey, privkey := GenerateECKeyPair()
@@ -155,12 +159,23 @@ func (cfg *Config) handleComputed() {
 	}
 	cfg.MachineID = hex.EncodeToString(machineID)
 
+	if cfg.PublicIP == "" {
+		routes, err := netlink.RouteGet(google)
+		if err != nil {
+			return err
+		}
+
+		cfg.PublicIP = routes[0].Src.String()
+	}
+
 	cfg.PublicAddress = cfg.PublicIP + ":" + strconv.Itoa(cfg.ListenPort)
 
 	cores := runtime.NumCPU()
 	runtime.GOMAXPROCS(cores * 2)
 
 	cfg.NumWorkers = cores
+
+	return nil
 }
 
 func (cfg *Config) parseFileData(data map[string]string) error {
@@ -260,10 +275,16 @@ func (cfg *Config) handleFile() error {
 func NewConfig() (*Config, error) {
 	cfg := &Config{notSet: make(map[string]bool)}
 	cfg.handleCli()
+
 	err := cfg.handleFile()
 	if err != nil {
 		return nil, err
 	}
-	cfg.handleComputed()
+
+	err = cfg.handleComputed()
+	if err != nil {
+		return nil, err
+	}
+
 	return cfg, nil
 }
