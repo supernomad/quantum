@@ -8,7 +8,10 @@ import (
 	"github.com/Supernomad/quantum/socket"
 	"github.com/Supernomad/quantum/workers"
 	"os"
+	"os/signal"
 	"strconv"
+	"strings"
+	"syscall"
 )
 
 const version string = "0.6.0"
@@ -31,26 +34,20 @@ func main() {
 
 	err = store.Init()
 	handleError(log, err)
-	defer store.Stop()
 
 	tunnel := inet.New(inet.TUNInterface, cfg)
 	err = tunnel.Open()
 	handleError(log, err)
-	defer tunnel.Close()
 
 	sock := socket.New(socket.UDPSocket, cfg)
 	err = sock.Open()
 	handleError(log, err)
-	defer sock.Close()
 
 	outgoing := workers.NewOutgoing(cfg.PrivateIP, cfg.NumWorkers, store, tunnel, sock)
-	defer outgoing.Stop()
 
 	incoming := workers.NewIncoming(cfg.PrivateIP, cfg.NumWorkers, store, tunnel, sock)
-	defer incoming.Stop()
 
 	aggregator := agg.New(log, cfg, incoming.QueueStats, outgoing.QueueStats)
-	defer aggregator.Stop()
 
 	aggregator.Start()
 	store.Start()
@@ -65,7 +62,57 @@ func main() {
 	log.Info.Println("[MAIN]", "TUN public IP address:    ", cfg.PublicIP)
 	log.Info.Println("[MAIN]", "Listening on UDP address: ", cfg.ListenAddress+":"+strconv.Itoa(cfg.ListenPort))
 
-	stop := make(chan bool)
-	defer close(stop)
-	<-stop
+	signals := make(chan os.Signal, 1)
+	done := make(chan struct{}, 1)
+
+	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
+
+	go func() {
+		for {
+			sig := <-signals
+			switch sig {
+			case syscall.SIGHUP:
+				log.Info.Println("[MAIN]", "Recieved:", sig.String(), "Reloading process.")
+
+				sockFDS := sock.GetFDs()
+				tunFDS := tunnel.GetFDs()
+
+				files := make([]uintptr, cfg.NumWorkers*2)
+				for i := 0; i < cfg.NumWorkers; i++ {
+					files[i] = uintptr(tunFDS[i])
+					files[i+cfg.NumWorkers] = uintptr(sockFDS[i])
+				}
+
+				env := os.Environ()
+				env = append(env, "QUANTUM_TUN_FDS="+strings.Join(common.ToStringArray(tunFDS), ","), "QUANTUM_SOCK_FDS="+strings.Join(common.ToStringArray(sockFDS), ","))
+
+				attr := &syscall.ProcAttr{
+					Env:   env,
+					Files: files,
+				}
+
+				incoming.Stop()
+				outgoing.Stop()
+
+				_, err := syscall.ForkExec(os.Args[0], os.Args[1:], attr)
+				handleError(log, err)
+
+				done <- struct{}{}
+			case syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL:
+				log.Info.Println("[MAIN]", "Recieved:", sig.String(), "Terminating process.")
+
+				aggregator.Stop()
+				incoming.Stop()
+				outgoing.Stop()
+				sock.Close()
+				store.Stop()
+				tunnel.Close()
+
+				done <- struct{}{}
+			}
+		}
+	}()
+
+	<-done
+	os.Exit(0)
 }

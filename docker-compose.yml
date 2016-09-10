@@ -4,7 +4,6 @@ services:
     container_name: quantum0
     build:
       context: "."
-    restart: unless-stopped
     extra_hosts:
       - "etcd.quantum.dev:172.18.0.4"
     cap_add:
@@ -71,6 +70,8 @@ services:
     volumes:
       - etcd:/var/lib/etcd
       - $GOPATH/src/github.com/Supernomad/quantum/bin/certs/:/etc/quantum/certs/:ro
+    ports:
+      - 2379:2379
     networks:
       perf_net:
         ipv4_address: 172.18.0.4

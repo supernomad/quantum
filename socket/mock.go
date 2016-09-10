@@ -33,6 +33,11 @@ func (mock *Mock) Close() error {
 	return nil
 }
 
+// GetFDs will return
+func (mock *Mock) GetFDs() []int {
+	return nil
+}
+
 func newMock(cfg *common.Config) *Mock {
 	return &Mock{}
 }

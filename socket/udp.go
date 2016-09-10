@@ -46,6 +46,11 @@ func (sock *UDP) Close() error {
 	return nil
 }
 
+// GetFDs will return
+func (sock *UDP) GetFDs() []int {
+	return sock.queues
+}
+
 // Read a packet from the socket
 func (sock *UDP) Read(buf []byte, queue int) (*common.Payload, bool) {
 	n, _, err := syscall.Recvfrom(sock.queues[queue], buf, 0)

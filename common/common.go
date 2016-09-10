@@ -3,6 +3,7 @@ package common
 import (
 	"encoding/binary"
 	"net"
+	"strconv"
 )
 
 const (
@@ -50,4 +51,26 @@ func IncrementIP(ip net.IP) {
 			break
 		}
 	}
+}
+
+// ToStringArray taks in a slice of ints and returns a slice of strings
+func ToStringArray(ints []int) []string {
+	strs := make([]string, len(ints))
+	for i := 0; i < len(ints); i++ {
+		strs[i] = strconv.Itoa(ints[i])
+	}
+	return strs
+}
+
+// ToIntArray takes in a slice of strings and returns a slice of ints or an error
+func ToIntArray(strs []string) ([]int, error) {
+	ints := make([]int, len(strs))
+	for i := 0; i < len(strs); i++ {
+		j, err := strconv.Atoi(strs[i])
+		if err != nil {
+			return nil, err
+		}
+		ints[i] = j
+	}
+	return ints, nil
 }

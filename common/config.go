@@ -61,6 +61,9 @@ type Config struct {
 
 	NetworkConfig *NetworkConfig
 	notSet        map[string]bool
+
+	TunnelFDS []int
+	SocketFDS []int
 }
 
 func (cfg *Config) handleDefaultString(name, def string) string {
@@ -174,6 +177,24 @@ func (cfg *Config) handleComputed() error {
 	runtime.GOMAXPROCS(cores * 2)
 
 	cfg.NumWorkers = cores
+
+	strSockFDS := os.Getenv("QUANTUM_SOCK_FDS")
+	if strSockFDS != "" {
+		arr, err := ToIntArray(strings.Split(strSockFDS, ","))
+		if err != nil {
+			return err
+		}
+		cfg.SocketFDS = arr
+	}
+
+	strTunnelFDS := os.Getenv("QUANTUM_TUN_FDS")
+	if strTunnelFDS != "" {
+		arr, err := ToIntArray(strings.Split(strTunnelFDS, ","))
+		if err != nil {
+			return err
+		}
+		cfg.TunnelFDS = arr
+	}
 
 	return nil
 }

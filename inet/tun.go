@@ -52,6 +52,11 @@ func (tun *Tun) Close() error {
 	return nil
 }
 
+// GetFDs will return
+func (tun *Tun) GetFDs() []int {
+	return tun.queues
+}
+
 // Read a packet off the tun
 func (tun *Tun) Read(buf []byte, queue int) (*common.Payload, bool) {
 	n, err := syscall.Read(tun.queues[queue], buf[common.PacketStart:])
