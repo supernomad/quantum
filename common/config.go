@@ -22,10 +22,12 @@ var google = net.ParseIP("8.8.8.8")
 
 // Config handles marshalling user supplied configuration data
 type Config struct {
-	InterfaceName string
-	MachineID     string
-	NumWorkers    int
-	StatsWindow   time.Duration
+	RealInterfaceName string
+	InterfaceName     string
+	MachineID         string
+	NumWorkers        int
+	ReuseFDS          bool
+	StatsWindow       time.Duration
 
 	PrivateIP string
 	PublicIP  string
@@ -61,9 +63,6 @@ type Config struct {
 
 	NetworkConfig *NetworkConfig
 	notSet        map[string]bool
-
-	TunnelFDS []int
-	SocketFDS []int
 }
 
 func (cfg *Config) handleDefaultString(name, def string) string {
@@ -178,22 +177,9 @@ func (cfg *Config) handleComputed() error {
 
 	cfg.NumWorkers = cores
 
-	strSockFDS := os.Getenv("QUANTUM_SOCK_FDS")
-	if strSockFDS != "" {
-		arr, err := ToIntArray(strings.Split(strSockFDS, ","))
-		if err != nil {
-			return err
-		}
-		cfg.SocketFDS = arr
-	}
-
-	strTunnelFDS := os.Getenv("QUANTUM_TUN_FDS")
-	if strTunnelFDS != "" {
-		arr, err := ToIntArray(strings.Split(strTunnelFDS, ","))
-		if err != nil {
-			return err
-		}
-		cfg.TunnelFDS = arr
+	if StringInSlice(ReloadTrigger, os.Args) {
+		cfg.ReuseFDS = true
+		cfg.RealInterfaceName = os.Getenv("QUANTUM_REAL_INTERFACE_NAME")
 	}
 
 	return nil

@@ -3,7 +3,13 @@ package common
 import (
 	"encoding/binary"
 	"net"
-	"strconv"
+)
+
+const (
+	// ReloadTrigger is the argument to trigger reusing passed in file descriptors
+	ReloadTrigger = ":|reload|:"
+	// RealInterfaceNameEnv is the environment variable the the real interface name is stored for reloads.
+	RealInterfaceNameEnv = "QUANTUM_REAL_INTERFACE_NAME"
 )
 
 const (
@@ -53,24 +59,12 @@ func IncrementIP(ip net.IP) {
 	}
 }
 
-// ToStringArray taks in a slice of ints and returns a slice of strings
-func ToStringArray(ints []int) []string {
-	strs := make([]string, len(ints))
-	for i := 0; i < len(ints); i++ {
-		strs[i] = strconv.Itoa(ints[i])
-	}
-	return strs
-}
-
-// ToIntArray takes in a slice of strings and returns a slice of ints or an error
-func ToIntArray(strs []string) ([]int, error) {
-	ints := make([]int, len(strs))
-	for i := 0; i < len(strs); i++ {
-		j, err := strconv.Atoi(strs[i])
-		if err != nil {
-			return nil, err
+// StringInSlice returns true if the given string is in the given slice.
+func StringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
 		}
-		ints[i] = j
 	}
-	return ints, nil
+	return false
 }
