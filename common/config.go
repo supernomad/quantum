@@ -43,7 +43,7 @@ type Config struct {
 	Prefix   string
 	ConfFile string
 	DataDir  string
-	LogDir   string
+	PidFile  string
 
 	SyncInterval    time.Duration
 	RefreshInterval time.Duration
@@ -116,7 +116,7 @@ func (cfg *Config) handleCli() {
 
 	flag.StringVar(&cfg.Prefix, "prefix", cfg.handleDefaultString("prefix", "quantum"), "The etcd key that quantum information is stored under.")
 	flag.StringVar(&cfg.DataDir, "data-dir", cfg.handleDefaultString("data-dir", "/var/lib/quantum"), "The data directory for quantum to use for persistent state.")
-	flag.StringVar(&cfg.LogDir, "log-dir", cfg.handleDefaultString("log-dir", ""), "The log directory to write logs to, if this is ommited logs are written to stdout/stderr.")
+	flag.StringVar(&cfg.PidFile, "pid-file", cfg.handleDefaultString("pid-file", "/var/run/quantum.pid"), "The pid file to write the process id to for supervison.")
 
 	flag.DurationVar(&cfg.SyncInterval, "sync-interval", cfg.handleDefaultDuration("sync-interval", 30), "The backend sync interval")
 	flag.DurationVar(&cfg.RefreshInterval, "refresh-interval", cfg.handleDefaultDuration("refresh-interval", 60), "The backend lease refresh interval.")
@@ -182,6 +182,9 @@ func (cfg *Config) handleComputed() error {
 		cfg.ReuseFDS = true
 	}
 
+	pid := os.Getpid()
+	ioutil.WriteFile(cfg.PidFile, []byte(strconv.Itoa(pid)), os.ModePerm)
+
 	return nil
 }
 
@@ -209,8 +212,8 @@ func (cfg *Config) parseFileData(data map[string]string) error {
 				cfg.Prefix = v
 			case "data-dir":
 				cfg.DataDir = v
-			case "log-dir":
-				cfg.LogDir = v
+			case "pid-file":
+				cfg.PidFile = v
 			case "stats-window":
 				dur, err := time.ParseDuration(v)
 				if err != nil {

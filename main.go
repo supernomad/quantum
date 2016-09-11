@@ -7,6 +7,7 @@ import (
 	"github.com/Supernomad/quantum/inet"
 	"github.com/Supernomad/quantum/socket"
 	"github.com/Supernomad/quantum/workers"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"strconv"
@@ -97,9 +98,9 @@ func main() {
 			outgoing.Stop()
 			store.Stop()
 
-			_, err := syscall.ForkExec(os.Args[0], os.Args, attr)
+			pid, err := syscall.ForkExec(os.Args[0], os.Args, attr)
 			handleError(log, err)
-
+			ioutil.WriteFile(cfg.PidFile, []byte(strconv.Itoa(pid)), os.ModePerm)
 			done <- struct{}{}
 		case sig == syscall.SIGINT || sig == syscall.SIGTERM || sig == syscall.SIGKILL:
 			log.Info.Println("[MAIN]", "Recieved termination signal from user. Terminating process.")
