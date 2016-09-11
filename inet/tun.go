@@ -21,25 +21,23 @@ func (tun *Tun) Name() string {
 
 // Open the Tun device for communication to begin
 func (tun *Tun) Open() error {
+	first := true
 	for i := 0; i < tun.cfg.NumWorkers; i++ {
-		if !tun.cfg.ReuseFDS {
-			ifName, queue, err := createTUN(tun.name)
-			if err != nil {
-				return err
-			}
-			tun.queues[i] = queue
-			tun.name = ifName
-		} else {
-			tun.queues[i] = 3 + i
-			tun.name = tun.cfg.RealInterfaceName
-		}
-	}
-
-	if !tun.cfg.ReuseFDS {
-		err := initInterface(tun.name, tun.cfg.PrivateIP, tun.cfg.NetworkConfig)
+		ifName, queue, err := createTUN(tun.name)
 		if err != nil {
 			return err
 		}
+		tun.queues[i] = queue
+
+		if first {
+			first = false
+			tun.name = ifName
+		}
+	}
+
+	err := initInterface(tun.name, tun.cfg.PrivateIP, tun.cfg.NetworkConfig)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -52,11 +50,6 @@ func (tun *Tun) Close() error {
 		}
 	}
 	return nil
-}
-
-// GetFDs will return the underlying queue fds
-func (tun *Tun) GetFDs() []int {
-	return tun.queues
 }
 
 // Read a packet off the tun
