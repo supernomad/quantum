@@ -51,7 +51,7 @@ func (sock *UDP) Close() error {
 	return nil
 }
 
-// GetFDs will return
+// GetFDs will return the underlying queue fds
 func (sock *UDP) GetFDs() []int {
 	return sock.queues
 }

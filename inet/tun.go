@@ -54,7 +54,7 @@ func (tun *Tun) Close() error {
 	return nil
 }
 
-// GetFDs will return
+// GetFDs will return the underlying queue fds
 func (tun *Tun) GetFDs() []int {
 	return tun.queues
 }

@@ -67,55 +67,52 @@ func main() {
 	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 
 	go func() {
-		for {
-			sig := <-signals
-			switch {
-			case sig == syscall.SIGHUP:
-				log.Info.Println("[MAIN]", "Recieved:", sig.String(), "Reloading process.")
+		sig := <-signals
+		switch {
+		case sig == syscall.SIGHUP:
+			log.Info.Println("[MAIN]", "Recieved reload signal from user. Reloading process.")
 
-				sockFDS := sock.GetFDs()
-				tunFDS := tunnel.GetFDs()
+			sockFDS := sock.GetFDs()
+			tunFDS := tunnel.GetFDs()
 
-				files := make([]uintptr, 3+cfg.NumWorkers*2)
-				files[0] = os.Stdin.Fd()
-				files[1] = os.Stdout.Fd()
-				files[2] = os.Stderr.Fd()
-				log.Info.Println("[MAIN]", "Sock FDs:", sockFDS)
-				log.Info.Println("[MAIN]", "Tun FDs:", tunFDS)
-				for i := 0; i < cfg.NumWorkers; i++ {
-					files[3+i] = uintptr(tunFDS[i])
-					files[3+i+cfg.NumWorkers] = uintptr(sockFDS[i])
-				}
-				log.Info.Println("[MAIN]", "Files:", files)
-				os.Setenv(common.RealInterfaceNameEnv, tunnel.Name())
-				env := os.Environ()
-				attr := &syscall.ProcAttr{
-					Env:   env,
-					Files: files,
-				}
+			files := make([]uintptr, 3+cfg.NumWorkers*2)
+			files[0] = os.Stdin.Fd()
+			files[1] = os.Stdout.Fd()
+			files[2] = os.Stderr.Fd()
 
-				incoming.Stop()
-				outgoing.Stop()
-
-				arg0 := os.Args[0]
-				args := os.Args
-				args = append(args, common.ReloadTrigger)
-				_, err := syscall.ForkExec(arg0, args, attr)
-				handleError(log, err)
-
-				done <- struct{}{}
-			case sig == syscall.SIGINT || sig == syscall.SIGTERM || sig == syscall.SIGKILL:
-				log.Info.Println("[MAIN]", "Recieved:", sig.String(), "Terminating process.")
-
-				aggregator.Stop()
-				incoming.Stop()
-				outgoing.Stop()
-				sock.Close()
-				store.Stop()
-				tunnel.Close()
-
-				done <- struct{}{}
+			for i := 0; i < cfg.NumWorkers; i++ {
+				files[3+i] = uintptr(tunFDS[i])
+				files[3+i+cfg.NumWorkers] = uintptr(sockFDS[i])
 			}
+
+			os.Setenv(common.RealInterfaceNameEnv, tunnel.Name())
+			env := os.Environ()
+			attr := &syscall.ProcAttr{
+				Env:   env,
+				Files: files,
+			}
+
+			aggregator.Stop()
+			incoming.Stop()
+			outgoing.Stop()
+			store.Stop()
+
+			_, err := syscall.ForkExec(os.Args[0], os.Args, attr)
+			handleError(log, err)
+
+			done <- struct{}{}
+		case sig == syscall.SIGINT || sig == syscall.SIGTERM || sig == syscall.SIGKILL:
+			log.Info.Println("[MAIN]", "Recieved termination signal from user. Terminating process.")
+
+			aggregator.Stop()
+			incoming.Stop()
+			outgoing.Stop()
+			store.Stop()
+
+			sock.Close()
+			tunnel.Close()
+
+			done <- struct{}{}
 		}
 	}()
 

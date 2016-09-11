@@ -33,7 +33,7 @@ func (mock *Mock) Close() error {
 	return nil
 }
 
-// GetFDs will return
+// GetFDs will return the underlying queue fds
 func (mock *Mock) GetFDs() []int {
 	return nil
 }

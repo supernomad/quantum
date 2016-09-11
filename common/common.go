@@ -6,10 +6,8 @@ import (
 )
 
 const (
-	// ReloadTrigger is the argument to trigger reusing passed in file descriptors
-	ReloadTrigger = ":|reload|:"
 	// RealInterfaceNameEnv is the environment variable the the real interface name is stored for reloads.
-	RealInterfaceNameEnv = "QUANTUM_REAL_INTERFACE_NAME"
+	RealInterfaceNameEnv = "_QUANTUM_REAL_INTERFACE_NAME"
 )
 
 const (
@@ -57,14 +55,4 @@ func IncrementIP(ip net.IP) {
 			break
 		}
 	}
-}
-
-// StringInSlice returns true if the given string is in the given slice.
-func StringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
 }

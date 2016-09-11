@@ -177,9 +177,9 @@ func (cfg *Config) handleComputed() error {
 
 	cfg.NumWorkers = cores
 
-	if StringInSlice(ReloadTrigger, os.Args) {
+	cfg.RealInterfaceName = os.Getenv(RealInterfaceNameEnv)
+	if cfg.RealInterfaceName != "" {
 		cfg.ReuseFDS = true
-		cfg.RealInterfaceName = os.Getenv("QUANTUM_REAL_INTERFACE_NAME")
 	}
 
 	return nil
