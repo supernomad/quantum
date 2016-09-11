@@ -20,7 +20,6 @@ type Socket interface {
 	Write(payload *common.Payload, mapping *common.Mapping, queue int) bool
 	Open() error
 	Close() error
-	GetFDs() []int
 }
 
 // New Socket object

@@ -6,11 +6,6 @@ import (
 )
 
 const (
-	// RealInterfaceNameEnv is the environment variable the the real interface name is stored for reloads.
-	RealInterfaceNameEnv = "_QUANTUM_REAL_INTERFACE_NAME"
-)
-
-const (
 	// MTU - The max size packet to recieve from the TUN device
 	MTU = 65475
 

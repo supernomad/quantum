@@ -33,7 +33,6 @@ type Interface interface {
 	Write(payload *common.Payload, queue int) bool
 	Open() error
 	Close() error
-	GetFDs() []int
 }
 
 // New Interface object

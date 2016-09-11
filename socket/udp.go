@@ -21,21 +21,16 @@ func (sock *UDP) Name() string {
 // Open the socket
 func (sock *UDP) Open() error {
 	for i := 0; i < sock.cfg.NumWorkers; i++ {
-		var queue int
-		var err error
-
-		if !sock.cfg.ReuseFDS {
-			queue, err = createUDP()
-			if err != nil {
-				return err
-			}
-			err = initUDP(queue, sock.sa)
-			if err != nil {
-				return err
-			}
-		} else {
-			queue = 3 + sock.cfg.NumWorkers + i
+		queue, err := createUDP()
+		if err != nil {
+			return err
 		}
+
+		err = initUDP(queue, sock.sa)
+		if err != nil {
+			return err
+		}
+
 		sock.queues[i] = queue
 	}
 	return nil
@@ -49,11 +44,6 @@ func (sock *UDP) Close() error {
 		}
 	}
 	return nil
-}
-
-// GetFDs will return the underlying queue fds
-func (sock *UDP) GetFDs() []int {
-	return sock.queues
 }
 
 // Read a packet from the socket
