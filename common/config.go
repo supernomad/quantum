@@ -106,7 +106,7 @@ func (cfg *Config) handleCli() {
 	flag.StringVar(&cfg.ConfFile, "conf-file", cfg.handleDefaultString("conf-file", ""), "The json or yaml file to load configuration data from.")
 
 	flag.StringVar(&cfg.InterfaceName, "interface-name", cfg.handleDefaultString("interface-name", "quantum%d"), "The name for the TUN interface that will be used for forwarding. Use %d to have the OS pick an available interface name.")
-	flag.DurationVar(&cfg.StatsWindow, "stats-window", cfg.handleDefaultDuration("stats-window", 5), "The window of time to calculate bandwidth and packet per second information on.")
+	flag.DurationVar(&cfg.StatsWindow, "stats-window", cfg.handleDefaultDuration("stats-window", 5*time.Second), "The window of time to calculate bandwidth and packet per second information on.")
 
 	flag.StringVar(&cfg.PrivateIP, "private-ip", cfg.handleDefaultString("private-ip", ""), "The private ip address of this node.")
 	flag.StringVar(&cfg.PublicIP, "public-ip", cfg.handleDefaultString("public-ip", ""), "The public ip address of this node.")
@@ -118,8 +118,8 @@ func (cfg *Config) handleCli() {
 	flag.StringVar(&cfg.DataDir, "data-dir", cfg.handleDefaultString("data-dir", "/var/lib/quantum"), "The data directory for quantum to use for persistent state.")
 	flag.StringVar(&cfg.PidFile, "pid-file", cfg.handleDefaultString("pid-file", "/var/run/quantum.pid"), "The pid file to write the process id to for supervison.")
 
-	flag.DurationVar(&cfg.SyncInterval, "sync-interval", cfg.handleDefaultDuration("sync-interval", 30), "The backend sync interval")
-	flag.DurationVar(&cfg.RefreshInterval, "refresh-interval", cfg.handleDefaultDuration("refresh-interval", 60), "The backend lease refresh interval.")
+	flag.DurationVar(&cfg.SyncInterval, "sync-interval", cfg.handleDefaultDuration("sync-interval", 30*time.Second), "The backend sync interval")
+	flag.DurationVar(&cfg.RefreshInterval, "refresh-interval", cfg.handleDefaultDuration("refresh-interval", 60*time.Second), "The backend lease refresh interval.")
 
 	flag.StringVar(&cfg.TLSCert, "tls-cert", cfg.handleDefaultString("tls-cert", ""), "The client certificate to use for authentication with the backend datastore.")
 	flag.StringVar(&cfg.TLSKey, "tls-key", cfg.handleDefaultString("tls-key", ""), "The client key to use for authentication with the backend datastore.")
