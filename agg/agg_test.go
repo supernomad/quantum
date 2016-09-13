@@ -17,8 +17,8 @@ func TestAgg(t *testing.T) {
 	agg := New(
 		common.NewLogger(),
 		&common.Config{
-			StatsWindow: 1,
-			NumWorkers:  3,
+			StatsWindow: 1 * time.Second,
+			NumWorkers:  3 * time.Second,
 		}, stats, stats)
 	agg.Start()
 	time.Sleep(2 * time.Second)
