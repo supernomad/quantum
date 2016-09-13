@@ -23,7 +23,7 @@ const (
 	consulStore string        = "consul"
 	etcdStore   string        = "etcd"
 	mockStore   string        = "mock"
-	lockTTL     time.Duration = 10 * time.Second
+	lockTTL     time.Duration = 20 * time.Second
 )
 
 // Libkv datastore object which is responsible for managing state between the local node and the real libkv datastore.
@@ -246,8 +246,8 @@ func (libkv *Libkv) Init() error {
 
 // Start watching the libkv and updating mappings.
 func (libkv *Libkv) Start() {
-	refresh := time.NewTicker(libkv.cfg.RefreshInterval * time.Second)
-	sync := time.NewTicker(libkv.cfg.SyncInterval * time.Second)
+	refresh := time.NewTicker(libkv.cfg.RefreshInterval)
+	sync := time.NewTicker(libkv.cfg.SyncInterval)
 	key := path.Join("/nodes/", libkv.cfg.MachineID)
 
 	stopWatching := make(chan struct{})
