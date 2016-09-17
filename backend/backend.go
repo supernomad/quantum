@@ -3,6 +3,7 @@ package backend
 import (
 	"errors"
 	"github.com/Supernomad/quantum/common"
+	"sync"
 )
 
 const (
@@ -14,7 +15,7 @@ const (
 type Backend interface {
 	GetMapping(ip uint32) (*common.Mapping, bool)
 	Init() error
-	Start()
+	Start(wg *sync.WaitGroup)
 	Stop()
 }
 

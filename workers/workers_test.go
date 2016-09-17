@@ -8,6 +8,7 @@ import (
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/inet"
 	"github.com/Supernomad/quantum/socket"
+	"sync"
 )
 
 var (
@@ -17,6 +18,7 @@ var (
 	sock      socket.Socket
 	store     *backend.Mock
 	privateIP = "10.1.1.1"
+	wg        = &sync.WaitGroup{}
 )
 
 var (

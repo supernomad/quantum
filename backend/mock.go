@@ -2,6 +2,7 @@ package backend
 
 import (
 	"github.com/Supernomad/quantum/common"
+	"sync"
 )
 
 // Mock backend
@@ -21,7 +22,7 @@ func (mock *Mock) Init() error {
 }
 
 // Start the mock backend
-func (mock *Mock) Start() {
+func (mock *Mock) Start(wg *sync.WaitGroup) {
 
 }
 
