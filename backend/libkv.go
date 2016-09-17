@@ -11,6 +11,7 @@ import (
 	"github.com/docker/libkv/store/etcd"
 	"io/ioutil"
 	"path"
+	"sync"
 	"time"
 )
 
@@ -245,23 +246,23 @@ func (libkv *Libkv) Init() error {
 }
 
 // Start watching the libkv and updating mappings.
-func (libkv *Libkv) Start() {
+func (libkv *Libkv) Start(wg *sync.WaitGroup) {
 	refresh := time.NewTicker(libkv.cfg.RefreshInterval)
 	sync := time.NewTicker(libkv.cfg.SyncInterval)
 	key := path.Join("/nodes/", libkv.cfg.MachineID)
 
-	stopWatching := make(chan struct{})
-	events, err := libkv.store.WatchTree(libkv.getKey("/nodes/"), stopWatching)
+	events, err := libkv.store.WatchTree(libkv.getKey("/nodes/"), nil)
 	if err != nil {
 		libkv.log.Error.Println("[BACKEND]", "Error setting up watch:", err)
 	}
 
 	go func() {
+		defer wg.Done()
+	loop:
 		for {
 			select {
-			case stop := <-libkv.stop:
-				stopWatching <- stop
-				break
+			case <-libkv.stop:
+				break loop
 			case <-refresh.C:
 				err := libkv.set(key, libkv.localMapping.Bytes(), libkv.NetworkCfg.LeaseTime)
 				if err != nil {
@@ -279,12 +280,15 @@ func (libkv *Libkv) Start() {
 				}
 			}
 		}
+		libkv.log.Info.Println("[BACKEND]", "Exited")
 	}()
 }
 
 // Stop watching the libkv and updating mappings
 func (libkv *Libkv) Stop() {
-	libkv.stop <- struct{}{}
+	go func() {
+		libkv.stop <- struct{}{}
+	}()
 }
 
 // New Libkv object

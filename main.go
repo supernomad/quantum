@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"sync"
 	"syscall"
 )
 
@@ -25,6 +26,7 @@ func handleError(log *common.Logger, err error) {
 
 func main() {
 	log := common.NewLogger()
+	wg := &sync.WaitGroup{}
 
 	cfg, err := common.NewConfig()
 	handleError(log, err)
@@ -49,11 +51,12 @@ func main() {
 
 	aggregator := agg.New(log, cfg, incoming.QueueStats, outgoing.QueueStats)
 
-	aggregator.Start()
-	store.Start()
+	wg.Add(2 + 2*cfg.NumWorkers)
+	aggregator.Start(wg)
+	store.Start(wg)
 	for i := 0; i < cfg.NumWorkers; i++ {
-		incoming.Start(i)
-		outgoing.Start(i)
+		incoming.Start(i, wg)
+		outgoing.Start(i, wg)
 	}
 
 	log.Info.Println("[MAIN]", "Listening on TUN device:  ", tunnel.Name())
@@ -62,9 +65,8 @@ func main() {
 	log.Info.Println("[MAIN]", "TUN public IP address:    ", cfg.PublicIP)
 	log.Info.Println("[MAIN]", "Listening on UDP address: ", cfg.ListenAddress+":"+strconv.Itoa(cfg.ListenPort))
 
+	exit := make(chan struct{})
 	signals := make(chan os.Signal, 1)
-	done := make(chan struct{}, 1)
-
 	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 
 	go func() {
@@ -98,10 +100,12 @@ func main() {
 			outgoing.Stop()
 			store.Stop()
 
+			wg.Wait()
+
 			pid, err := syscall.ForkExec(os.Args[0], os.Args, attr)
 			handleError(log, err)
-			ioutil.WriteFile(cfg.PidFile, []byte(strconv.Itoa(pid)), os.ModePerm)
-			done <- struct{}{}
+
+			ioutil.WriteFile(cfg.PidFile, []byte(strconv.Itoa(pid)), 0644)
 		case sig == syscall.SIGINT || sig == syscall.SIGTERM || sig == syscall.SIGKILL:
 			log.Info.Println("[MAIN]", "Recieved termination signal from user. Terminating process.")
 
@@ -110,12 +114,12 @@ func main() {
 			outgoing.Stop()
 			store.Stop()
 
+			wg.Wait()
+
 			sock.Close()
 			tunnel.Close()
-
-			done <- struct{}{}
 		}
+		exit <- struct{}{}
 	}()
-
-	<-done
+	<-exit
 }

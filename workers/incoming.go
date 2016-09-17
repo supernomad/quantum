@@ -2,10 +2,12 @@ package workers
 
 import (
 	"encoding/binary"
+	"fmt"
 	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/inet"
 	"github.com/Supernomad/quantum/socket"
+	"sync"
 )
 
 // Incoming external packet interface which handles reading packets off of a Socket object
@@ -13,7 +15,7 @@ type Incoming struct {
 	tunnel     inet.Interface
 	sock       socket.Socket
 	store      backend.Backend
-	quit       chan bool
+	stop       bool
 	QueueStats []*common.Stats
 }
 
@@ -96,25 +98,21 @@ func (incoming *Incoming) pipeline(buf []byte, queue int) bool {
 }
 
 // Start handling packets
-func (incoming *Incoming) Start(queue int) {
+func (incoming *Incoming) Start(queue int, wg *sync.WaitGroup) {
 	go func() {
+		defer wg.Done()
+
 		buf := make([]byte, common.MaxPacketLength)
-		for {
-			select {
-			case <-incoming.quit:
-				return
-			default:
-				incoming.pipeline(buf, queue)
-			}
+		for !incoming.stop {
+			incoming.pipeline(buf, queue)
 		}
+		fmt.Println("[INCOMING]", "Queue:", queue, "Exiting")
 	}()
 }
 
 // Stop handling packets
 func (incoming *Incoming) Stop() {
-	go func() {
-		incoming.quit <- true
-	}()
+	incoming.stop = true
 }
 
 // NewIncoming object
@@ -127,7 +125,7 @@ func NewIncoming(privateIP string, numWorkers int, store backend.Backend, tunnel
 		tunnel:     tunnel,
 		sock:       sock,
 		store:      store,
-		quit:       make(chan bool),
+		stop:       false,
 		QueueStats: stats,
 	}
 }

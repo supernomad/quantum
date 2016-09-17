@@ -3,11 +3,13 @@ package workers
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"fmt"
 	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/inet"
 	"github.com/Supernomad/quantum/socket"
 	"net"
+	"sync"
 )
 
 // Outgoing internal packet interface which handles reading packets off of a TUN object
@@ -16,7 +18,7 @@ type Outgoing struct {
 	sock       socket.Socket
 	privateIP  []byte
 	store      backend.Backend
-	quit       chan bool
+	stop       bool
 	QueueStats []*common.Stats
 }
 
@@ -100,25 +102,21 @@ func (outgoing *Outgoing) pipeline(buf []byte, queue int) bool {
 }
 
 // Start handling packets
-func (outgoing *Outgoing) Start(queue int) {
+func (outgoing *Outgoing) Start(queue int, wg *sync.WaitGroup) {
 	go func() {
+		defer wg.Done()
+
 		buf := make([]byte, common.MaxPacketLength)
-		for {
-			select {
-			case <-outgoing.quit:
-				return
-			default:
-				outgoing.pipeline(buf, queue)
-			}
+		for !outgoing.stop {
+			outgoing.pipeline(buf, queue)
 		}
+		fmt.Println("[OUTGOING]", "Queue:", queue, "Exiting")
 	}()
 }
 
 // Stop handling packets
 func (outgoing *Outgoing) Stop() {
-	go func() {
-		outgoing.quit <- true
-	}()
+	outgoing.stop = true
 }
 
 // NewOutgoing object
@@ -132,7 +130,7 @@ func NewOutgoing(privateIP string, numWorkers int, store backend.Backend, tunnel
 		sock:       sock,
 		privateIP:  net.ParseIP(privateIP).To4(),
 		store:      store,
-		quit:       make(chan bool),
+		stop:       false,
 		QueueStats: stats,
 	}
 }
