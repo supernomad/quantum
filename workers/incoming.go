@@ -7,11 +7,11 @@ import (
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/inet"
 	"github.com/Supernomad/quantum/socket"
-	"sync"
 )
 
 // Incoming external packet interface which handles reading packets off of a Socket object
 type Incoming struct {
+	cfg        *common.Config
 	tunnel     inet.Interface
 	sock       socket.Socket
 	store      backend.Backend
@@ -80,6 +80,7 @@ func (incoming *Incoming) stats(payload *common.Payload, mapping *common.Mapping
 func (incoming *Incoming) pipeline(buf []byte, queue int) bool {
 	payload, ok := incoming.sock.Read(buf, queue)
 	if !ok {
+		fmt.Println("What the fuck")
 		incoming.droppedStats(payload, nil, queue)
 		return ok
 	}
@@ -98,15 +99,12 @@ func (incoming *Incoming) pipeline(buf []byte, queue int) bool {
 }
 
 // Start handling packets
-func (incoming *Incoming) Start(queue int, wg *sync.WaitGroup) {
+func (incoming *Incoming) Start(queue int) {
 	go func() {
-		defer wg.Done()
-
 		buf := make([]byte, common.MaxPacketLength)
 		for !incoming.stop {
 			incoming.pipeline(buf, queue)
 		}
-		fmt.Println("[INCOMING]", "Queue:", queue, "Exiting")
 	}()
 }
 
@@ -116,12 +114,13 @@ func (incoming *Incoming) Stop() {
 }
 
 // NewIncoming object
-func NewIncoming(privateIP string, numWorkers int, store backend.Backend, tunnel inet.Interface, sock socket.Socket) *Incoming {
-	stats := make([]*common.Stats, numWorkers)
-	for i := 0; i < numWorkers; i++ {
+func NewIncoming(cfg *common.Config, store backend.Backend, tunnel inet.Interface, sock socket.Socket) *Incoming {
+	stats := make([]*common.Stats, cfg.NumWorkers)
+	for i := 0; i < cfg.NumWorkers; i++ {
 		stats[i] = common.NewStats()
 	}
 	return &Incoming{
+		cfg:        cfg,
 		tunnel:     tunnel,
 		sock:       sock,
 		store:      store,

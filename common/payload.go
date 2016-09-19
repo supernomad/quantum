@@ -39,3 +39,18 @@ func NewSockPayload(raw []byte, packetLength int) *Payload {
 		Length:    packetLength,
 	}
 }
+
+func NewIPPayload(raw []byte, packetLength int) *Payload {
+	offset := raw[0] & 15 * 4
+	ip := raw[offset+IPStart : offset+IPEnd]
+	nonce := raw[offset+NonceStart : offset+NonceEnd]
+	pkt := raw[offset+PacketStart : packetLength]
+
+	return &Payload{
+		Raw:       raw,
+		IPAddress: ip,
+		Nonce:     nonce,
+		Packet:    pkt,
+		Length:    packetLength - int(offset),
+	}
+}

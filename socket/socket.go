@@ -7,10 +7,12 @@ import (
 const (
 	// UDPSocket socket type
 	UDPSocket int = 0
-	// TCPSocket socket type
-	TCPSocket int = 1
+	// IPSocket socket type
+	IPSocket int = 1
 	// MOCKSocket socket type
 	MOCKSocket int = 2
+
+	ipProto = 138
 )
 
 // Socket is a generic multi-queue socket interface
@@ -28,6 +30,8 @@ func New(kind int, cfg *common.Config) Socket {
 	switch kind {
 	case UDPSocket:
 		return newUDP(cfg)
+	case IPSocket:
+		return newIP(cfg)
 	case MOCKSocket:
 		return newMock(cfg)
 	}

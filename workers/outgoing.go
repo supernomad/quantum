@@ -3,17 +3,16 @@ package workers
 import (
 	"crypto/rand"
 	"encoding/binary"
-	"fmt"
 	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/inet"
 	"github.com/Supernomad/quantum/socket"
 	"net"
-	"sync"
 )
 
 // Outgoing internal packet interface which handles reading packets off of a TUN object
 type Outgoing struct {
+	cfg        *common.Config
 	tunnel     inet.Interface
 	sock       socket.Socket
 	privateIP  []byte
@@ -102,15 +101,12 @@ func (outgoing *Outgoing) pipeline(buf []byte, queue int) bool {
 }
 
 // Start handling packets
-func (outgoing *Outgoing) Start(queue int, wg *sync.WaitGroup) {
+func (outgoing *Outgoing) Start(queue int) {
 	go func() {
-		defer wg.Done()
-
 		buf := make([]byte, common.MaxPacketLength)
 		for !outgoing.stop {
 			outgoing.pipeline(buf, queue)
 		}
-		fmt.Println("[OUTGOING]", "Queue:", queue, "Exiting")
 	}()
 }
 
@@ -120,15 +116,16 @@ func (outgoing *Outgoing) Stop() {
 }
 
 // NewOutgoing object
-func NewOutgoing(privateIP string, numWorkers int, store backend.Backend, tunnel inet.Interface, sock socket.Socket) *Outgoing {
-	stats := make([]*common.Stats, numWorkers)
-	for i := 0; i < numWorkers; i++ {
+func NewOutgoing(cfg *common.Config, store backend.Backend, tunnel inet.Interface, sock socket.Socket) *Outgoing {
+	stats := make([]*common.Stats, cfg.NumWorkers)
+	for i := 0; i < cfg.NumWorkers; i++ {
 		stats[i] = common.NewStats()
 	}
 	return &Outgoing{
+		cfg:        cfg,
 		tunnel:     tunnel,
 		sock:       sock,
-		privateIP:  net.ParseIP(privateIP).To4(),
+		privateIP:  net.ParseIP(cfg.PrivateIP).To4(),
 		store:      store,
 		stop:       false,
 		QueueStats: stats,

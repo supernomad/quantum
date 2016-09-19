@@ -41,22 +41,22 @@ func main() {
 	err = tunnel.Open()
 	handleError(log, err)
 
-	sock := socket.New(socket.UDPSocket, cfg)
+	sock := socket.New(socket.IPSocket, cfg)
 	err = sock.Open()
 	handleError(log, err)
 
-	outgoing := workers.NewOutgoing(cfg.PrivateIP, cfg.NumWorkers, store, tunnel, sock)
+	outgoing := workers.NewOutgoing(cfg, store, tunnel, sock)
 
-	incoming := workers.NewIncoming(cfg.PrivateIP, cfg.NumWorkers, store, tunnel, sock)
+	incoming := workers.NewIncoming(cfg, store, tunnel, sock)
 
 	aggregator := agg.New(log, cfg, incoming.QueueStats, outgoing.QueueStats)
 
-	wg.Add(2 + 2*cfg.NumWorkers)
+	wg.Add(2)
 	aggregator.Start(wg)
 	store.Start(wg)
 	for i := 0; i < cfg.NumWorkers; i++ {
-		incoming.Start(i, wg)
-		outgoing.Start(i, wg)
+		incoming.Start(i)
+		outgoing.Start(i)
 	}
 
 	log.Info.Println("[MAIN]", "Listening on TUN device:  ", tunnel.Name())
@@ -89,37 +89,26 @@ func main() {
 			}
 
 			os.Setenv(common.RealInterfaceNameEnv, tunnel.Name())
-			env := os.Environ()
-			attr := &syscall.ProcAttr{
-				Env:   env,
+			pid, err := syscall.ForkExec(os.Args[0], os.Args, &syscall.ProcAttr{
+				Env:   os.Environ(),
 				Files: files,
-			}
-
-			aggregator.Stop()
-			incoming.Stop()
-			outgoing.Stop()
-			store.Stop()
-
-			wg.Wait()
-
-			pid, err := syscall.ForkExec(os.Args[0], os.Args, attr)
+			})
 			handleError(log, err)
 
 			ioutil.WriteFile(cfg.PidFile, []byte(strconv.Itoa(pid)), 0644)
 		case sig == syscall.SIGINT || sig == syscall.SIGTERM || sig == syscall.SIGKILL:
 			log.Info.Println("[MAIN]", "Recieved termination signal from user. Terminating process.")
-
-			aggregator.Stop()
-			incoming.Stop()
-			outgoing.Stop()
-			store.Stop()
-
-			wg.Wait()
-
-			sock.Close()
-			tunnel.Close()
 		}
 		exit <- struct{}{}
 	}()
 	<-exit
+
+	aggregator.Stop()
+	store.Stop()
+	incoming.Stop()
+	outgoing.Stop()
+
+	sock.Close()
+	tunnel.Close()
+	wg.Wait()
 }
