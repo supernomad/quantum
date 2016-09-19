@@ -12,7 +12,7 @@ const (
 
 const (
 	// MTU - The max size packet to recieve from the TUN device
-	MTU = 65475
+	MTU = 65483
 
 	// HeaderSize - The size of the perpended data
 	HeaderSize = 16
@@ -21,7 +21,7 @@ const (
 	FooterSize = 16
 
 	// MaxPacketLength - The maximum packet size to send via the UDP device
-	MaxPacketLength = HeaderSize + MTU + FooterSize
+	MaxPacketLength = HeaderSize + MTU + FooterSize + 60
 )
 
 const (
