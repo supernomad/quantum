@@ -2,6 +2,7 @@ FROM ubuntu
 
 RUN apt-get update \
     && apt-get install -yqq \
+        mtr \
         tcpdump \
         iperf3 \
         iproute2 \

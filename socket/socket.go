@@ -31,7 +31,7 @@ func New(kind int, cfg *common.Config) Socket {
 	case UDPSocket:
 		return newUDP(cfg)
 	case IPSocket:
-		return newIP(cfg)
+		return newPacket(cfg)
 	case MOCKSocket:
 		return newMock(cfg)
 	}

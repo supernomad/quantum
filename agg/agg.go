@@ -1,7 +1,6 @@
 package agg
 
 import (
-	"fmt"
 	"github.com/Supernomad/quantum/common"
 	"sync"
 	"time"
@@ -66,8 +65,10 @@ func (agg *Agg) pipeline() {
 	outgoingStats := aggregateStats(agg.outgoingStats)
 
 	statsl := &StatsLog{
-		TxStats: outgoingStats,
-		RxStats: incomingStats,
+		TxStats:      outgoingStats,
+		TxQueueStats: agg.outgoingStats,
+		RxStats:      incomingStats,
+		RxQueueStats: agg.incomingStats,
 	}
 
 	agg.sendData(statsl)
@@ -86,7 +87,6 @@ func (agg *Agg) Start(wg *sync.WaitGroup) {
 				agg.pipeline()
 			}
 		}
-		fmt.Println("[AGG]", "Exited")
 	}()
 }
 

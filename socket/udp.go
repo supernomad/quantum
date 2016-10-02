@@ -67,7 +67,11 @@ func (sock *UDP) Read(buf []byte, queue int) (*common.Payload, bool) {
 
 // Write a packet to the socket
 func (sock *UDP) Write(payload *common.Payload, mapping *common.Mapping, queue int) bool {
-	err := syscall.Sendto(sock.queues[queue], payload.Raw[:payload.Length], 0, mapping.Sockaddr)
+	sa := &syscall.SockaddrInet4{
+		Port: mapping.PublicPort,
+	}
+	copy(sa.Addr[:], mapping.Addr.To4())
+	err := syscall.Sendto(sock.queues[queue], payload.Raw[:payload.Length], 0, sa)
 	if err != nil {
 		return false
 	}

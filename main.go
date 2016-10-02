@@ -17,9 +17,9 @@ import (
 
 const version string = "0.6.0"
 
-func handleError(log *common.Logger, err error) {
+func handleError(log *common.Logger, err error, stack string) {
 	if err != nil {
-		log.Error.Println(err)
+		log.Error.Println(err, "Stack:", stack)
 		os.Exit(1)
 	}
 }
@@ -29,21 +29,21 @@ func main() {
 	wg := &sync.WaitGroup{}
 
 	cfg, err := common.NewConfig()
-	handleError(log, err)
+	handleError(log, err, "common.NewConfig()")
 
 	store, err := backend.New(backend.LIBKV, log, cfg)
-	handleError(log, err)
+	handleError(log, err, "backend.New(backend.LIBKV, log, cfg)")
 
 	err = store.Init()
-	handleError(log, err)
+	handleError(log, err, "store.Init()")
 
 	tunnel := inet.New(inet.TUNInterface, cfg)
 	err = tunnel.Open()
-	handleError(log, err)
+	handleError(log, err, "tunnel.Open()")
 
 	sock := socket.New(socket.IPSocket, cfg)
 	err = sock.Open()
-	handleError(log, err)
+	handleError(log, err, "sock.Open()")
 
 	outgoing := workers.NewOutgoing(cfg, store, tunnel, sock)
 
@@ -93,7 +93,7 @@ func main() {
 				Env:   os.Environ(),
 				Files: files,
 			})
-			handleError(log, err)
+			handleError(log, err, "syscall.ForkExec(os.Args[0], os.Args, &syscall.ProcAttr{Env: os.Environ(), Files: files})")
 
 			ioutil.WriteFile(cfg.PidFile, []byte(strconv.Itoa(pid)), 0644)
 		case sig == syscall.SIGINT || sig == syscall.SIGTERM || sig == syscall.SIGKILL:
