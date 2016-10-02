@@ -152,7 +152,7 @@ func (libkv *Libkv) handleLocalMapping() error {
 		}
 	}
 
-	mapping := common.NewMapping(libkv.cfg.PrivateIP, libkv.cfg.PublicAddress, libkv.cfg.MachineID, libkv.cfg.PublicKey)
+	mapping := common.NewMapping(libkv.cfg.PrivateIP, libkv.cfg.PublicIP, libkv.cfg.ListenPort, libkv.cfg.PublicKey)
 	key := path.Join("/nodes/", libkv.cfg.MachineID)
 
 	err := libkv.set(key, mapping.Bytes(), libkv.NetworkCfg.LeaseTime)

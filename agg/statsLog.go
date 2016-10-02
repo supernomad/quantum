@@ -7,8 +7,10 @@ import (
 
 // StatsLog object to hold statistics information for quantum
 type StatsLog struct {
-	TxStats *common.Stats
-	RxStats *common.Stats
+	TxStats      *common.Stats
+	RxStats      *common.Stats
+	TxQueueStats []*common.Stats
+	RxQueueStats []*common.Stats
 }
 
 // String the StatsLog object
