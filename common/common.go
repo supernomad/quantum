@@ -12,7 +12,7 @@ const (
 
 const (
 	// MTU - The max size packet to recieve from the TUN device
-	MTU = 1500 - HeaderSize - FooterSize - IPHeaderSize
+	MTU = 65400 - HeaderSize - FooterSize - IPHeaderSize
 
 	// HeaderSize - The size of the perpended data
 	HeaderSize = 16
@@ -24,30 +24,24 @@ const (
 	IPHeaderSize = 20
 
 	// MaxPacketLength - The maximum packet size to send via the UDP device
-	MaxPacketLength = 4096
+	MaxPacketLength = 65536
 )
 
 const (
-	// IPHeaderStart - the ip header start position
-	IPHeaderStart = 0
-
-	// IPHeaderEnd - the ip header end position
-	IPHeaderEnd = 20
-
 	// IPStart - The ip start position
-	IPStart = 20
+	IPStart = 0
 
 	// IPEnd - The ip end position
-	IPEnd = 24
+	IPEnd = 4
 
 	// NonceStart - The nonce start position
-	NonceStart = 24
+	NonceStart = 4
 
 	// NonceEnd - The nonce end postion
-	NonceEnd = 36
+	NonceEnd = 16
 
 	// PacketStart - The packet start position
-	PacketStart = 36
+	PacketStart = 16
 )
 
 // IPtoInt takes a string ip in the form '0.0.0.0' and returns a uint32 that represents that ipaddress

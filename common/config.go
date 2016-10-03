@@ -196,11 +196,7 @@ func (cfg *Config) handleComputed() error {
 	}
 
 	cfg.PublicAddress = cfg.PublicIP + ":" + strconv.Itoa(cfg.ListenPort)
-
-	cores := runtime.NumCPU()
-	runtime.GOMAXPROCS(cores * 2)
-
-	cfg.NumWorkers = 1
+	cfg.NumWorkers = runtime.NumCPU()
 
 	cfg.RealInterfaceName = os.Getenv(RealInterfaceNameEnv)
 	if cfg.RealInterfaceName != "" {

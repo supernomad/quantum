@@ -8,11 +8,6 @@ import (
 type Mock struct {
 }
 
-// Name of the socket
-func (mock *Mock) Name() string {
-	return "Mocked Socket"
-}
-
 // Read a packet off the socket
 func (mock *Mock) Read(buf []byte, queue int) (*common.Payload, bool) {
 	return common.NewSockPayload(buf, len(buf)), true
