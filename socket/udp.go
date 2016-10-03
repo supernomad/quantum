@@ -13,11 +13,6 @@ type UDP struct {
 	sa     *syscall.SockaddrInet4
 }
 
-// Name address of the socket
-func (sock *UDP) Name() string {
-	return sock.cfg.ListenAddress
-}
-
 // Open the socket
 func (sock *UDP) Open() error {
 	for i := 0; i < sock.cfg.NumWorkers; i++ {

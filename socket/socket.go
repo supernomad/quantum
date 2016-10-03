@@ -17,7 +17,6 @@ const (
 
 // Socket is a generic multi-queue socket interface
 type Socket interface {
-	Name() string
 	Read(buf []byte, queue int) (*common.Payload, bool)
 	Write(payload *common.Payload, mapping *common.Mapping, queue int) bool
 	Open() error
@@ -31,7 +30,7 @@ func New(kind int, cfg *common.Config) Socket {
 	case UDPSocket:
 		return newUDP(cfg)
 	case IPSocket:
-		return newPacket(cfg)
+		return newIP(cfg)
 	case MOCKSocket:
 		return newMock(cfg)
 	}

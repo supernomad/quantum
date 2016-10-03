@@ -30,7 +30,7 @@ func ParseMapping(data, privkey []byte) (*Mapping, error) {
 
 	secret := GenerateSharedSecret(mapping.PublicKey, privkey)
 
-	block, err := aes.NewCipher(secret)
+	block, err := aes.NewCipher(secret[0:16])
 	if err != nil {
 		return nil, err
 	}
