@@ -130,29 +130,31 @@ func initPacket(rtype int, sa *syscall.SockaddrLinklayer) (int, []byte, error) {
 		return -1, nil, fmt.Errorf("Create socket error: %v", err)
 	}
 
-	// bind the socket to the public interface
-	err = syscall.Bind(queue, sa)
-	if err != nil {
-		return -1, nil, fmt.Errorf("Bind socket error: %v", err)
-	}
+	if rtype == rxRing {
+		// bind the socket to the public interface
+		err = syscall.Bind(queue, sa)
+		if err != nil {
+			return -1, nil, fmt.Errorf("Bind socket error: %v", err)
+		}
 
-	// set the socket C.PACKET_FANOUT options
-	fanoutVar := (C.PACKET_FANOUT_LB | C.PACKET_FANOUT_FLAG_ROLLOVER | C.PACKET_FANOUT_FLAG_DEFRAG) << 16
-	err = syscall.SetsockoptInt(queue, syscall.SOL_PACKET, C.PACKET_FANOUT, fanoutVar)
-	if err != nil {
-		return -1, nil, fmt.Errorf("Fanout option error: %v", err)
-	}
+		// set the socket C.PACKET_FANOUT options
+		fanoutVar := (C.PACKET_FANOUT_LB | C.PACKET_FANOUT_FLAG_ROLLOVER | C.PACKET_FANOUT_FLAG_DEFRAG) << 16
+		err = syscall.SetsockoptInt(queue, syscall.SOL_PACKET, C.PACKET_FANOUT, fanoutVar)
+		if err != nil {
+			return -1, nil, fmt.Errorf("Fanout option error: %v", err)
+		}
 
-	// set the base bpf filter to only get quantum traffic
-	_, err = C.setsockopt(C.int(queue), C.SOL_SOCKET, C.int(C.SO_ATTACH_FILTER), unsafe.Pointer(&filter), C.socklen_t(unsafe.Sizeof(filter)))
-	if err != nil {
-		return -1, nil, fmt.Errorf("Bpf option error: %v", err)
+		// set the base bpf filter to only get quantum traffic
+		_, err = C.setsockopt(C.int(queue), C.SOL_SOCKET, C.int(C.SO_ATTACH_FILTER), unsafe.Pointer(&filter), C.socklen_t(unsafe.Sizeof(filter)))
+		if err != nil {
+			return -1, nil, fmt.Errorf("Bpf option error: %v", err)
+		}
 	}
 
 	// setup the ring buffer
 	_, err = C.setsockopt(C.int(queue), C.SOL_PACKET, C.int(rtype), unsafe.Pointer(&tpreq), C.socklen_t(unsafe.Sizeof(tpreq)))
 	if err != nil {
-		return -1, nil, fmt.Errorf("TxRing option error: %v", err)
+		return -1, nil, fmt.Errorf("Ring option error: %v", err)
 	}
 
 	// generate the actual memory buffer for the rx/tx ring buffers
@@ -160,6 +162,7 @@ func initPacket(rtype int, sa *syscall.SockaddrLinklayer) (int, []byte, error) {
 	if err != nil {
 		return -1, nil, fmt.Errorf("Mmap error: %v", err)
 	}
+
 	return queue, ring, nil
 }
 
