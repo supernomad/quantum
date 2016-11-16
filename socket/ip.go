@@ -14,6 +14,10 @@ type IP struct {
 	cfg    *common.Config
 }
 
+const (
+	ethernetMTU = 1480
+)
+
 func checksum(buf []byte) {
 	buf[10] = 0
 	buf[11] = 0
@@ -49,8 +53,8 @@ func (sock *IP) Read(buf []byte, queue int) (*common.Payload, bool) {
 	if err != nil {
 		return nil, false
 	}
-	header, err := ipv4.ParseHeader(buf)
-	return common.NewIPPayload(buf[20:header.TotalLen], header.TotalLen-20), true
+	iph, err := ipv4.ParseHeader(buf)
+	return common.NewIPPayload(buf[20:iph.TotalLen], iph.TotalLen-20), true
 }
 
 func (sock *IP) Write(payload *common.Payload, mapping *common.Mapping, queue int) bool {
@@ -71,17 +75,39 @@ func (sock *IP) Write(payload *common.Payload, mapping *common.Mapping, queue in
 	}
 	sock.id++
 
-	buf, _ := iph.Marshal()
-	checksum(buf)
-	buf = append(buf, payload.Raw[:payload.Length]...)
+	data := payload.Raw[:payload.Length]
+	length := len(data)
 
-	err := sock.packet.Send(buf, queue)
-	if err != nil {
-		fmt.Println(err)
-		return false
+	numFragments := int(length / ethernetMTU)
+	if length%ethernetMTU != 0 {
+		numFragments += 1
 	}
 
-	err = sock.packet.Flush(queue)
+	for i := 0; i < numFragments; i++ {
+		start := i * ethernetMTU
+		end := start
+
+		if i+1 == numFragments {
+			end += length
+			iph.Flags = 0
+		} else {
+			end += ethernetMTU
+			length -= ethernetMTU
+			iph.Flags = ipv4.MoreFragments
+		}
+		iph.TotalLen = (end - start) + 20
+		iph.FragOff = i * (ethernetMTU / 8)
+
+		buf, _ := iph.Marshal()
+		checksum(buf)
+		err := sock.packet.Send(append(buf, data[start:end]...), queue)
+		if err != nil {
+			fmt.Println(err)
+			return false
+		}
+	}
+
+	err := sock.packet.Flush(queue)
 	if err != nil {
 		fmt.Println(err)
 		return false

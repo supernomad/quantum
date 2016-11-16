@@ -42,6 +42,21 @@ type RingBuffer struct {
 	offset int
 }
 
+type Frame struct {
+	raw  []byte
+	tph  *C.struct_tpacket_hdr
+	Data []byte
+}
+
+func (frame *Frame) FinalizeRead() {
+	frame.tph.tp_status = C.TP_STATUS_KERNEL
+}
+
+func (frame *Frame) FinalizeWrite() {
+	frame.tph.tp_len = C.uint(len(frame.raw))
+	frame.tph.tp_status = C.TP_STATUS_SEND_REQUEST
+}
+
 var tpreq C.struct_tpacket_req
 var bpfCode [5]C.struct_sock_filter
 var filter C.struct_sock_fprog
@@ -94,14 +109,14 @@ func (packet *Packet) poll(rtype int, queue int, events C.short) error {
 	return err
 }
 
-func (packet *Packet) nextFrame(rtype int, queue int, status C.ulong, events C.short) (*C.struct_tpacket_hdr, []byte, error) {
+func (packet *Packet) nextFrame(rtype int, queue int, status C.ulong, events C.short) (*Frame, error) {
 	pos := packet.rings[rtype][queue].offset * frameSize
 	tph := (*C.struct_tpacket_hdr)(unsafe.Pointer(&packet.rings[rtype][queue].buffer[pos]))
 
 	for tph.tp_status&status != status {
 		err := packet.poll(rtype, queue, events)
 		if err != nil {
-			return nil, nil, fmt.Errorf("Poll error: %s", err)
+			return nil, fmt.Errorf("Poll error: %s", err)
 		}
 	}
 
@@ -118,9 +133,13 @@ func (packet *Packet) nextFrame(rtype int, queue int, status C.ulong, events C.s
 	case txRing:
 		var sll C.struct_sockaddr_ll
 		start = pos + C.TPACKET_HDRLEN - int(unsafe.Sizeof(sll))
-		end = start + frameSize
+		end = pos + frameSize
 	}
-	return tph, packet.rings[rtype][queue].buffer[start:end], nil
+	return &Frame{
+		raw:  packet.rings[rtype][queue].buffer[pos:end],
+		tph:  tph,
+		Data: packet.rings[rtype][queue].buffer[start:end],
+	}, nil
 }
 
 func initPacket(rtype int, sa *syscall.SockaddrLinklayer) (int, []byte, error) {
@@ -222,23 +241,22 @@ func (packet *Packet) Close() error {
 }
 
 func (packet *Packet) Recv(buf []byte, queue int) error {
-	tph, frame, err := packet.nextFrame(rxRing, queue, C.TP_STATUS_USER, C.POLLIN)
+	frame, err := packet.nextFrame(rxRing, queue, C.TP_STATUS_USER, C.POLLIN)
 	if err != nil {
 		return fmt.Errorf("Get next rx frame error: %s", err)
 	}
-	copy(buf[:], frame[:])
-	tph.tp_status = C.TP_STATUS_KERNEL
+	copy(buf[:], frame.Data[:])
+	frame.FinalizeRead()
 	return nil
 }
 
 func (packet *Packet) Send(buf []byte, queue int) error {
-	tph, frame, err := packet.nextFrame(txRing, queue, C.TP_STATUS_AVAILABLE, C.POLLOUT)
+	frame, err := packet.nextFrame(txRing, queue, C.TP_STATUS_AVAILABLE, C.POLLOUT)
 	if err != nil {
 		return fmt.Errorf("Get next tx frame error: %s", err)
 	}
-	copy(frame[:], buf[:])
-	tph.tp_len = C.uint(len(buf))
-	tph.tp_status = C.TP_STATUS_SEND_REQUEST
+	copy(frame.Data[:], buf[:])
+	frame.FinalizeWrite()
 	return nil
 }
 
