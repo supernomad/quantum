@@ -83,7 +83,7 @@ func (libkv *Libkv) getKey(key string) string {
 
 func (libkv *Libkv) lock() error {
 	stopWaiting := make(chan struct{})
-	ticker := time.NewTicker(lockTTL)
+	ticker := time.NewTicker(lockTTL / 5)
 	locker, err := libkv.store.NewLock(libkv.getKey("/lock"), &store.LockOptions{Value: []byte(libkv.cfg.MachineID), TTL: lockTTL})
 	if err != nil {
 		return err
