@@ -39,6 +39,7 @@ func NewSockPayload(raw []byte, packetLength int) *Payload {
 	}
 }
 
+// NewIPPayload is used to generate a payload based on a IP packet
 func NewIPPayload(raw []byte, packetLength int) *Payload {
 	ip := raw[IPStart:IPEnd]
 	nonce := raw[NonceStart:NonceEnd]

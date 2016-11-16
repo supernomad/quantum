@@ -128,7 +128,7 @@ func TestIncomingPipeline(t *testing.T) {
 }
 
 func TestIncoming(t *testing.T) {
-	incoming.Start(0, wg)
+	incoming.Start(0)
 	time.Sleep(2 * time.Second)
 	incoming.Stop()
 }

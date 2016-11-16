@@ -19,7 +19,7 @@ const version string = "0.6.0"
 
 func handleError(log *common.Logger, err error, stack string) {
 	if err != nil {
-		log.Error.Println(err, "Stack:", stack)
+		log.Error.Println(err.Error(), "Stack:", stack)
 		os.Exit(1)
 	}
 }

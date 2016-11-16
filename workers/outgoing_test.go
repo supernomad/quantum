@@ -107,7 +107,7 @@ func TestOutgoingPipeline(t *testing.T) {
 }
 
 func TestOutgoing(t *testing.T) {
-	outgoing.Start(0, wg)
+	outgoing.Start(0)
 	time.Sleep(2 * time.Second)
 	outgoing.Stop()
 }
