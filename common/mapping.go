@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"encoding/json"
 	"net"
+	"syscall"
 )
 
 // Mapping represents the relationship between a public/private address and encryption metadata
@@ -13,8 +14,9 @@ type Mapping struct {
 	PublicKey  []byte
 	PublicIP   string
 	PublicPort int
-	Addr       net.IP      `json:"-"`
-	Cipher     cipher.AEAD `json:"-"`
+	Addr       net.IP           `json:"-"`
+	Cipher     cipher.AEAD      `json:"-"`
+	Sockaddr   syscall.Sockaddr `json:"-"`
 }
 
 // Bytes returns the mapping as a byte slice
@@ -43,6 +45,16 @@ func ParseMapping(data, privkey []byte) (*Mapping, error) {
 	mapping.Cipher = aesgcm
 
 	mapping.Addr = net.ParseIP(mapping.PublicIP)
+
+	if addr := mapping.Addr.To4(); addr != nil {
+		sa := &syscall.SockaddrInet4{Port: mapping.PublicPort}
+		copy(sa.Addr[:], addr[:])
+		mapping.Sockaddr = sa
+	} else if addr := mapping.Addr.To16(); addr != nil {
+		sa := &syscall.SockaddrInet6{Port: mapping.PublicPort}
+		copy(sa.Addr[:], addr[:])
+		mapping.Sockaddr = sa
+	}
 
 	return &mapping, nil
 }

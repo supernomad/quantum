@@ -48,7 +48,7 @@ func init() {
 	intRemoteIP = common.IPtoInt(remoteIP)
 	intLocalIP = common.IPtoInt(localIP)
 
-	testMapping = &common.Mapping{PublicKey: make([]byte, 32), SecretKey: key, Cipher: aesgcm}
+	testMapping = &common.Mapping{PublicKey: make([]byte, 32), Cipher: aesgcm}
 
 	store.Mappings[intRemoteIP] = testMapping
 	store.Mappings[intLocalIP] = testMapping
@@ -57,6 +57,6 @@ func init() {
 		store.Mappings[intRemoteIP+uint32(i)] = &common.Mapping{PublicKey: make([]byte, 32)}
 	}
 
-	incoming = NewIncoming(remoteIP, 1, store, tun, sock)
-	outgoing = NewOutgoing(localIP, 1, store, tun, sock)
+	incoming = NewIncoming(&common.Config{NumWorkers: 1, PrivateIP: remoteIP}, store, tun, sock)
+	outgoing = NewOutgoing(&common.Config{NumWorkers: 1, PrivateIP: localIP}, store, tun, sock)
 }

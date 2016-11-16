@@ -6,7 +6,7 @@ import (
 	"syscall"
 )
 
-// UDP is a generic multique socket
+// UDP is a generic multiqueue socket
 type UDP struct {
 	queues []int
 	cfg    *common.Config
@@ -62,11 +62,7 @@ func (sock *UDP) Read(buf []byte, queue int) (*common.Payload, bool) {
 
 // Write a packet to the socket
 func (sock *UDP) Write(payload *common.Payload, mapping *common.Mapping, queue int) bool {
-	sa := &syscall.SockaddrInet4{
-		Port: mapping.PublicPort,
-	}
-	copy(sa.Addr[:], mapping.Addr.To4())
-	err := syscall.Sendto(sock.queues[queue], payload.Raw[:payload.Length], 0, sa)
+	err := syscall.Sendto(sock.queues[queue], payload.Raw[:payload.Length], 0, mapping.Sockaddr)
 	if err != nil {
 		return false
 	}
