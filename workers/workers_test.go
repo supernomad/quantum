@@ -54,7 +54,7 @@ func init() {
 	store.Mappings[intLocalIP] = testMapping
 
 	for i := 5; i < 10000; i++ {
-		store.Mappings[intRemoteIP+uint32(i)] = &common.Mapping{PublicKey: make([]byte, 32)}
+		store.Mappings[intRemoteIP+uint32(i)] = &common.Mapping{PublicKey: make([]byte, 32), Cipher: aesgcm}
 	}
 
 	incoming = NewIncoming(&common.Config{NumWorkers: 1, PrivateIP: remoteIP}, store, tun, sock)
