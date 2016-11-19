@@ -136,7 +136,7 @@ func (libkv *Libkv) getFreeIP() (string, error) {
 			return str, nil
 		}
 	}
-	return "", errors.New("There are no available ip addresses in the configured network.")
+	return "", errors.New("there are no available ip addresses in the configured network")
 }
 
 func (libkv *Libkv) handleLocalMapping() error {
@@ -253,7 +253,7 @@ func (libkv *Libkv) Start(wg *sync.WaitGroup) {
 
 	events, err := libkv.store.WatchTree(libkv.getKey("/nodes/"), nil)
 	if err != nil {
-		libkv.log.Error.Println("[BACKEND]", "Error setting up watch:", err)
+		libkv.log.Error.Println("[BACKEND]", "error setting up watch:", err)
 	}
 
 	go func() {
@@ -266,21 +266,21 @@ func (libkv *Libkv) Start(wg *sync.WaitGroup) {
 			case <-refresh.C:
 				err := libkv.set(key, libkv.localMapping.Bytes(), libkv.NetworkCfg.LeaseTime)
 				if err != nil {
-					libkv.log.Error.Println("[BACKEND]", "Error during refresh of the ip address lease:", err)
+					libkv.log.Error.Println("[BACKEND]", "error during refresh of the ip address lease:", err)
 				}
 			case <-sync.C:
 				err := libkv.syncMappings(nil)
 				if err != nil {
-					libkv.log.Error.Println("[BACKEND]", "Error during resync of the ip address mappings:", err)
+					libkv.log.Error.Println("[BACKEND]", "error during resync of the ip address mappings:", err)
 				}
 			case nodes := <-events:
 				err := libkv.syncMappings(nodes)
 				if err != nil {
-					libkv.log.Error.Println("[BACKEND]", "Error while watching of the ip address mappings for changes:", err)
+					libkv.log.Error.Println("[BACKEND]", "error while watching of the ip address mappings for changes:", err)
 				}
 			}
 		}
-		libkv.log.Info.Println("[BACKEND]", "Exited")
+		libkv.log.Info.Println("[BACKEND]", "exited")
 	}()
 }
 
@@ -306,7 +306,7 @@ func newLibkv(log *common.Logger, cfg *common.Config) (Backend, error) {
 	case etcdStore:
 		libkvStore, err = libkv.NewStore(store.ETCD, cfg.Endpoints, storeCfg)
 	default:
-		err = errors.New("Configured 'Datastore' is not supported by quantum.")
+		err = errors.New("configured 'Datastore' is not supported by quantum")
 	}
 
 	if err != nil {
