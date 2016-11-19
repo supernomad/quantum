@@ -25,6 +25,6 @@ func New(kind int, log *common.Logger, cfg *common.Config) (Backend, error) {
 	case LIBKV:
 		return newLibkv(log, cfg)
 	default:
-		return nil, errors.New("Non compatible backend specified.")
+		return nil, errors.New("non compatible backend specified")
 	}
 }
