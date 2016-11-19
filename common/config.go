@@ -294,7 +294,7 @@ func (cfg *Config) handleFile() error {
 		case ".yaml" == ext || ".yml" == ext:
 			err = yaml.Unmarshal(buf, &data)
 		default:
-			return errors.New("The configuration file is not in a supported format.")
+			return errors.New("the configuration file is not in a supported format")
 		}
 
 		return cfg.parseFileData(data)
