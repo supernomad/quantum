@@ -11,28 +11,14 @@ const (
 )
 
 const (
-	// MTU - The max size packet to recieve from the TUN device
-	MTU = 65400 - HeaderSize - FooterSize - IPHeaderSize
-
-	// HeaderSize - The size of the perpended data
-	HeaderSize = 16
-
-	// FooterSize - The size of the appended data
-	FooterSize = 16
-
-	// IPHeaderSize - The size of the injected ip header
-	IPHeaderSize = 20
-
-	// MaxPacketLength - The maximum packet size to send via the UDP device
-	MaxPacketLength = 65536
-)
-
-const (
 	// IPStart - The ip start position
 	IPStart = 0
 
 	// IPEnd - The ip end position
 	IPEnd = 4
+
+	// IPLength - The length of the private ip header
+	IPLength = 4
 
 	// NonceStart - The nonce start position
 	NonceStart = 4
@@ -40,9 +26,29 @@ const (
 	// NonceEnd - The nonce end postion
 	NonceEnd = 16
 
+	// NonceLength - The nonce length
+	NonceLength = 12
+
+	// TagLength - The crypto tag length
+	TagLength = 16
+
 	// PacketStart - The packet start position
 	PacketStart = 16
+
+	// MaxPacketLength - The maximum packet size to send via the UDP device
+	MaxPacketLength = 65500
+
+	// HeaderSize - The size of the perpended data
+	HeaderSize = IPLength + NonceLength
+
+	// FooterSize - The size of the appended data
+	FooterSize = TagLength
+
+	// MTU - The max size packet to recieve from the TUN device
+	MTU = MaxPacketLength - HeaderSize - FooterSize
 )
+
+const ()
 
 // IPtoInt takes a string ip in the form '0.0.0.0' and returns a uint32 that represents that ipaddress
 func IPtoInt(IP string) uint32 {

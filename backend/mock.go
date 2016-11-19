@@ -1,22 +1,19 @@
 package backend
 
 import (
-	"fmt"
 	"github.com/Supernomad/quantum/common"
 	"sync"
 )
 
 // Mock backend
 type Mock struct {
-	Mappings map[uint32]*common.Mapping
-	wg       *sync.WaitGroup
+	Mapping *common.Mapping
+	wg      *sync.WaitGroup
 }
 
 // GetMapping from the mock backend
 func (mock *Mock) GetMapping(ip uint32) (*common.Mapping, bool) {
-	val, ok := mock.Mappings[ip]
-	fmt.Println(val, ok)
-	return val, ok
+	return mock.Mapping, true
 }
 
 // Init the mock backend

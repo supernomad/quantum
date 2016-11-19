@@ -2,7 +2,6 @@ package workers
 
 import (
 	"encoding/binary"
-	"fmt"
 	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/inet"
@@ -32,7 +31,6 @@ func (incoming *Incoming) resolve(payload *common.Payload) (*common.Payload, *co
 func (incoming *Incoming) unseal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
 	_, err := mapping.Cipher.Open(payload.Packet[:0], payload.Nonce, payload.Packet, nil)
 	if err != nil {
-		fmt.Println(err.Error())
 		return nil, false
 	}
 
