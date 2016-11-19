@@ -42,6 +42,7 @@ $ go get github.com/mattn/goveralls
 $ go get github.com/golang/lint/golint
 $ go get github.com/GeertJohan/fgt
 # Run a build of quantum which will ensure your system is indeed up to date.
+$ bin/generate-etcd-certs
 $ bin/build.sh
 # Build the container to run quantum in.
 $ docker-compose build
