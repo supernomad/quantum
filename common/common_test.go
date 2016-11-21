@@ -67,7 +67,7 @@ func testEq(a, b []byte) bool {
 
 func TestIPtoInt(t *testing.T) {
 	var expected uint32
-	actual := IPtoInt("0.0.0.0")
+	actual := IPtoInt(net.ParseIP("0.0.0.0"))
 	if expected != actual {
 		t.Fatalf("IPtoInt did not return the right value, got: %d, expected: %d", actual, expected)
 	}
@@ -89,10 +89,13 @@ func TestNewConfig(t *testing.T) {
 	os.Setenv("QUANTUM_STATS_WINDOW", "10s")
 	os.Setenv("QUANTUM_LISTEN_PORT", "1")
 	os.Setenv("QUANTUM_CONF_FILE", confFile)
+	os.Setenv("QUANTUM_PID_FILE", "quantum.pid")
+
 	cfg, err := NewConfig()
 	if err != nil {
 		t.Fatalf("NewConfig returned an error, %s", err)
 	}
+	t.Log(cfg)
 	if cfg == nil {
 		t.Fatal("NewConfig returned a blank config")
 	}
@@ -104,6 +107,9 @@ func TestNewConfig(t *testing.T) {
 	}
 	if cfg.ListenPort != 1 {
 		t.Fatalf("NewConfig didn't pick up the environment variable replacement for ListenPort")
+	}
+	if cfg.Datastore != "consul" {
+		t.Fatalf("NewConfig didn't pick up the config file replacement for datastore")
 	}
 }
 
@@ -128,29 +134,31 @@ func TestEcdh(t *testing.T) {
 }
 
 func TestNewMapping(t *testing.T) {
-	privateIP := "0.0.0.0"
-	publicip := "1.1.1.1"
+	privateIP := net.ParseIP("0.0.0.0")
+	publicip := net.ParseIP("1.1.1.1")
+	publicip6 := net.ParseIP("dead::beef")
 	publicport := 80
 	publicKey := make([]byte, 32)
 
-	actual := NewMapping(privateIP, publicip, publicport, publicKey)
-	if actual.PublicIP != publicip || actual.PublicPort != publicport || actual.PrivateIP != privateIP || len(actual.PublicKey) != 32 {
+	actual := NewMapping(privateIP, publicip, publicip6, publicport, publicKey)
+	if !testEq(actual.IPv4, publicip) || !testEq(actual.IPv6, publicip6) || actual.Port != publicport || !testEq(actual.PrivateIP, privateIP) || !testEq(actual.PublicKey, publicKey) {
 		t.Fatalf("NewMapping did not return the right value, got: %v", actual)
 	}
 }
 
 func TestParseMapping(t *testing.T) {
-	privateIP := "0.0.0.0"
-	publicip := "1.1.1.1"
+	privateIP := net.ParseIP("0.0.0.0")
+	publicip := net.ParseIP("1.1.1.1")
+	publicip6 := net.ParseIP("dead::beef")
 	publicport := 80
 	publicKey := make([]byte, 32)
 
-	expected := NewMapping(privateIP, publicip, publicport, publicKey)
+	expected := NewMapping(privateIP, publicip, publicip6, publicport, publicKey)
 	actual, err := ParseMapping(expected.Bytes(), make([]byte, 32))
 	if err != nil {
 		t.Fatalf("Error occured during test: %s", err)
 	}
-	if actual.PublicIP != expected.PublicIP || actual.PublicPort != expected.PublicPort || actual.PrivateIP != expected.PrivateIP || len(actual.PublicKey) != len(expected.PublicKey) {
+	if !testEq(actual.IPv4, expected.IPv4) || actual.Port != expected.Port || !testEq(actual.PrivateIP, expected.PrivateIP) || !testEq(actual.PublicKey, expected.PublicKey) {
 		t.Fatalf("ParseMapping did not return the right value, got: %v, expected: %v", actual, expected)
 	}
 }

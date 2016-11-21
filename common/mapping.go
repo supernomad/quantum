@@ -10,19 +10,25 @@ import (
 
 // Mapping represents the relationship between a public/private address and encryption metadata
 type Mapping struct {
-	PrivateIP  string
-	PublicKey  []byte
-	PublicIP   string
-	PublicPort int
-	Addr       net.IP           `json:"-"`
-	Cipher     cipher.AEAD      `json:"-"`
-	Sockaddr   syscall.Sockaddr `json:"-"`
+	PrivateIP     net.IP                 `json:"privateIP"`
+	PublicKey     []byte                 `json:"publicKey"`
+	IPv4          net.IP                 `json:"ipv4,omitempty"`
+	IPv6          net.IP                 `json:"ipv6,omitempty"`
+	Port          int                    `json:"port"`
+	Cipher        cipher.AEAD            `json:"-"`
+	SockaddrInet4 *syscall.SockaddrInet4 `json:"-"`
+	SockaddrInet6 *syscall.SockaddrInet6 `json:"-"`
 }
 
 // Bytes returns the mapping as a byte slice
-func (m *Mapping) Bytes() []byte {
-	buf, _ := json.Marshal(m)
+func (mapping *Mapping) Bytes() []byte {
+	buf, _ := json.Marshal(mapping)
 	return buf
+}
+
+// String returns the mapping as a string
+func (mapping *Mapping) String() string {
+	return string(mapping.Bytes())
 }
 
 // ParseMapping creates a new mapping based on the output of Mapping.Bytes
@@ -44,27 +50,27 @@ func ParseMapping(data, privkey []byte) (*Mapping, error) {
 
 	mapping.Cipher = aesgcm
 
-	mapping.Addr = net.ParseIP(mapping.PublicIP)
-
-	if addr := mapping.Addr.To4(); addr != nil {
-		sa := &syscall.SockaddrInet4{Port: mapping.PublicPort}
-		copy(sa.Addr[:], addr[:])
-		mapping.Sockaddr = sa
-	} else if addr := mapping.Addr.To16(); addr != nil {
-		sa := &syscall.SockaddrInet6{Port: mapping.PublicPort}
-		copy(sa.Addr[:], addr[:])
-		mapping.Sockaddr = sa
+	if mapping.IPv4 != nil {
+		sa := &syscall.SockaddrInet4{Port: mapping.Port}
+		copy(sa.Addr[:], mapping.IPv4.To4())
+		mapping.SockaddrInet4 = sa
+	}
+	if mapping.IPv6 != nil {
+		sa := &syscall.SockaddrInet6{Port: mapping.Port}
+		copy(sa.Addr[:], mapping.IPv6.To16())
+		mapping.SockaddrInet6 = sa
 	}
 
 	return &mapping, nil
 }
 
 // NewMapping generates a new basic Mapping
-func NewMapping(privateIP, publicIP string, publicPort int, pubkey []byte) *Mapping {
+func NewMapping(privateIP, publicV4, publicV6 net.IP, port int, pubkey []byte) *Mapping {
 	return &Mapping{
-		PublicIP:   publicIP,
-		PublicPort: publicPort,
-		PrivateIP:  privateIP,
-		PublicKey:  pubkey,
+		IPv4:      publicV4,
+		IPv6:      publicV6,
+		Port:      port,
+		PrivateIP: privateIP,
+		PublicKey: pubkey,
 	}
 }

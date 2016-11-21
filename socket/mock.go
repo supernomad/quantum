@@ -14,7 +14,7 @@ func (mock *Mock) Read(buf []byte, queue int) (*common.Payload, bool) {
 }
 
 // Write a packet to the socket
-func (mock *Mock) Write(payload *common.Payload, mapping *common.Mapping, queue int) bool {
+func (mock *Mock) Write(payload *common.Payload, queue int) bool {
 	return true
 }
 

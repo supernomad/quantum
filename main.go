@@ -41,7 +41,7 @@ func main() {
 	err = tunnel.Open()
 	handleError(log, err, "tunnel.Open()")
 
-	sock := socket.New(socket.IPSocket, cfg)
+	sock := socket.New(socket.UDPSocket, cfg)
 	err = sock.Open()
 	handleError(log, err, "sock.Open()")
 
@@ -62,8 +62,9 @@ func main() {
 	log.Info.Println("[MAIN]", "Listening on TUN device:  ", tunnel.Name())
 	log.Info.Println("[MAIN]", "TUN network space:        ", cfg.NetworkConfig.Network)
 	log.Info.Println("[MAIN]", "TUN private IP address:   ", cfg.PrivateIP)
-	log.Info.Println("[MAIN]", "TUN public IP address:    ", cfg.PublicIP)
-	log.Info.Println("[MAIN]", "Listening on UDP address: ", cfg.ListenAddress+":"+strconv.Itoa(cfg.ListenPort))
+	log.Info.Println("[MAIN]", "TUN public IPv4 address:    ", cfg.PublicIPv4)
+	log.Info.Println("[MAIN]", "TUN public IPv6 address:    ", cfg.PublicIPv6)
+	log.Info.Println("[MAIN]", "Listening on UDP port: ", strconv.Itoa(cfg.ListenPort))
 
 	exit := make(chan struct{})
 	signals := make(chan os.Signal, 1)
