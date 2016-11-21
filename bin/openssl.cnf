@@ -6,16 +6,13 @@ default_ca = etcd_ca
 
 [ etcd_ca ]
 certs            = $dir/certs
-certificate      = $dir/certs/etcd-ca.crt
-crl              = $dir/crl.pem
-crl_dir          = $dir/crl
-crlnumber        = $dir/crlnumber
-database         = $dir/index.txt
+new_certs_dir    = $dir/certs
+certificate      = $dir/certs/ca.crt
+database         = $dir/certs/index.txt
 email_in_dn      = no
-new_certs_dir    = $dir/newcerts
-private_key      = $dir/private/etcd-ca.key
-serial           = $dir/serial
-RANDFILE         = $dir/private/.rand
+private_key      = $dir/certs/ca.key
+serial           = $dir/certs/serial
+RANDFILE         = $dir/certs/.rand
 name_opt         = ca_default
 cert_opt         = ca_default
 default_days     = 3650

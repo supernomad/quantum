@@ -1,11 +1,16 @@
 package common
 
+import (
+	"syscall"
+)
+
 // Payload represents a packet going through either the incoming or outgoing pipelines
 type Payload struct {
 	Raw       []byte
 	Packet    []byte
 	IPAddress []byte
 	Nonce     []byte
+	Sockaddr  syscall.Sockaddr
 	Length    int
 }
 

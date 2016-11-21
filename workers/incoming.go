@@ -50,8 +50,8 @@ func (incoming *Incoming) droppedStats(payload *common.Payload, mapping *common.
 		return
 	}
 
-	if link, ok := incoming.QueueStats[queue].Links[mapping.PrivateIP]; !ok {
-		incoming.QueueStats[queue].Links[mapping.PrivateIP] = &common.Stats{
+	if link, ok := incoming.QueueStats[queue].Links[mapping.PrivateIP.String()]; !ok {
+		incoming.QueueStats[queue].Links[mapping.PrivateIP.String()] = &common.Stats{
 			DroppedPackets: 1,
 			DroppedBytes:   uint64(payload.Length),
 		}
@@ -65,8 +65,8 @@ func (incoming *Incoming) stats(payload *common.Payload, mapping *common.Mapping
 	incoming.QueueStats[queue].Packets++
 	incoming.QueueStats[queue].Bytes += uint64(payload.Length)
 
-	if link, ok := incoming.QueueStats[queue].Links[mapping.PrivateIP]; !ok {
-		incoming.QueueStats[queue].Links[mapping.PrivateIP] = &common.Stats{
+	if link, ok := incoming.QueueStats[queue].Links[mapping.PrivateIP.String()]; !ok {
+		incoming.QueueStats[queue].Links[mapping.PrivateIP.String()] = &common.Stats{
 			Packets: 1,
 			Bytes:   uint64(payload.Length),
 		}

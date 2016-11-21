@@ -8,6 +8,7 @@ import (
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/inet"
 	"github.com/Supernomad/quantum/socket"
+	"net"
 	"sync"
 )
 
@@ -29,7 +30,8 @@ var (
 )
 
 func init() {
-	ip := "10.8.0.1"
+	ip := net.ParseIP("10.8.0.1")
+	ipv6 := net.ParseIP("dead::beef")
 
 	store = &backend.Mock{}
 	tun = inet.New(inet.MOCKInterface, nil)
@@ -41,10 +43,10 @@ func init() {
 	block, _ := aes.NewCipher(key)
 	aesgcm, _ := cipher.NewGCM(block)
 
-	testMapping = &common.Mapping{PublicKey: make([]byte, 32), Cipher: aesgcm}
+	testMapping = &common.Mapping{IPv4: ip, IPv6: ipv6, PublicKey: make([]byte, 32), Cipher: aesgcm}
 
 	store.Mapping = testMapping
 
-	incoming = NewIncoming(&common.Config{NumWorkers: 1, PrivateIP: ip}, store, tun, sock)
-	outgoing = NewOutgoing(&common.Config{NumWorkers: 1, PrivateIP: ip}, store, tun, sock)
+	incoming = NewIncoming(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, store, tun, sock)
+	outgoing = NewOutgoing(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, store, tun, sock)
 }

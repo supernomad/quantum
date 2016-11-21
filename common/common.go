@@ -48,11 +48,9 @@ const (
 	MTU = MaxPacketLength - HeaderSize - FooterSize
 )
 
-const ()
-
 // IPtoInt takes a string ip in the form '0.0.0.0' and returns a uint32 that represents that ipaddress
-func IPtoInt(IP string) uint32 {
-	buf := net.ParseIP(IP).To4()
+func IPtoInt(IP net.IP) uint32 {
+	buf := IP.To4()
 	return binary.LittleEndian.Uint32(buf)
 }
 
@@ -64,4 +62,28 @@ func IncrementIP(ip net.IP) {
 			break
 		}
 	}
+}
+
+// ArrayEquals returns true if both byte slices contain the same data
+// NOTE: this is a very slow method and should be limited in use
+func ArrayEquals(a, b []byte) bool {
+	if a == nil && b == nil {
+		return true
+	}
+
+	if a == nil || b == nil {
+		return false
+	}
+
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+
+	return true
 }
