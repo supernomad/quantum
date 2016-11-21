@@ -3,16 +3,5 @@ language: go
 go:
   - 1.6
 
-before_install:
-  - go get golang.org/x/tools/cmd/cover
-  - go get github.com/mattn/goveralls
-  - go get github.com/golang/lint/golint
-  - go get github.com/GeertJohan/fgt
-
 script:
-  - fgt go install github.com/Supernomad/quantum
-  - fgt go fmt ./...
-  - fgt go vet ./...
-  - fgt golint ./...
-  - go test -bench . -benchmem ./...
-  - bin/coverage travis
+  - bin/build.sh coverage travis
