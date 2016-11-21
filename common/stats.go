@@ -6,23 +6,11 @@ import (
 
 // Stats object for incoming/outgoing statistics
 type Stats struct {
-	DroppedPackets     uint64
-	DroppedPacketsDiff uint64
-	DroppedPPS         float64
-
-	Packets     uint64
-	PacketsDiff uint64
-	PPS         float64
-
-	DroppedBytes     uint64
-	DroppedBytesDiff uint64
-	DroppedBandwidth float64
-
-	Bytes     uint64
-	BytesDiff uint64
-	Bandwidth float64
-
-	Links map[string]*Stats `json:",omitempty"`
+	DroppedPackets uint64            `json:"droppedPackets"`
+	Packets        uint64            `json:"packets"`
+	DroppedBytes   uint64            `json:"droppedBytes"`
+	Bytes          uint64            `json:"bytes"`
+	Links          map[string]*Stats `json:"links,omitempty"`
 }
 
 // String the Stats object
@@ -34,10 +22,6 @@ func (stats *Stats) String() string {
 // NewStats object with links
 func NewStats() *Stats {
 	return &Stats{
-		Packets:   0,
-		PPS:       0,
-		Bytes:     0,
-		Bandwidth: 0,
-		Links:     make(map[string]*Stats),
+		Links: make(map[string]*Stats),
 	}
 }

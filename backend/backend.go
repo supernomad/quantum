@@ -3,6 +3,7 @@ package backend
 import (
 	"errors"
 	"github.com/Supernomad/quantum/common"
+	"sync"
 )
 
 const (
@@ -14,7 +15,7 @@ const (
 type Backend interface {
 	GetMapping(ip uint32) (*common.Mapping, bool)
 	Init() error
-	Start()
+	Start(wg *sync.WaitGroup)
 	Stop()
 }
 
@@ -24,6 +25,6 @@ func New(kind int, log *common.Logger, cfg *common.Config) (Backend, error) {
 	case LIBKV:
 		return newLibkv(log, cfg)
 	default:
-		return nil, errors.New("Non compatible backend specified.")
+		return nil, errors.New("non compatible backend specified")
 	}
 }

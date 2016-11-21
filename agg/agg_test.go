@@ -2,6 +2,7 @@ package agg
 
 import (
 	"github.com/Supernomad/quantum/common"
+	"sync"
 	"testing"
 	"time"
 )
@@ -20,7 +21,9 @@ func TestAgg(t *testing.T) {
 			StatsWindow: 1 * time.Second,
 			NumWorkers:  3,
 		}, stats, stats)
-	agg.Start()
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	agg.Start(wg)
 	time.Sleep(2 * time.Second)
 	agg.Stop()
 }

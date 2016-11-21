@@ -6,16 +6,11 @@ import (
 	"syscall"
 )
 
-// UDP is a generic multique socket
+// UDP is a generic multiqueue socket
 type UDP struct {
 	queues []int
 	cfg    *common.Config
 	sa     *syscall.SockaddrInet4
-}
-
-// Name address of the socket
-func (sock *UDP) Name() string {
-	return sock.cfg.ListenAddress
 }
 
 // Open the socket

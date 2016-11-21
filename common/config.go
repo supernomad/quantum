@@ -24,13 +24,17 @@ var google = net.ParseIP("8.8.8.8")
 type Config struct {
 	RealInterfaceName string
 	InterfaceName     string
-	MachineID         string
-	NumWorkers        int
-	ReuseFDS          bool
-	StatsWindow       time.Duration
 
-	PrivateIP string
-	PublicIP  string
+	PublicInterface int
+
+	MachineID   string
+	NumWorkers  int
+	ReuseFDS    bool
+	StatsWindow time.Duration
+
+	PrivateIP    string
+	PublicIP     string
+	PublicIPAddr net.IP
 
 	PublicAddress string
 
@@ -54,9 +58,10 @@ type Config struct {
 	TLSKey        string
 	TLSCA         string
 
-	Datastore   string
-	endpoints   string
-	Endpoints   []string
+	Datastore string
+	endpoints string
+	Endpoints []string
+
 	AuthEnabled bool
 	Username    string
 	Password    string
@@ -166,16 +171,32 @@ func (cfg *Config) handleComputed() error {
 		if err != nil {
 			return err
 		}
-
 		cfg.PublicIP = routes[0].Src.String()
+		cfg.PublicIPAddr = net.ParseIP(cfg.PublicIP)
+		cfg.PublicInterface = routes[0].LinkIndex
+	} else {
+		cfg.PublicIPAddr = net.ParseIP(cfg.PublicIP)
+		links, err := netlink.LinkList()
+		if err != nil {
+			return err
+		}
+	loop:
+		for i := 0; i < len(links); i++ {
+			addrs, err := netlink.AddrList(links[i], netlink.FAMILY_V4)
+			if err != nil {
+				return err
+			}
+			for j := 0; j < len(addrs); j++ {
+				if addrs[j].Contains(cfg.PublicIPAddr) {
+					cfg.PublicInterface = links[i].Attrs().Index
+					break loop
+				}
+			}
+		}
 	}
 
 	cfg.PublicAddress = cfg.PublicIP + ":" + strconv.Itoa(cfg.ListenPort)
-
-	cores := runtime.NumCPU()
-	runtime.GOMAXPROCS(cores * 2)
-
-	cfg.NumWorkers = cores
+	cfg.NumWorkers = runtime.NumCPU()
 
 	cfg.RealInterfaceName = os.Getenv(RealInterfaceNameEnv)
 	if cfg.RealInterfaceName != "" {
@@ -273,7 +294,7 @@ func (cfg *Config) handleFile() error {
 		case ".yaml" == ext || ".yml" == ext:
 			err = yaml.Unmarshal(buf, &data)
 		default:
-			return errors.New("The configuration file is not in a supported format.")
+			return errors.New("the configuration file is not in a supported format")
 		}
 
 		return cfg.parseFileData(data)

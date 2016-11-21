@@ -11,6 +11,7 @@ import (
 	"github.com/docker/libkv/store/etcd"
 	"io/ioutil"
 	"path"
+	"sync"
 	"time"
 )
 
@@ -82,7 +83,7 @@ func (libkv *Libkv) getKey(key string) string {
 
 func (libkv *Libkv) lock() error {
 	stopWaiting := make(chan struct{})
-	ticker := time.NewTicker(lockTTL)
+	ticker := time.NewTicker(lockTTL / 5)
 	locker, err := libkv.store.NewLock(libkv.getKey("/lock"), &store.LockOptions{Value: []byte(libkv.cfg.MachineID), TTL: lockTTL})
 	if err != nil {
 		return err
@@ -135,7 +136,7 @@ func (libkv *Libkv) getFreeIP() (string, error) {
 			return str, nil
 		}
 	}
-	return "", errors.New("There are no available ip addresses in the configured network.")
+	return "", errors.New("there are no available ip addresses in the configured network")
 }
 
 func (libkv *Libkv) handleLocalMapping() error {
@@ -151,7 +152,7 @@ func (libkv *Libkv) handleLocalMapping() error {
 		}
 	}
 
-	mapping := common.NewMapping(libkv.cfg.PrivateIP, libkv.cfg.PublicAddress, libkv.cfg.MachineID, libkv.cfg.PublicKey)
+	mapping := common.NewMapping(libkv.cfg.PrivateIP, libkv.cfg.PublicIP, libkv.cfg.ListenPort, libkv.cfg.PublicKey)
 	key := path.Join("/nodes/", libkv.cfg.MachineID)
 
 	err := libkv.set(key, mapping.Bytes(), libkv.NetworkCfg.LeaseTime)
@@ -245,46 +246,49 @@ func (libkv *Libkv) Init() error {
 }
 
 // Start watching the libkv and updating mappings.
-func (libkv *Libkv) Start() {
+func (libkv *Libkv) Start(wg *sync.WaitGroup) {
 	refresh := time.NewTicker(libkv.cfg.RefreshInterval)
 	sync := time.NewTicker(libkv.cfg.SyncInterval)
 	key := path.Join("/nodes/", libkv.cfg.MachineID)
 
-	stopWatching := make(chan struct{})
-	events, err := libkv.store.WatchTree(libkv.getKey("/nodes/"), stopWatching)
+	events, err := libkv.store.WatchTree(libkv.getKey("/nodes/"), nil)
 	if err != nil {
-		libkv.log.Error.Println("[BACKEND]", "Error setting up watch:", err)
+		libkv.log.Error.Println("[BACKEND]", "error setting up watch:", err)
 	}
 
 	go func() {
+		defer wg.Done()
+	loop:
 		for {
 			select {
-			case stop := <-libkv.stop:
-				stopWatching <- stop
-				break
+			case <-libkv.stop:
+				break loop
 			case <-refresh.C:
 				err := libkv.set(key, libkv.localMapping.Bytes(), libkv.NetworkCfg.LeaseTime)
 				if err != nil {
-					libkv.log.Error.Println("[BACKEND]", "Error during refresh of the ip address lease:", err)
+					libkv.log.Error.Println("[BACKEND]", "error during refresh of the ip address lease:", err)
 				}
 			case <-sync.C:
 				err := libkv.syncMappings(nil)
 				if err != nil {
-					libkv.log.Error.Println("[BACKEND]", "Error during resync of the ip address mappings:", err)
+					libkv.log.Error.Println("[BACKEND]", "error during resync of the ip address mappings:", err)
 				}
 			case nodes := <-events:
 				err := libkv.syncMappings(nodes)
 				if err != nil {
-					libkv.log.Error.Println("[BACKEND]", "Error while watching of the ip address mappings for changes:", err)
+					libkv.log.Error.Println("[BACKEND]", "error while watching of the ip address mappings for changes:", err)
 				}
 			}
 		}
+		libkv.log.Info.Println("[BACKEND]", "exited")
 	}()
 }
 
 // Stop watching the libkv and updating mappings
 func (libkv *Libkv) Stop() {
-	libkv.stop <- struct{}{}
+	go func() {
+		libkv.stop <- struct{}{}
+	}()
 }
 
 // New Libkv object
@@ -302,7 +306,7 @@ func newLibkv(log *common.Logger, cfg *common.Config) (Backend, error) {
 	case etcdStore:
 		libkvStore, err = libkv.NewStore(store.ETCD, cfg.Endpoints, storeCfg)
 	default:
-		err = errors.New("Configured 'Datastore' is not supported by quantum.")
+		err = errors.New("configured 'Datastore' is not supported by quantum")
 	}
 
 	if err != nil {

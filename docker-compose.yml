@@ -14,6 +14,8 @@ services:
       - $GOPATH/bin/quantum:/bin/quantum
       - $GOPATH/src/github.com/Supernomad/quantum/bin/certs/:/etc/quantum/certs/:ro
       - quantum0:/var/lib/quantum/
+    environment:
+      GODEBUG: "cgocheck=0"
     networks:
       perf_net:
         ipv4_address: 172.18.0.2
@@ -33,6 +35,7 @@ services:
       - $GOPATH/src/github.com/Supernomad/quantum/bin/certs/:/etc/quantum/certs/:ro
       - quantum1:/var/lib/quantum/
     environment:
+      GODEBUG: "cgocheck=0"
       QUANTUM_ENDPOINTS: "etcd.quantum.dev:2379"
       QUANTUM_PUBLIC_IP: "172.18.0.3"
       QUANTUM_TLS_CA_CERT: "/etc/quantum/certs/ca.crt"
@@ -58,6 +61,7 @@ services:
       - $GOPATH/src/github.com/Supernomad/quantum/bin/certs/:/etc/quantum/certs/:ro
       - quantum2:/var/lib/quantum/
     environment:
+      GODEBUG: "cgocheck=0"
       QUANTUM_CONF_FILE: "/etc/quantum/quantum.yml"
     networks:
       perf_net:

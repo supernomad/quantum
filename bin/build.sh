@@ -18,8 +18,10 @@ fgt golint ./... && echo "PASS"
 echo "Running go test:"
 go test -bench . -benchmem ./...
 
-echo "Running go cover:"
-bin/coverage
+if [[ $1 == "coverage" ]]; then
+	echo "Running go cover:"
+	bin/coverage
+fi
 
 echo "Reseting GOMAXPROCS to $LASTGOMAXPROCS"
 export GOMAXPROCS=$LASTGOMAXPROCS

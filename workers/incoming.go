@@ -10,10 +10,11 @@ import (
 
 // Incoming external packet interface which handles reading packets off of a Socket object
 type Incoming struct {
+	cfg        *common.Config
 	tunnel     inet.Interface
 	sock       socket.Socket
 	store      backend.Backend
-	quit       chan bool
+	stop       bool
 	QueueStats []*common.Stats
 }
 
@@ -99,35 +100,29 @@ func (incoming *Incoming) pipeline(buf []byte, queue int) bool {
 func (incoming *Incoming) Start(queue int) {
 	go func() {
 		buf := make([]byte, common.MaxPacketLength)
-		for {
-			select {
-			case <-incoming.quit:
-				return
-			default:
-				incoming.pipeline(buf, queue)
-			}
+		for !incoming.stop {
+			incoming.pipeline(buf, queue)
 		}
 	}()
 }
 
 // Stop handling packets
 func (incoming *Incoming) Stop() {
-	go func() {
-		incoming.quit <- true
-	}()
+	incoming.stop = true
 }
 
 // NewIncoming object
-func NewIncoming(privateIP string, numWorkers int, store backend.Backend, tunnel inet.Interface, sock socket.Socket) *Incoming {
-	stats := make([]*common.Stats, numWorkers)
-	for i := 0; i < numWorkers; i++ {
+func NewIncoming(cfg *common.Config, store backend.Backend, tunnel inet.Interface, sock socket.Socket) *Incoming {
+	stats := make([]*common.Stats, cfg.NumWorkers)
+	for i := 0; i < cfg.NumWorkers; i++ {
 		stats[i] = common.NewStats()
 	}
 	return &Incoming{
+		cfg:        cfg,
 		tunnel:     tunnel,
 		sock:       sock,
 		store:      store,
-		quit:       make(chan bool),
+		stop:       false,
 		QueueStats: stats,
 	}
 }

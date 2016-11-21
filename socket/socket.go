@@ -7,15 +7,16 @@ import (
 const (
 	// UDPSocket socket type
 	UDPSocket int = 0
-	// TCPSocket socket type
-	TCPSocket int = 1
+	// IPSocket socket type
+	IPSocket int = 1
 	// MOCKSocket socket type
 	MOCKSocket int = 2
+
+	ipProto = 138
 )
 
 // Socket is a generic multi-queue socket interface
 type Socket interface {
-	Name() string
 	Read(buf []byte, queue int) (*common.Payload, bool)
 	Write(payload *common.Payload, mapping *common.Mapping, queue int) bool
 	Open() error

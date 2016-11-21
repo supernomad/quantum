@@ -7,7 +7,6 @@ type Payload struct {
 	IPAddress []byte
 	Nonce     []byte
 	Length    int
-	Mapping   *Mapping
 }
 
 // NewTunPayload is used to generate a payload based on a TUN packet
