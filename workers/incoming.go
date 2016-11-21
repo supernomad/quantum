@@ -2,7 +2,6 @@ package workers
 
 import (
 	"encoding/binary"
-	"fmt"
 	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/inet"
@@ -90,8 +89,6 @@ func (incoming *Incoming) pipeline(buf []byte, queue int) bool {
 	}
 	payload, ok = incoming.unseal(payload, mapping)
 	if !ok {
-		fmt.Println("unseal", payload)
-		fmt.Println("unseal", mapping)
 		incoming.droppedStats(payload, mapping, queue)
 		return ok
 	}
