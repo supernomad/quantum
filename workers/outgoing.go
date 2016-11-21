@@ -7,7 +7,6 @@ import (
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/inet"
 	"github.com/Supernomad/quantum/socket"
-	"net"
 )
 
 // Outgoing internal packet interface which handles reading packets off of a TUN object
@@ -15,7 +14,6 @@ type Outgoing struct {
 	cfg        *common.Config
 	tunnel     inet.Interface
 	sock       socket.Socket
-	privateIP  []byte
 	store      backend.Backend
 	stop       bool
 	QueueStats []*common.Stats
@@ -25,7 +23,14 @@ func (outgoing *Outgoing) resolve(payload *common.Payload) (*common.Payload, *co
 	dip := binary.LittleEndian.Uint32(payload.Packet[16:20])
 
 	if mapping, ok := outgoing.store.GetMapping(dip); ok {
-		copy(payload.IPAddress, outgoing.privateIP)
+		if outgoing.cfg.IsIPv6Enabled && mapping.IPv6 != nil {
+			payload.Sockaddr = mapping.SockaddrInet6
+		} else if outgoing.cfg.IsIPv4Enabled && mapping.IPv4 != nil {
+			payload.Sockaddr = mapping.SockaddrInet4
+		} else {
+			return nil, nil, false
+		}
+		copy(payload.IPAddress, outgoing.cfg.PrivateIP.To4())
 		return payload, mapping, true
 	}
 
@@ -54,8 +59,8 @@ func (outgoing *Outgoing) droppedStats(payload *common.Payload, mapping *common.
 		return
 	}
 
-	if link, ok := outgoing.QueueStats[queue].Links[mapping.PrivateIP]; !ok {
-		outgoing.QueueStats[queue].Links[mapping.PrivateIP] = &common.Stats{
+	if link, ok := outgoing.QueueStats[queue].Links[mapping.PrivateIP.String()]; !ok {
+		outgoing.QueueStats[queue].Links[mapping.PrivateIP.String()] = &common.Stats{
 			DroppedPackets: 1,
 			DroppedBytes:   uint64(payload.Length),
 		}
@@ -69,8 +74,8 @@ func (outgoing *Outgoing) stats(payload *common.Payload, mapping *common.Mapping
 	outgoing.QueueStats[queue].Packets++
 	outgoing.QueueStats[queue].Bytes += uint64(payload.Length)
 
-	if link, ok := outgoing.QueueStats[queue].Links[mapping.PrivateIP]; !ok {
-		outgoing.QueueStats[queue].Links[mapping.PrivateIP] = &common.Stats{
+	if link, ok := outgoing.QueueStats[queue].Links[mapping.PrivateIP.String()]; !ok {
+		outgoing.QueueStats[queue].Links[mapping.PrivateIP.String()] = &common.Stats{
 			Packets: 1,
 			Bytes:   uint64(payload.Length),
 		}
@@ -97,7 +102,7 @@ func (outgoing *Outgoing) pipeline(buf []byte, queue int) bool {
 		return ok
 	}
 	outgoing.stats(payload, mapping, queue)
-	return outgoing.sock.Write(payload, mapping, queue)
+	return outgoing.sock.Write(payload, queue)
 }
 
 // Start handling packets
@@ -125,7 +130,6 @@ func NewOutgoing(cfg *common.Config, store backend.Backend, tunnel inet.Interfac
 		cfg:        cfg,
 		tunnel:     tunnel,
 		sock:       sock,
-		privateIP:  net.ParseIP(cfg.PrivateIP).To4(),
 		store:      store,
 		stop:       false,
 		QueueStats: stats,

@@ -18,7 +18,7 @@ const (
 // Socket is a generic multi-queue socket interface
 type Socket interface {
 	Read(buf []byte, queue int) (*common.Payload, bool)
-	Write(payload *common.Payload, mapping *common.Mapping, queue int) bool
+	Write(payload *common.Payload, queue int) bool
 	Open() error
 	Close() error
 	GetFDs() []int

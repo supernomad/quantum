@@ -2,6 +2,7 @@ package workers
 
 import (
 	"encoding/binary"
+	"fmt"
 	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/inet"
@@ -50,8 +51,8 @@ func (incoming *Incoming) droppedStats(payload *common.Payload, mapping *common.
 		return
 	}
 
-	if link, ok := incoming.QueueStats[queue].Links[mapping.PrivateIP]; !ok {
-		incoming.QueueStats[queue].Links[mapping.PrivateIP] = &common.Stats{
+	if link, ok := incoming.QueueStats[queue].Links[mapping.PrivateIP.String()]; !ok {
+		incoming.QueueStats[queue].Links[mapping.PrivateIP.String()] = &common.Stats{
 			DroppedPackets: 1,
 			DroppedBytes:   uint64(payload.Length),
 		}
@@ -65,8 +66,8 @@ func (incoming *Incoming) stats(payload *common.Payload, mapping *common.Mapping
 	incoming.QueueStats[queue].Packets++
 	incoming.QueueStats[queue].Bytes += uint64(payload.Length)
 
-	if link, ok := incoming.QueueStats[queue].Links[mapping.PrivateIP]; !ok {
-		incoming.QueueStats[queue].Links[mapping.PrivateIP] = &common.Stats{
+	if link, ok := incoming.QueueStats[queue].Links[mapping.PrivateIP.String()]; !ok {
+		incoming.QueueStats[queue].Links[mapping.PrivateIP.String()] = &common.Stats{
 			Packets: 1,
 			Bytes:   uint64(payload.Length),
 		}
@@ -89,6 +90,8 @@ func (incoming *Incoming) pipeline(buf []byte, queue int) bool {
 	}
 	payload, ok = incoming.unseal(payload, mapping)
 	if !ok {
+		fmt.Println("unseal", payload)
+		fmt.Println("unseal", mapping)
 		incoming.droppedStats(payload, mapping, queue)
 		return ok
 	}
