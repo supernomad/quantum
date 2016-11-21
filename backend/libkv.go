@@ -153,7 +153,7 @@ func (libkv *Libkv) handleLocalMapping() error {
 			libkv.cfg.PrivateIP = ip
 		}
 	} else if _, exists := libkv.getMappingIfExists(); !exists && libkv.ipExists(libkv.cfg.PrivateIP) {
-		return errors.New("Statically assigned private ip address belongs to another server.")
+		return errors.New("statically assigned private ip address belongs to another server")
 	}
 
 	mapping := common.NewMapping(libkv.cfg.PrivateIP, libkv.cfg.PublicIPv4, libkv.cfg.PublicIPv6, libkv.cfg.ListenPort, libkv.cfg.PublicKey)
