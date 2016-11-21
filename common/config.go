@@ -217,7 +217,7 @@ func parseArgs() (*Config, error) {
 		case "ip":
 			ip := net.ParseIP(raw)
 			if ip == nil && raw != "" {
-				return nil, errors.New("Invalid ip address.")
+				return nil, errors.New("invalid ip address")
 			}
 			fieldValue.Set(reflect.ValueOf(ip))
 		case "bool":
@@ -232,7 +232,7 @@ func parseArgs() (*Config, error) {
 		case "string":
 			fieldValue.Set(reflect.ValueOf(raw))
 		default:
-			return nil, errors.New("Unknown configuration field type.")
+			return nil, errors.New("unknown configuration type")
 		}
 
 		if field.Name == "ConfFile" {
@@ -318,7 +318,7 @@ func (cfg *Config) computeArgs() error {
 			copy(sa.Addr[:], allV4.To4()[:])
 			cfg.ListenAddr = sa
 		default:
-			return errors.New("Impossible situation occured, neither ipv4 or ipv6 is active. Check your networking configuration you must have public internet access to use autoconfiguration.")
+			return errors.New("impossible situation occured, neither ipv4 or ipv6 is active. check your networking configuration you must have public internet access to use autoconfiguration")
 		}
 	} else if addr := cfg.ListenIP.To4(); addr != nil {
 		sa := &syscall.SockaddrInet4{Port: cfg.ListenPort}
@@ -329,7 +329,7 @@ func (cfg *Config) computeArgs() error {
 		copy(sa.Addr[:], addr[:])
 		cfg.ListenAddr = sa
 	} else {
-		return errors.New("Impossible situation occured, neither ipv4 or ipv6 is active. Check your networking configuration you must have public internet access to use autoconfiguration.")
+		return errors.New("impossible situation occured, neither ipv4 or ipv6 is active. check your networking configuration you must have public internet access to use autoconfiguration")
 	}
 
 	pid := os.Getpid()
