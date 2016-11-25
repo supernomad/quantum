@@ -10,6 +10,7 @@ import (
 	"github.com/docker/libkv/store/consul"
 	"github.com/docker/libkv/store/etcd"
 	"io/ioutil"
+	"net"
 	"path"
 	"sync"
 	"time"
@@ -125,23 +126,24 @@ func (libkv *Libkv) getMappingIfExists() (*common.Mapping, bool) {
 	return mapping, true
 }
 
-func (libkv *Libkv) getFreeIP() (string, error) {
+func (libkv *Libkv) ipExists(ip net.IP) bool {
+	_, exists := libkv.mappings[common.IPtoInt(ip)]
+	return exists
+}
+
+func (libkv *Libkv) getFreeIP() (net.IP, error) {
 	for ip := libkv.NetworkCfg.BaseIP.Mask(libkv.NetworkCfg.IPNet.Mask); libkv.NetworkCfg.IPNet.Contains(ip); common.IncrementIP(ip) {
-		if ip[3] == 0 || libkv.NetworkCfg.ReservedIPNet.Contains(ip) {
+		if ip[3] == 0 || libkv.ipExists(ip) {
 			continue
 		}
-
-		str := ip.String()
-		if _, exists := libkv.mappings[common.IPtoInt(str)]; !exists {
-			return str, nil
-		}
+		return ip, nil
 	}
-	return "", errors.New("there are no available ip addresses in the configured network")
+	return nil, errors.New("there are no available ip addresses in the configured network")
 }
 
 func (libkv *Libkv) handleLocalMapping() error {
-	if libkv.cfg.PrivateIP == "" {
-		if mapping, ok := libkv.getMappingIfExists(); ok {
+	if libkv.cfg.PrivateIP == nil {
+		if mapping, exists := libkv.getMappingIfExists(); exists {
 			libkv.cfg.PrivateIP = mapping.PrivateIP
 		} else {
 			ip, err := libkv.getFreeIP()
@@ -150,9 +152,11 @@ func (libkv *Libkv) handleLocalMapping() error {
 			}
 			libkv.cfg.PrivateIP = ip
 		}
+	} else if _, exists := libkv.getMappingIfExists(); !exists && libkv.ipExists(libkv.cfg.PrivateIP) {
+		return errors.New("statically assigned private ip address belongs to another server")
 	}
 
-	mapping := common.NewMapping(libkv.cfg.PrivateIP, libkv.cfg.PublicIP, libkv.cfg.ListenPort, libkv.cfg.PublicKey)
+	mapping := common.NewMapping(libkv.cfg.PrivateIP, libkv.cfg.PublicIPv4, libkv.cfg.PublicIPv6, libkv.cfg.ListenPort, libkv.cfg.PublicKey)
 	key := path.Join("/nodes/", libkv.cfg.MachineID)
 
 	err := libkv.set(key, mapping.Bytes(), libkv.NetworkCfg.LeaseTime)

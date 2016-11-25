@@ -36,7 +36,7 @@ func (tun *Tun) Open() error {
 	}
 
 	if !tun.cfg.ReuseFDS {
-		err := initInterface(tun.name, tun.cfg.PrivateIP, tun.cfg.NetworkConfig)
+		err := initInterface(tun.name, tun.cfg.PrivateIP.String(), tun.cfg.NetworkConfig)
 		if err != nil {
 			return err
 		}

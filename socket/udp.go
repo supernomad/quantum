@@ -2,7 +2,6 @@ package socket
 
 import (
 	"github.com/Supernomad/quantum/common"
-	"net"
 	"syscall"
 )
 
@@ -10,7 +9,6 @@ import (
 type UDP struct {
 	queues []int
 	cfg    *common.Config
-	sa     *syscall.SockaddrInet4
 }
 
 // Open the socket
@@ -20,11 +18,11 @@ func (sock *UDP) Open() error {
 		var err error
 
 		if !sock.cfg.ReuseFDS {
-			queue, err = createUDP()
+			queue, err = createUDP(sock.cfg.IsIPv6Enabled)
 			if err != nil {
 				return err
 			}
-			err = initUDP(queue, sock.sa)
+			err = initUDP(queue, sock.cfg.ListenAddr)
 			if err != nil {
 				return err
 			}
@@ -61,8 +59,8 @@ func (sock *UDP) Read(buf []byte, queue int) (*common.Payload, bool) {
 }
 
 // Write a packet to the socket
-func (sock *UDP) Write(payload *common.Payload, mapping *common.Mapping, queue int) bool {
-	err := syscall.Sendto(sock.queues[queue], payload.Raw[:payload.Length], 0, mapping.Sockaddr)
+func (sock *UDP) Write(payload *common.Payload, queue int) bool {
+	err := syscall.Sendto(sock.queues[queue], payload.Raw[:payload.Length], 0, payload.Sockaddr)
 	if err != nil {
 		return false
 	}
@@ -70,19 +68,11 @@ func (sock *UDP) Write(payload *common.Payload, mapping *common.Mapping, queue i
 }
 
 func newUDP(cfg *common.Config) *UDP {
-	var addr [4]byte
-	copy(addr[:], net.ParseIP(cfg.ListenAddress).To4())
-	sa := &syscall.SockaddrInet4{
-		Port: cfg.ListenPort,
-		Addr: addr,
-	}
-
 	queues := make([]int, cfg.NumWorkers)
-
-	return &UDP{queues: queues, cfg: cfg, sa: sa}
+	return &UDP{queues: queues, cfg: cfg}
 }
 
-func initUDP(queue int, sa *syscall.SockaddrInet4) error {
+func initUDP(queue int, sa syscall.Sockaddr) error {
 	err := syscall.SetsockoptInt(queue, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
 	if err != nil {
 		return err
@@ -96,6 +86,9 @@ func initUDP(queue int, sa *syscall.SockaddrInet4) error {
 	return nil
 }
 
-func createUDP() (int, error) {
+func createUDP(ipv6Enabled bool) (int, error) {
+	if ipv6Enabled {
+		return syscall.Socket(syscall.AF_INET6, syscall.SOCK_DGRAM, 0)
+	}
 	return syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, 0)
 }
