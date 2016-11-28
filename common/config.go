@@ -47,7 +47,6 @@ type Config struct {
 	Prefix            string            `skip:"false"  type:"string"    short:"pr"   long:"prefix"            default:"quantum"               description:"The prefix to store quantum configuration data under in the backend key/value store."`
 	DataDir           string            `skip:"false"  type:"string"    short:"d"    long:"data-dir"          default:"/var/lib/quantum"      description:"The directory to store local quantum state to."`
 	PidFile           string            `skip:"false"  type:"string"    short:"pf"   long:"pid-file"          default:"/var/run/quantum.pid"  description:"The pid file to use for tracking rolling restarts."`
-	StatsWindow       time.Duration     `skip:"false"  type:"duration"  short:"sw"   long:"stats-window"      default:"10s"                   description:"The interval of stats aggregation."`
 	SyncInterval      time.Duration     `skip:"false"  type:"duration"  short:"si"   long:"sync-interval"     default:"60s"                   description:"The interval of full backend syncs."`
 	RefreshInterval   time.Duration     `skip:"false"  type:"duration"  short:"ri"   long:"refresh-interval"  default:"120s"                  description:"The interval of dhcp lease refreshes."`
 	Datastore         string            `skip:"false"  type:"string"    short:"ds"   long:"datastore"         default:"etcd"                  description:"The type of backend key/value store, this should be 'etcd' or 'consul'."`

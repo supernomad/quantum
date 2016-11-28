@@ -9,8 +9,10 @@ import (
 )
 
 const (
+	// Incoming i.e. RX stats
 	Incoming = iota // 0
-	Outgoing        // 1
+	// Outgoing i.e. TX stats
+	Outgoing // 1
 )
 
 // Agg a statistics aggregation object
@@ -21,24 +23,25 @@ type Agg struct {
 	rx *common.Stats
 	tx *common.Stats
 
-	Aggs chan *AggData
+	Aggs chan *Data
 	stop chan struct{}
 }
 
-type AggData struct {
+// Data to use for statistics collection
+type Data struct {
 	PrivateIP string
 	Bytes     uint64
 	Direction uint64
 	Dropped   bool
 }
 
-func handleStats(stats *common.Stats, aggData *AggData) {
+func handleStats(stats *common.Stats, aggData *Data) {
 	if !aggData.Dropped {
 		stats.Bytes += aggData.Bytes
-		stats.Packets += 1
+		stats.Packets++
 	} else {
 		stats.DroppedBytes += aggData.Bytes
-		stats.DroppedPackets += 1
+		stats.DroppedPackets++
 	}
 }
 
@@ -50,7 +53,7 @@ func (agg *Agg) returnStats(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, statsl.String())
 }
 
-func (agg *Agg) pipeline(aggData *AggData) {
+func (agg *Agg) pipeline(aggData *Data) {
 	var stats *common.Stats
 	switch aggData.Direction {
 	case Incoming:
@@ -120,6 +123,6 @@ func New(log *common.Logger, cfg *common.Config) *Agg {
 		rx:   common.NewStats(),
 		tx:   common.NewStats(),
 		stop: make(chan struct{}),
-		Aggs: make(chan *AggData, 1024*1024),
+		Aggs: make(chan *Data, 1024*1024),
 	}
 }

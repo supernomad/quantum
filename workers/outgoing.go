@@ -49,7 +49,7 @@ func (outgoing *Outgoing) seal(payload *common.Payload, mapping *common.Mapping)
 }
 
 func (outgoing *Outgoing) stats(dropped bool, payload *common.Payload, mapping *common.Mapping) {
-	aggData := &agg.AggData{
+	aggData := &agg.Data{
 		Direction: agg.Outgoing,
 		Dropped:   dropped,
 	}

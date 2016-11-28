@@ -39,7 +39,7 @@ func (incoming *Incoming) unseal(payload *common.Payload, mapping *common.Mappin
 }
 
 func (incoming *Incoming) stats(dropped bool, payload *common.Payload, mapping *common.Mapping) {
-	aggData := &agg.AggData{
+	aggData := &agg.Data{
 		Direction: agg.Incoming,
 		Dropped:   dropped,
 	}

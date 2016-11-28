@@ -30,5 +30,7 @@ if [[ $1 == "coverage" ]]; then
 	bin/coverage $2
 fi
 
+rm quantum.pid
+
 echo "Reseting GOMAXPROCS to $LASTGOMAXPROCS"
 export GOMAXPROCS=$LASTGOMAXPROCS
