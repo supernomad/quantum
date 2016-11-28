@@ -3,6 +3,7 @@ package workers
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"github.com/Supernomad/quantum/agg"
 	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/inet"
@@ -12,11 +13,11 @@ import (
 // Outgoing internal packet interface which handles reading packets off of a TUN object
 type Outgoing struct {
 	cfg        *common.Config
+	aggregator *agg.Agg
 	tunnel     inet.Interface
 	sock       socket.Socket
 	store      backend.Backend
 	stop       bool
-	QueueStats []*common.Stats
 }
 
 func (outgoing *Outgoing) resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
@@ -47,61 +48,40 @@ func (outgoing *Outgoing) seal(payload *common.Payload, mapping *common.Mapping)
 	return payload, true
 }
 
-func (outgoing *Outgoing) droppedStats(payload *common.Payload, mapping *common.Mapping, queue int) {
-	outgoing.QueueStats[queue].DroppedPackets++
-	if payload == nil {
-		return
+func (outgoing *Outgoing) stats(dropped bool, payload *common.Payload, mapping *common.Mapping) {
+	aggData := &agg.AggData{
+		Direction: agg.Outgoing,
+		Dropped:   dropped,
 	}
 
-	outgoing.QueueStats[queue].DroppedBytes += uint64(payload.Length)
-
-	if mapping == nil {
-		return
+	if payload != nil {
+		aggData.Bytes += uint64(payload.Length)
 	}
 
-	if link, ok := outgoing.QueueStats[queue].Links[mapping.PrivateIP.String()]; !ok {
-		outgoing.QueueStats[queue].Links[mapping.PrivateIP.String()] = &common.Stats{
-			DroppedPackets: 1,
-			DroppedBytes:   uint64(payload.Length),
-		}
-	} else {
-		link.DroppedPackets++
-		link.DroppedBytes += uint64(payload.Length)
+	if mapping != nil {
+		aggData.PrivateIP = mapping.PrivateIP.String()
 	}
-}
 
-func (outgoing *Outgoing) stats(payload *common.Payload, mapping *common.Mapping, queue int) {
-	outgoing.QueueStats[queue].Packets++
-	outgoing.QueueStats[queue].Bytes += uint64(payload.Length)
-
-	if link, ok := outgoing.QueueStats[queue].Links[mapping.PrivateIP.String()]; !ok {
-		outgoing.QueueStats[queue].Links[mapping.PrivateIP.String()] = &common.Stats{
-			Packets: 1,
-			Bytes:   uint64(payload.Length),
-		}
-	} else {
-		link.Packets++
-		link.Bytes += uint64(payload.Length)
-	}
+	outgoing.aggregator.Aggs <- aggData
 }
 
 func (outgoing *Outgoing) pipeline(buf []byte, queue int) bool {
 	payload, ok := outgoing.tunnel.Read(buf, queue)
 	if !ok {
-		outgoing.droppedStats(payload, nil, queue)
+		outgoing.stats(true, payload, nil)
 		return ok
 	}
 	payload, mapping, ok := outgoing.resolve(payload)
 	if !ok {
-		outgoing.droppedStats(payload, mapping, queue)
+		outgoing.stats(true, payload, mapping)
 		return ok
 	}
 	payload, ok = outgoing.seal(payload, mapping)
 	if !ok {
-		outgoing.droppedStats(payload, mapping, queue)
+		outgoing.stats(true, payload, mapping)
 		return ok
 	}
-	outgoing.stats(payload, mapping, queue)
+	outgoing.stats(false, payload, mapping)
 	return outgoing.sock.Write(payload, queue)
 }
 
@@ -121,17 +101,13 @@ func (outgoing *Outgoing) Stop() {
 }
 
 // NewOutgoing object
-func NewOutgoing(cfg *common.Config, store backend.Backend, tunnel inet.Interface, sock socket.Socket) *Outgoing {
-	stats := make([]*common.Stats, cfg.NumWorkers)
-	for i := 0; i < cfg.NumWorkers; i++ {
-		stats[i] = common.NewStats()
-	}
+func NewOutgoing(cfg *common.Config, aggregator *agg.Agg, store backend.Backend, tunnel inet.Interface, sock socket.Socket) *Outgoing {
 	return &Outgoing{
 		cfg:        cfg,
+		aggregator: aggregator,
 		tunnel:     tunnel,
 		sock:       sock,
 		store:      store,
 		stop:       false,
-		QueueStats: stats,
 	}
 }

@@ -1,81 +1,96 @@
 package agg
 
 import (
+	"fmt"
 	"github.com/Supernomad/quantum/common"
+	"net/http"
 	"sync"
 	"time"
 )
 
+const (
+	Incoming = iota // 0
+	Outgoing        // 1
+)
+
 // Agg a statistics aggregation object
 type Agg struct {
+	log *common.Logger
 	cfg *common.Config
 
-	stop   chan struct{}
-	ticker *time.Ticker
+	rx *common.Stats
+	tx *common.Stats
 
-	incomingStats []*common.Stats
-	outgoingStats []*common.Stats
-
-	sinks []StatSink
+	Aggs chan *AggData
+	stop chan struct{}
 }
 
-// StatSink to dump statistics into
-type StatSink interface {
-	SendStats(statsl *StatsLog) error
+type AggData struct {
+	PrivateIP string
+	Bytes     uint64
+	Direction uint64
+	Dropped   bool
 }
 
-func aggregateStats(stats []*common.Stats) *common.Stats {
-	aggStats := common.NewStats()
-	for i := 0; i < len(stats); i++ {
-		aggStats.DroppedPackets += stats[i].DroppedPackets
-		aggStats.Packets += stats[i].Packets
-		aggStats.DroppedBytes += stats[i].DroppedBytes
-		aggStats.Bytes += stats[i].Bytes
-
-		for k, statLink := range stats[i].Links {
-			if aggLink, ok := aggStats.Links[k]; !ok {
-				aggStats.Links[k] = &common.Stats{
-					DroppedPackets: statLink.DroppedPackets,
-					Packets:        statLink.Packets,
-					DroppedBytes:   statLink.DroppedBytes,
-					Bytes:          statLink.Bytes,
-				}
-			} else {
-				aggLink.DroppedPackets += statLink.DroppedPackets
-				aggLink.Packets += statLink.Packets
-				aggLink.DroppedBytes += statLink.DroppedBytes
-				aggLink.Bytes += statLink.Bytes
-			}
-		}
+func handleStats(stats *common.Stats, aggData *AggData) {
+	if !aggData.Dropped {
+		stats.Bytes += aggData.Bytes
+		stats.Packets += 1
+	} else {
+		stats.DroppedBytes += aggData.Bytes
+		stats.DroppedPackets += 1
 	}
-	return aggStats
 }
 
-func (agg *Agg) sendData(statsl *StatsLog) error {
-	for i := 0; i < len(agg.sinks); i++ {
-		if err := agg.sinks[i].SendStats(statsl); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (agg *Agg) pipeline() {
-	incomingStats := aggregateStats(agg.incomingStats)
-	outgoingStats := aggregateStats(agg.outgoingStats)
-
+func (agg *Agg) returnStats(w http.ResponseWriter, r *http.Request) {
 	statsl := &StatsLog{
-		TxStats:      outgoingStats,
-		TxQueueStats: agg.outgoingStats,
-		RxStats:      incomingStats,
-		RxQueueStats: agg.incomingStats,
+		RxStats: agg.rx,
+		TxStats: agg.tx,
 	}
-
-	agg.sendData(statsl)
+	fmt.Fprintf(w, statsl.String())
 }
 
-// Start aggregating and sending stats data
+func (agg *Agg) pipeline(aggData *AggData) {
+	var stats *common.Stats
+	switch aggData.Direction {
+	case Incoming:
+		stats = agg.rx
+	case Outgoing:
+		stats = agg.tx
+	}
+
+	handleStats(stats, aggData)
+
+	if aggData.PrivateIP == "" {
+		return
+	}
+
+	if linkStats, ok := stats.Links[aggData.PrivateIP]; ok {
+		handleStats(linkStats, aggData)
+	} else {
+		linkStats = &common.Stats{}
+		handleStats(linkStats, aggData)
+
+		stats.Links[aggData.PrivateIP] = linkStats
+	}
+}
+
+func (agg *Agg) server() {
+	for {
+		listenAddress := fmt.Sprintf("%s:%d", agg.cfg.StatsAddress, agg.cfg.StatsPort)
+
+		http.HandleFunc(agg.cfg.StatsRoute, agg.returnStats)
+		err := http.ListenAndServe(listenAddress, nil)
+		if err != nil {
+			agg.log.Error.Println(err.Error())
+		}
+		time.Sleep(10 * time.Second)
+	}
+}
+
+// Start aggregating stats data
 func (agg *Agg) Start(wg *sync.WaitGroup) {
+	go agg.server()
 	go func() {
 		defer wg.Done()
 	loop:
@@ -83,8 +98,8 @@ func (agg *Agg) Start(wg *sync.WaitGroup) {
 			select {
 			case <-agg.stop:
 				break loop
-			case <-agg.ticker.C:
-				agg.pipeline()
+			case aggData := <-agg.Aggs:
+				agg.pipeline(aggData)
 			}
 		}
 	}()
@@ -98,13 +113,13 @@ func (agg *Agg) Stop() {
 }
 
 // New Agg instance pointer
-func New(log *common.Logger, cfg *common.Config, incomingStats []*common.Stats, outgoingStats []*common.Stats) *Agg {
+func New(log *common.Logger, cfg *common.Config) *Agg {
 	return &Agg{
-		cfg:           cfg,
-		sinks:         []StatSink{&ConsoleSink{log: log}},
-		ticker:        time.NewTicker(cfg.StatsWindow),
-		stop:          make(chan struct{}),
-		incomingStats: incomingStats,
-		outgoingStats: outgoingStats,
+		log:  log,
+		cfg:  cfg,
+		rx:   common.NewStats(),
+		tx:   common.NewStats(),
+		stop: make(chan struct{}),
+		Aggs: make(chan *AggData, 1024*1024),
 	}
 }

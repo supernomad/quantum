@@ -36,29 +36,31 @@ var (
 
 // Config handles marshalling user supplied configuration data
 type Config struct {
-	ConfFile        string        `skip:"false"  type:"string"    short:"c"    long:"conf-file"         default:""                      description:"The configuration file to use to configure quantum."`
-	InterfaceName   string        `skip:"false"  type:"string"    short:"i"    long:"interface-name"    default:"quantum%d"             description:"The name to give the TUN interface quantum uses, append '%d' to have auto incrementing names."`
-	NumWorkers      int           `skip:"false"  type:"int"       short:"n"    long:"workers"           default:"0"                     description:"The number of quantum workers to use, set to 0 for a worker per available cpu core."`
-	PrivateIP       net.IP        `skip:"false"  type:"ip"        short:"ip"   long:"private-ip"        default:""                      description:"The private ip address to assign this quantum instance."`
-	ListenIP        net.IP        `skip:"false"  type:"ip"        short:"lip"  long:"listen-ip"         default:""                      description:"The local server ip to listen on, leave blank of automatic association."`
-	ListenPort      int           `skip:"false"  type:"int"       short:"p"    long:"listen-port"       default:"1099"                  description:"The local server port to listen on."`
-	PublicIPv4      net.IP        `skip:"false"  type:"ip"        short:"4"    long:"public-v4"         default:""                      description:"The public ipv4 address to associate with this quantum instance, leave blank for automatic association."`
-	PublicIPv6      net.IP        `skip:"false"  type:"ip"        short:"6"    long:"public-v6"         default:""                      description:"The public ipv6 address to associate with this quantum instance, leave blank for automatic association."`
-	Prefix          string        `skip:"false"  type:"string"    short:"pr"   long:"prefix"            default:"quantum"               description:"The prefix to store quantum configuration data under in the backend key/value store."`
-	DataDir         string        `skip:"false"  type:"string"    short:"d"    long:"data-dir"          default:"/var/lib/quantum"      description:"The directory to store local quantum state to."`
-	PidFile         string        `skip:"false"  type:"string"    short:"pf"   long:"pid-file"          default:"/var/run/quantum.pid"  description:"The pid file to use for tracking rolling restarts."`
-	StatsWindow     time.Duration `skip:"false"  type:"duration"  short:"sw"   long:"stats-window"      default:"10s"                   description:"The interval of stats aggregation."`
-	SyncInterval    time.Duration `skip:"false"  type:"duration"  short:"si"   long:"sync-interval"     default:"60s"                   description:"The interval of full backend syncs."`
-	RefreshInterval time.Duration `skip:"false"  type:"duration"  short:"ri"   long:"refresh-interval"  default:"120s"                  description:"The interval of dhcp lease refreshes."`
-	Datastore       string        `skip:"false"  type:"string"    short:"ds"   long:"datastore"         default:"etcd"                  description:"The type of backend key/value store, this should be 'etcd' or 'consul'."`
-	Endpoints       []string      `skip:"false"  type:"list"      short:"e"    long:"endpoints"         default:"127.0.0.1:2379"        description:"A comma delimited list of backend key/value store endpoints, in 'IPADDR:PORT' syntax."`
-	Username        string        `skip:"false"  type:"string"    short:"u"    long:"username"          default:""                      description:"The username to use for authentication with the backend datastore."`
-	Password        string        `skip:"false"  type:"string"    short:"pw"   long:"password"          default:""                      description:"The password to use for authentication with the backend datastore."`
-	TLSSkipVerify   bool          `skip:"false"  type:"bool"      short:"tsv"  long:"tls-skip-verify"   default:"false"                 description:"Whether or not to authenticate the TLS certificates of the backend key/value store."`
-	TLSCA           string        `skip:"false"  type:"string"    short:"tca"  long:"tls-ca-cert"       default:""                      description:"The TLS CA certificate to authenticate the TLS certificates of the backend key/value store certificates."`
-	TLSCert         string        `skip:"false"  type:"string"    short:"tc"   long:"tls-cert"          default:""                      description:"The TLS client certificate to use to authenticate with the backend key/value store."`
-	TLSKey          string        `skip:"false"  type:"string"    short:"tk"   long:"tls-key"           default:""                      description:"The TLS client key to use to authenticate with the backend key/value store."`
-
+	ConfFile          string            `skip:"false"  type:"string"    short:"c"    long:"conf-file"         default:""                      description:"The configuration file to use to configure quantum."`
+	InterfaceName     string            `skip:"false"  type:"string"    short:"i"    long:"interface-name"    default:"quantum%d"             description:"The name to give the TUN interface quantum uses, append '%d' to have auto incrementing names."`
+	NumWorkers        int               `skip:"false"  type:"int"       short:"n"    long:"workers"           default:"0"                     description:"The number of quantum workers to use, set to 0 for a worker per available cpu core."`
+	PrivateIP         net.IP            `skip:"false"  type:"ip"        short:"ip"   long:"private-ip"        default:""                      description:"The private ip address to assign this quantum instance."`
+	ListenIP          net.IP            `skip:"false"  type:"ip"        short:"lip"  long:"listen-ip"         default:""                      description:"The local server ip to listen on, leave blank of automatic association."`
+	ListenPort        int               `skip:"false"  type:"int"       short:"p"    long:"listen-port"       default:"1099"                  description:"The local server port to listen on."`
+	PublicIPv4        net.IP            `skip:"false"  type:"ip"        short:"4"    long:"public-v4"         default:""                      description:"The public ipv4 address to associate with this quantum instance, leave blank for automatic association."`
+	PublicIPv6        net.IP            `skip:"false"  type:"ip"        short:"6"    long:"public-v6"         default:""                      description:"The public ipv6 address to associate with this quantum instance, leave blank for automatic association."`
+	Prefix            string            `skip:"false"  type:"string"    short:"pr"   long:"prefix"            default:"quantum"               description:"The prefix to store quantum configuration data under in the backend key/value store."`
+	DataDir           string            `skip:"false"  type:"string"    short:"d"    long:"data-dir"          default:"/var/lib/quantum"      description:"The directory to store local quantum state to."`
+	PidFile           string            `skip:"false"  type:"string"    short:"pf"   long:"pid-file"          default:"/var/run/quantum.pid"  description:"The pid file to use for tracking rolling restarts."`
+	StatsWindow       time.Duration     `skip:"false"  type:"duration"  short:"sw"   long:"stats-window"      default:"10s"                   description:"The interval of stats aggregation."`
+	SyncInterval      time.Duration     `skip:"false"  type:"duration"  short:"si"   long:"sync-interval"     default:"60s"                   description:"The interval of full backend syncs."`
+	RefreshInterval   time.Duration     `skip:"false"  type:"duration"  short:"ri"   long:"refresh-interval"  default:"120s"                  description:"The interval of dhcp lease refreshes."`
+	Datastore         string            `skip:"false"  type:"string"    short:"ds"   long:"datastore"         default:"etcd"                  description:"The type of backend key/value store, this should be 'etcd' or 'consul'."`
+	Endpoints         []string          `skip:"false"  type:"list"      short:"e"    long:"endpoints"         default:"127.0.0.1:2379"        description:"A comma delimited list of backend key/value store endpoints, in 'IPADDR:PORT' syntax."`
+	Username          string            `skip:"false"  type:"string"    short:"u"    long:"username"          default:""                      description:"The username to use for authentication with the backend datastore."`
+	Password          string            `skip:"false"  type:"string"    short:"pw"   long:"password"          default:""                      description:"The password to use for authentication with the backend datastore."`
+	TLSSkipVerify     bool              `skip:"false"  type:"bool"      short:"tsv"  long:"tls-skip-verify"   default:"false"                 description:"Whether or not to authenticate the TLS certificates of the backend key/value store."`
+	TLSCA             string            `skip:"false"  type:"string"    short:"tca"  long:"tls-ca-cert"       default:""                      description:"The TLS CA certificate to authenticate the TLS certificates of the backend key/value store certificates."`
+	TLSCert           string            `skip:"false"  type:"string"    short:"tc"   long:"tls-cert"          default:""                      description:"The TLS client certificate to use to authenticate with the backend key/value store."`
+	TLSKey            string            `skip:"false"  type:"string"    short:"tk"   long:"tls-key"           default:""                      description:"The TLS client key to use to authenticate with the backend key/value store."`
+	StatsRoute        string            `skip:"false"  type:"string"    short:"sr"   long:"stats-route"       default:"/stats"                description:"The api route to serve statistics data from."`
+	StatsPort         int               `skip:"false"  type:"int"       short:"sp"   long:"stats-port"        default:"1099"                  description:"The api server port."`
+	StatsAddress      string            `skip:"false"  type:"string"    short:"sa"   long:"stats-address"     default:""                      description:"The api server address."`
 	RealInterfaceName string            `skip:"true"`
 	ReuseFDS          bool              `skip:"true"`
 	MachineID         string            `skip:"true"`

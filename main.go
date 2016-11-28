@@ -45,11 +45,10 @@ func main() {
 	err = sock.Open()
 	handleError(log, err, "sock.Open()")
 
-	outgoing := workers.NewOutgoing(cfg, store, tunnel, sock)
+	aggregator := agg.New(log, cfg)
 
-	incoming := workers.NewIncoming(cfg, store, tunnel, sock)
-
-	aggregator := agg.New(log, cfg, incoming.QueueStats, outgoing.QueueStats)
+	outgoing := workers.NewOutgoing(cfg, aggregator, store, tunnel, sock)
+	incoming := workers.NewIncoming(cfg, aggregator, store, tunnel, sock)
 
 	wg.Add(2)
 	aggregator.Start(wg)
