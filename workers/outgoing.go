@@ -48,8 +48,9 @@ func (outgoing *Outgoing) seal(payload *common.Payload, mapping *common.Mapping)
 	return payload, true
 }
 
-func (outgoing *Outgoing) stats(dropped bool, payload *common.Payload, mapping *common.Mapping) {
+func (outgoing *Outgoing) stats(dropped bool, queue int, payload *common.Payload, mapping *common.Mapping) {
 	aggData := &agg.Data{
+		Queue:     queue,
 		Direction: agg.Outgoing,
 		Dropped:   dropped,
 	}
@@ -68,20 +69,20 @@ func (outgoing *Outgoing) stats(dropped bool, payload *common.Payload, mapping *
 func (outgoing *Outgoing) pipeline(buf []byte, queue int) bool {
 	payload, ok := outgoing.tunnel.Read(buf, queue)
 	if !ok {
-		outgoing.stats(true, payload, nil)
+		outgoing.stats(true, queue, payload, nil)
 		return ok
 	}
 	payload, mapping, ok := outgoing.resolve(payload)
 	if !ok {
-		outgoing.stats(true, payload, mapping)
+		outgoing.stats(true, queue, payload, mapping)
 		return ok
 	}
 	payload, ok = outgoing.seal(payload, mapping)
 	if !ok {
-		outgoing.stats(true, payload, mapping)
+		outgoing.stats(true, queue, payload, mapping)
 		return ok
 	}
-	outgoing.stats(false, payload, mapping)
+	outgoing.stats(false, queue, payload, mapping)
 	return outgoing.sock.Write(payload, queue)
 }
 

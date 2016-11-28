@@ -11,6 +11,7 @@ type Stats struct {
 	DroppedBytes   uint64            `json:"droppedBytes"`
 	Bytes          uint64            `json:"bytes"`
 	Links          map[string]*Stats `json:"links,omitempty"`
+	Queues         []*Stats          `json:"queues,omitempty"`
 }
 
 // String the Stats object
@@ -20,8 +21,13 @@ func (stats *Stats) String() string {
 }
 
 // NewStats object with links
-func NewStats() *Stats {
+func NewStats(numQueues int) *Stats {
+	queues := make([]*Stats, numQueues)
+	for i := 0; i < numQueues; i++ {
+		queues[i] = &Stats{}
+	}
 	return &Stats{
-		Links: make(map[string]*Stats),
+		Links:  make(map[string]*Stats),
+		Queues: queues,
 	}
 }

@@ -1,6 +1,7 @@
 package agg
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/Supernomad/quantum/common"
 	"net/http"
@@ -20,16 +21,28 @@ type Agg struct {
 	log *common.Logger
 	cfg *common.Config
 
-	rx *common.Stats
-	tx *common.Stats
+	statsLog *StatsLog
 
 	Aggs chan *Data
 	stop chan struct{}
 }
 
+// StatsLog object to hold statistics information for quantum
+type StatsLog struct {
+	TxStats *common.Stats
+	RxStats *common.Stats
+}
+
+// Bytes will return a byte slice representing the StatsLog object
+func (statsl *StatsLog) Bytes() []byte {
+	data, _ := json.Marshal(statsl)
+	return data
+}
+
 // Data to use for statistics collection
 type Data struct {
 	PrivateIP string
+	Queue     int
 	Bytes     uint64
 	Direction uint64
 	Dropped   bool
@@ -46,23 +59,27 @@ func handleStats(stats *common.Stats, aggData *Data) {
 }
 
 func (agg *Agg) returnStats(w http.ResponseWriter, r *http.Request) {
-	statsl := &StatsLog{
-		RxStats: agg.rx,
-		TxStats: agg.tx,
+	header := w.Header()
+	header.Set("Content-Type", "application/json")
+	header.Set("Server", "quantum")
+
+	_, err := w.Write(agg.statsLog.Bytes())
+	if err != nil {
+		agg.log.Error.Println(err.Error())
 	}
-	fmt.Fprintf(w, statsl.String())
 }
 
 func (agg *Agg) pipeline(aggData *Data) {
 	var stats *common.Stats
 	switch aggData.Direction {
 	case Incoming:
-		stats = agg.rx
+		stats = agg.statsLog.RxStats
 	case Outgoing:
-		stats = agg.tx
+		stats = agg.statsLog.TxStats
 	}
 
 	handleStats(stats, aggData)
+	handleStats(stats.Queues[aggData.Queue], aggData)
 
 	if aggData.PrivateIP == "" {
 		return
@@ -79,14 +96,14 @@ func (agg *Agg) pipeline(aggData *Data) {
 }
 
 func (agg *Agg) server() {
+	listenAddress := fmt.Sprintf("%s:%d", agg.cfg.StatsAddress, agg.cfg.StatsPort)
+	http.HandleFunc(agg.cfg.StatsRoute, agg.returnStats)
 	for {
-		listenAddress := fmt.Sprintf("%s:%d", agg.cfg.StatsAddress, agg.cfg.StatsPort)
-
-		http.HandleFunc(agg.cfg.StatsRoute, agg.returnStats)
 		err := http.ListenAndServe(listenAddress, nil)
 		if err != nil {
 			agg.log.Error.Println(err.Error())
 		}
+
 		time.Sleep(10 * time.Second)
 	}
 }
@@ -118,10 +135,12 @@ func (agg *Agg) Stop() {
 // New Agg instance pointer
 func New(log *common.Logger, cfg *common.Config) *Agg {
 	return &Agg{
-		log:  log,
-		cfg:  cfg,
-		rx:   common.NewStats(),
-		tx:   common.NewStats(),
+		log: log,
+		cfg: cfg,
+		statsLog: &StatsLog{
+			RxStats: common.NewStats(cfg.NumWorkers),
+			TxStats: common.NewStats(cfg.NumWorkers),
+		},
 		stop: make(chan struct{}),
 		Aggs: make(chan *Data, 1024*1024),
 	}

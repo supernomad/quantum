@@ -44,6 +44,9 @@ $ go get github.com/GeertJohan/fgt
 # Run a build of quantum which will ensure your system is indeed up to date.
 $ bin/generate-etcd-certs
 $ bin/build.sh
+# Setup docker networks for testing
+$ docker network create --ipv6 --subnet=fd00:dead:beef::/64 --gateway=fd00:dead:beef::1 perf_net_v6
+$ docker network create --subnet=172.18.0.0/24 --gateway=172.18.0.1 perf_net_v4
 # Build the container to run quantum in.
 $ docker-compose build
 # Start up docker test bench
