@@ -28,6 +28,7 @@ Currently `quantum` development is entirely in go and utilizes a few BASH script
   - please see your distributions information on how to enable it.
 - docker
 - docker-compose
+- openssl
 - go 1.6
 
 #### Getting started
@@ -42,8 +43,9 @@ $ go get github.com/mattn/goveralls
 $ go get github.com/golang/lint/golint
 $ go get github.com/GeertJohan/fgt
 # Run a build of quantum which will ensure your system is indeed up to date.
-$ bin/generate-etcd-certs
 $ bin/build.sh
+# Generate the required tls certificates
+$ bin/generate-etcd-certs
 # Setup docker networks for testing
 $ docker network create --ipv6 --subnet=fd00:dead:beef::/64 --gateway=fd00:dead:beef::1 perf_net_v6
 $ docker network create --subnet=172.18.0.0/24 --gateway=172.18.0.1 perf_net_v4
@@ -55,9 +57,7 @@ $ docker-compose up -d
 # Check on the status of the different quantum instances
 $ docker-compose logs quantum0 quantum1 quantum2
 ```
-After running the above you will have a single etcd instance and three quantum instances running. The three quantum instances are configured to run a quantum network `10.9.0.0/16`, with `quantum0` having a statically defined private ip `10.9.0.1` and `quantum1`/`quantum2` having DHCP defined private ip addresses.
-
-> A note about TLS, there are included TLS certificates in this repo that should only used for testing quantum in a lab setting. These certificates should not be in anyway considered secure. There is an included script `generate-etcd-certs` that was used to create the certificates, if you wish to replicate them.
+After running the above you will have a single etcd instance and three quantum instances running. The three quantum instances are configured to run a quantum network `10.10.0.0/16`, with `quantum0` having a statically defined private ip `10.10.0.1` and `quantum1`/`quantum2` having DHCP defined private ip addresses.
 
 #### Testing
 To run basic unit testing and builds run:
@@ -79,11 +79,11 @@ $ docker exec -it quantum0 iperf3 -s -f M
 
 # In second shell start iperf3 client in quantum1
 $ cd $GOPATH/src/github.com/Supernomad/quantum
-$ docker exec -it quantum1 iperf3 -c 10.9.0.1 -P 2 -t 50
+$ docker exec -it quantum1 iperf3 -c 10.10.0.1 -P 2 -t 50
 
 # In third shell start iperf3 client in quantum2
 $ cd $GOPATH/src/github.com/Supernomad/quantum
-$ docker exec -it quantum2 iperf3 -c 10.9.0.1 -P 2 -t 50
+$ docker exec -it quantum2 iperf3 -c 10.10.0.1 -P 2 -t 50
 ```
 
 ### Contributing
