@@ -211,7 +211,7 @@ func TestNewSockPayload(t *testing.T) {
 }
 
 func TestNewStats(t *testing.T) {
-	stats := NewStats()
+	stats := NewStats(1)
 	if stats.Packets != 0 {
 		t.Fatalf("NewStats did not return the correct default for Packets, got: %d, expected: %d", stats.Packets, 0)
 	}
