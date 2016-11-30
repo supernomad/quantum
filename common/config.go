@@ -23,6 +23,7 @@ import (
 const (
 	version   = "0.11.0"
 	envPrefix = "QUANTUM_"
+	linkLocal = "fe80::/10"
 )
 
 var (
@@ -257,8 +258,8 @@ func (cfg *Config) computeArgs() error {
 		cfg.AuthEnabled = true
 	}
 
-	if cfg.NumWorkers == 0 {
-		cfg.NumWorkers = runtime.NumCPU()
+	if numCpu := runtime.NumCPU(); cfg.NumWorkers == 0 || cfg.NumWorkers > numCpu {
+		cfg.NumWorkers = numCpu
 	}
 
 	os.MkdirAll(cfg.DataDir, os.ModeDir)
@@ -298,7 +299,11 @@ func (cfg *Config) computeArgs() error {
 		if err != nil {
 			return err
 		}
-		if !ArrayEquals(routes[0].Src, loopbackV6) {
+		_, ipNet, err := net.ParseCIDR(linkLocal)
+		if err != nil {
+			return err
+		}
+		if !ArrayEquals(routes[0].Src, loopbackV6) && !ipNet.Contains(routes[0].Src) {
 			cfg.PublicIPv6 = routes[0].Src
 			cfg.IsIPv6Enabled = true
 		}
