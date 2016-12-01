@@ -258,8 +258,8 @@ func (cfg *Config) computeArgs() error {
 		cfg.AuthEnabled = true
 	}
 
-	if numCpu := runtime.NumCPU(); cfg.NumWorkers == 0 || cfg.NumWorkers > numCpu {
-		cfg.NumWorkers = numCpu
+	if numCPU := runtime.NumCPU(); cfg.NumWorkers == 0 || cfg.NumWorkers > numCPU {
+		cfg.NumWorkers = numCPU
 	}
 
 	os.MkdirAll(cfg.DataDir, os.ModeDir)

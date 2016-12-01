@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/json"
+	"errors"
 	"net"
 	"time"
 )
@@ -40,9 +41,11 @@ func ParseNetworkConfig(data []byte) (*NetworkConfig, error) {
 		return &networkCfg, nil
 	}
 
-	_, staticNet, err := net.ParseCIDR(networkCfg.StaticRange)
+	staticBase, staticNet, err := net.ParseCIDR(networkCfg.StaticRange)
 	if err != nil {
 		return nil, err
+	} else if !ipnet.Contains(staticBase) {
+		return nil, errors.New("network configuration has staticRange defined but the range does not exist in the configured network")
 	}
 
 	networkCfg.StaticNet = staticNet
