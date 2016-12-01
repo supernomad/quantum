@@ -11,16 +11,22 @@ var DefaultNetworkConfig *NetworkConfig
 
 // NetworkConfig object to represent the current network.
 type NetworkConfig struct {
-	Network   string        `json:"network"`
-	LeaseTime time.Duration `json:"leaseTime"`
-	BaseIP    net.IP        `json:"-"`
-	IPNet     *net.IPNet    `json:"-"`
+	Network     string        `json:"network"`
+	StaticRange string        `json:"staticRange"`
+	LeaseTime   time.Duration `json:"leaseTime"`
+	BaseIP      net.IP        `json:"-"`
+	IPNet       *net.IPNet    `json:"-"`
+	StaticNet   *net.IPNet    `json:"-"`
 }
 
 // ParseNetworkConfig from the return of the backend datastore
 func ParseNetworkConfig(data []byte) (*NetworkConfig, error) {
 	var networkCfg NetworkConfig
 	json.Unmarshal(data, &networkCfg)
+
+	if networkCfg.LeaseTime == 0 {
+		networkCfg.LeaseTime = 48 * time.Hour
+	}
 
 	baseIP, ipnet, err := net.ParseCIDR(networkCfg.Network)
 	if err != nil {
@@ -30,6 +36,16 @@ func ParseNetworkConfig(data []byte) (*NetworkConfig, error) {
 	networkCfg.BaseIP = baseIP
 	networkCfg.IPNet = ipnet
 
+	if networkCfg.StaticRange == "" {
+		return &networkCfg, nil
+	}
+
+	_, staticNet, err := net.ParseCIDR(networkCfg.StaticRange)
+	if err != nil {
+		return nil, err
+	}
+
+	networkCfg.StaticNet = staticNet
 	return &networkCfg, nil
 }
 
@@ -47,11 +63,15 @@ func (networkCfg *NetworkConfig) String() string {
 func init() {
 	defaultLeaseTime, _ := time.ParseDuration("48h")
 	DefaultNetworkConfig = &NetworkConfig{
-		Network:   "10.10.0.0/16",
-		LeaseTime: defaultLeaseTime,
+		Network:     "10.10.0.0/16",
+		StaticRange: "10.10.0.0/23",
+		LeaseTime:   defaultLeaseTime,
 	}
 
 	baseIP, ipnet, _ := net.ParseCIDR(DefaultNetworkConfig.Network)
 	DefaultNetworkConfig.BaseIP = baseIP
 	DefaultNetworkConfig.IPNet = ipnet
+
+	_, staticNet, _ := net.ParseCIDR(DefaultNetworkConfig.StaticRange)
+	DefaultNetworkConfig.StaticNet = staticNet
 }

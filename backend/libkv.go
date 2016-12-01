@@ -132,8 +132,8 @@ func (libkv *Libkv) ipExists(ip net.IP) bool {
 }
 
 func (libkv *Libkv) getFreeIP() (net.IP, error) {
-	for ip := libkv.NetworkCfg.BaseIP.Mask(libkv.NetworkCfg.IPNet.Mask); libkv.NetworkCfg.IPNet.Contains(ip); common.IncrementIP(ip) {
-		if ip[3] == 0 || libkv.ipExists(ip) {
+	for ip := libkv.cfg.NetworkConfig.BaseIP.Mask(libkv.cfg.NetworkConfig.IPNet.Mask); libkv.cfg.NetworkConfig.IPNet.Contains(ip); common.IncrementIP(ip) {
+		if ip[3] == 0 || libkv.cfg.NetworkConfig.StaticNet.Contains(ip) || libkv.ipExists(ip) {
 			continue
 		}
 		return ip, nil
@@ -159,7 +159,7 @@ func (libkv *Libkv) handleLocalMapping() error {
 	mapping := common.NewMapping(libkv.cfg.PrivateIP, libkv.cfg.PublicIPv4, libkv.cfg.PublicIPv6, libkv.cfg.ListenPort, libkv.cfg.PublicKey)
 	key := path.Join("/nodes/", libkv.cfg.MachineID)
 
-	err := libkv.set(key, mapping.Bytes(), libkv.NetworkCfg.LeaseTime)
+	err := libkv.set(key, mapping.Bytes(), libkv.cfg.NetworkConfig.LeaseTime)
 	if err != nil {
 		return err
 	}
@@ -198,7 +198,6 @@ func (libkv *Libkv) fetchNetworkConfig() error {
 			return err
 		}
 		libkv.set("config", common.DefaultNetworkConfig.Bytes(), 0)
-		libkv.NetworkCfg = common.DefaultNetworkConfig
 		libkv.cfg.NetworkConfig = common.DefaultNetworkConfig
 		return nil
 	}
@@ -206,7 +205,6 @@ func (libkv *Libkv) fetchNetworkConfig() error {
 	if err != nil {
 		return err
 	}
-	libkv.NetworkCfg = networkCfg
 	libkv.cfg.NetworkConfig = networkCfg
 	return nil
 }
@@ -268,7 +266,7 @@ func (libkv *Libkv) Start(wg *sync.WaitGroup) {
 			case <-libkv.stop:
 				break loop
 			case <-refresh.C:
-				err := libkv.set(key, libkv.localMapping.Bytes(), libkv.NetworkCfg.LeaseTime)
+				err := libkv.set(key, libkv.localMapping.Bytes(), libkv.cfg.NetworkConfig.LeaseTime)
 				if err != nil {
 					libkv.log.Error.Println("[BACKEND]", "error during refresh of the ip address lease:", err)
 				}
