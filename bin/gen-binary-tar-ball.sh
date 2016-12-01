@@ -9,11 +9,16 @@ old_working_dir="$(pwd)"
 version=$1
 pushd /tmp/
 
-echo "Building quantum"
+echo "Building quantum..."
 go build github.com/Supernomad/quantum
-tar cvzf quantum_0.11.0_linux_amd64.tar.gz quantum
-rm quantum
 
+echo "Creating archive..."
+tar cvzf quantum_${version}_linux_amd64.tar.gz quantum
+
+echo "Cleaning up..."
+rm quantum
 mv quantum_${version}_linux_amd64.tar.gz $old_working_dir/
 
+echo "Generation complete..."
+echo "Archive: $old_working_dir/quantum_${version}_linux_amd64.tar.gz"
 popd
