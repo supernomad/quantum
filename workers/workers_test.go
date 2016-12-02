@@ -24,10 +24,7 @@ var (
 )
 
 var (
-	resolveIncomingResult, verifyResult, unsealResult,
-	resolveOutgoingResult, sealResult, signResult *common.Payload
-
-	resolveIncomingMapping, resolveOutgoingMapping, testMapping *common.Mapping
+	testMapping *common.Mapping
 )
 
 func init() {
@@ -49,7 +46,15 @@ func init() {
 	store.Mapping = testMapping
 	aggregator := agg.New(
 		common.NewLogger(),
-		&common.Config{})
+		&common.Config{
+			StatsRoute:   "/stats",
+			StatsPort:    1099,
+			StatsAddress: "127.0.0.1",
+			NumWorkers:   1,
+		})
+	wg.Add(1)
+	aggregator.Start(wg)
+
 	incoming = NewIncoming(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, tun, sock)
 	outgoing = NewOutgoing(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, tun, sock)
 }

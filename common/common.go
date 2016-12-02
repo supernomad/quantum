@@ -36,7 +36,8 @@ const (
 	PacketStart = 16
 
 	// MaxPacketLength - The maximum packet size to send via the UDP device
-	MaxPacketLength = 65500
+	// 1500 - IPHeader(20) - UDPHeader(8) - SafetyNet(2)
+	MaxPacketLength = 1470
 
 	// HeaderSize - The size of the perpended data
 	HeaderSize = IPLength + NonceLength

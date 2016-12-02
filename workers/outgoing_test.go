@@ -26,7 +26,6 @@ func BenchmarkOutgoingPipeline(b *testing.B) {
 func TestOutgoingPipeline(t *testing.T) {
 	buf := make([]byte, common.MaxPacketLength)
 	rand.Read(buf)
-
 	if !outgoing.pipeline(buf, 0) {
 		panic("Somthing is wrong.")
 	}
