@@ -5,3 +5,6 @@ go:
 
 script:
   - bin/build.sh coverage travis
+
+addons:
+  srcclr: true
