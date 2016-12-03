@@ -1,4 +1,4 @@
-package inet
+package device
 
 import (
 	"github.com/Supernomad/quantum/common"
@@ -7,12 +7,12 @@ import (
 )
 
 const (
-	// TUNInterface interface type
-	TUNInterface int = 0
-	// TAPInterface interface type
-	TAPInterface int = 1
-	// MOCKInterface interface type
-	MOCKInterface int = 2
+	// TUNDevice interface type
+	TUNDevice int = 0
+	// TAPDevice interface type
+	TAPDevice int = 1
+	// MOCKDevice interface type
+	MOCKDevice int = 2
 
 	ifNameSize    = 16
 	iffTun        = 0x0001
@@ -26,28 +26,26 @@ type ifReq struct {
 	Flags uint16
 }
 
-// Interface is a generic multi-queue network interface
-type Interface interface {
+// Device is a generic multi-queue network device
+type Device interface {
 	Name() string
 	Read(buf []byte, queue int) (*common.Payload, bool)
 	Write(payload *common.Payload, queue int) bool
 	Open() error
 	Close() error
-	GetFDs() []int
+	Queues() []int
 }
 
-// New Interface object
-func New(kind int, cfg *common.Config) Interface {
+// New Device object
+func New(kind int, cfg *common.Config) Device {
 	switch kind {
-	case TUNInterface:
+	case TUNDevice:
 		return newTUN(cfg)
-	case MOCKInterface:
-		return newMock(cfg)
 	}
 	return nil
 }
 
-func initInterface(name, src string, networkCfg *common.NetworkConfig) error {
+func initDevice(name, src string, networkCfg *common.NetworkConfig) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return err

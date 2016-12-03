@@ -4,7 +4,7 @@ import (
 	"github.com/Supernomad/quantum/agg"
 	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
-	"github.com/Supernomad/quantum/inet"
+	"github.com/Supernomad/quantum/device"
 	"github.com/Supernomad/quantum/socket"
 	"github.com/Supernomad/quantum/workers"
 	"io/ioutil"
@@ -14,8 +14,6 @@ import (
 	"sync"
 	"syscall"
 )
-
-const version string = "0.6.0"
 
 func handleError(log *common.Logger, err error, stack string) {
 	if err != nil {
@@ -37,9 +35,9 @@ func main() {
 	err = store.Init()
 	handleError(log, err, "store.Init()")
 
-	tunnel := inet.New(inet.TUNInterface, cfg)
-	err = tunnel.Open()
-	handleError(log, err, "tunnel.Open()")
+	dev := device.New(device.TUNDevice, cfg)
+	err = dev.Open()
+	handleError(log, err, "dev.Open()")
 
 	sock := socket.New(socket.UDPSocket, cfg)
 	err = sock.Open()
@@ -47,8 +45,8 @@ func main() {
 
 	aggregator := agg.New(log, cfg)
 
-	outgoing := workers.NewOutgoing(cfg, aggregator, store, tunnel, sock)
-	incoming := workers.NewIncoming(cfg, aggregator, store, tunnel, sock)
+	outgoing := workers.NewOutgoing(cfg, aggregator, store, dev, sock)
+	incoming := workers.NewIncoming(cfg, aggregator, store, dev, sock)
 
 	wg.Add(2)
 	aggregator.Start(wg)
@@ -58,12 +56,12 @@ func main() {
 		outgoing.Start(i)
 	}
 
-	log.Info.Println("[MAIN]", "Listening on TUN device:  ", tunnel.Name())
+	log.Info.Println("[MAIN]", "Listening on TUN device:  ", dev.Name())
 	log.Info.Println("[MAIN]", "TUN network space:        ", cfg.NetworkConfig.Network)
 	log.Info.Println("[MAIN]", "TUN private IP address:   ", cfg.PrivateIP)
-	log.Info.Println("[MAIN]", "TUN public IPv4 address:    ", cfg.PublicIPv4)
-	log.Info.Println("[MAIN]", "TUN public IPv6 address:    ", cfg.PublicIPv6)
-	log.Info.Println("[MAIN]", "Listening on UDP port: ", strconv.Itoa(cfg.ListenPort))
+	log.Info.Println("[MAIN]", "TUN public IPv4 address:  ", cfg.PublicIPv4)
+	log.Info.Println("[MAIN]", "TUN public IPv6 address:  ", cfg.PublicIPv6)
+	log.Info.Println("[MAIN]", "Listening on UDP port:    ", strconv.Itoa(cfg.ListenPort))
 
 	exit := make(chan struct{})
 	signals := make(chan os.Signal, 1)
@@ -76,7 +74,7 @@ func main() {
 			log.Info.Println("[MAIN]", "Recieved reload signal from user. Reloading process.")
 
 			sockFDS := sock.GetFDs()
-			tunFDS := tunnel.GetFDs()
+			tunFDS := dev.Queues()
 
 			files := make([]uintptr, 3+cfg.NumWorkers*2)
 			files[0] = os.Stdin.Fd()
@@ -88,7 +86,7 @@ func main() {
 				files[3+i+cfg.NumWorkers] = uintptr(sockFDS[i])
 			}
 
-			os.Setenv(common.RealInterfaceNameEnv, tunnel.Name())
+			os.Setenv(common.RealDeviceNameEnv, dev.Name())
 			pid, err := syscall.ForkExec(os.Args[0], os.Args, &syscall.ProcAttr{
 				Env:   os.Environ(),
 				Files: files,
@@ -109,6 +107,6 @@ func main() {
 	outgoing.Stop()
 
 	sock.Close()
-	tunnel.Close()
+	dev.Close()
 	wg.Wait()
 }

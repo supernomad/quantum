@@ -5,7 +5,7 @@ import (
 	"github.com/Supernomad/quantum/agg"
 	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
-	"github.com/Supernomad/quantum/inet"
+	"github.com/Supernomad/quantum/device"
 	"github.com/Supernomad/quantum/socket"
 )
 
@@ -13,7 +13,7 @@ import (
 type Incoming struct {
 	cfg        *common.Config
 	aggregator *agg.Agg
-	tunnel     inet.Interface
+	dev        device.Device
 	sock       socket.Socket
 	store      backend.Backend
 	stop       bool
@@ -73,7 +73,7 @@ func (incoming *Incoming) pipeline(buf []byte, queue int) bool {
 		return ok
 	}
 	incoming.stats(false, queue, payload, mapping)
-	return incoming.tunnel.Write(payload, queue)
+	return incoming.dev.Write(payload, queue)
 }
 
 // Start handling packets
@@ -92,11 +92,11 @@ func (incoming *Incoming) Stop() {
 }
 
 // NewIncoming object
-func NewIncoming(cfg *common.Config, aggregator *agg.Agg, store backend.Backend, tunnel inet.Interface, sock socket.Socket) *Incoming {
+func NewIncoming(cfg *common.Config, aggregator *agg.Agg, store backend.Backend, dev device.Device, sock socket.Socket) *Incoming {
 	return &Incoming{
 		cfg:        cfg,
 		aggregator: aggregator,
-		tunnel:     tunnel,
+		dev:        dev,
 		sock:       sock,
 		store:      store,
 		stop:       false,

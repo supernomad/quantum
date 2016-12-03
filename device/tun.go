@@ -1,4 +1,4 @@
-package inet
+package device
 
 import (
 	"github.com/Supernomad/quantum/common"
@@ -7,7 +7,7 @@ import (
 	"unsafe"
 )
 
-// Tun interface
+// Tun device
 type Tun struct {
 	name   string
 	queues []int
@@ -31,12 +31,12 @@ func (tun *Tun) Open() error {
 			tun.name = ifName
 		} else {
 			tun.queues[i] = 3 + i
-			tun.name = tun.cfg.RealInterfaceName
+			tun.name = tun.cfg.RealDeviceName
 		}
 	}
 
 	if !tun.cfg.ReuseFDS {
-		err := initInterface(tun.name, tun.cfg.PrivateIP.String(), tun.cfg.NetworkConfig)
+		err := initDevice(tun.name, tun.cfg.PrivateIP.String(), tun.cfg.NetworkConfig)
 		if err != nil {
 			return err
 		}
@@ -54,8 +54,8 @@ func (tun *Tun) Close() error {
 	return nil
 }
 
-// GetFDs will return the underlying queue fds
-func (tun *Tun) GetFDs() []int {
+// Queues will return the underlying queue fds
+func (tun *Tun) Queues() []int {
 	return tun.queues
 }
 
@@ -77,9 +77,9 @@ func (tun *Tun) Write(payload *common.Payload, queue int) bool {
 	return true
 }
 
-func newTUN(cfg *common.Config) Interface {
+func newTUN(cfg *common.Config) Device {
 	queues := make([]int, cfg.NumWorkers)
-	name := cfg.InterfaceName
+	name := cfg.DeviceName
 
 	return &Tun{name: name, cfg: cfg, queues: queues}
 }

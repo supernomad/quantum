@@ -7,7 +7,7 @@ import (
 	"github.com/Supernomad/quantum/agg"
 	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
-	"github.com/Supernomad/quantum/inet"
+	"github.com/Supernomad/quantum/device"
 	"github.com/Supernomad/quantum/socket"
 	"net"
 	"sync"

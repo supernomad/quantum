@@ -1,40 +1,40 @@
-package inet
+package device
 
 import (
 	"github.com/Supernomad/quantum/common"
 )
 
-// Mock interface
+// Mock device
 type Mock struct {
 }
 
-// Name of the interface
+// Name of the device
 func (mock *Mock) Name() string {
-	return "Mocked Interface"
+	return "Mocked Device"
 }
 
-// Read a packet off the interface
+// Read a packet off the device
 func (mock *Mock) Read(buf []byte, queue int) (*common.Payload, bool) {
 	return common.NewTunPayload(buf, common.MTU), true
 }
 
-// Write a packet to the interface
+// Write a packet to the device
 func (mock *Mock) Write(payload *common.Payload, queue int) bool {
 	return true
 }
 
-// Open the interface
+// Open the device
 func (mock *Mock) Open() error {
 	return nil
 }
 
-// Close the interface
+// Close the device
 func (mock *Mock) Close() error {
 	return nil
 }
 
-// GetFDs will return the underlying queue fds
-func (mock *Mock) GetFDs() []int {
+// Queues will return the underlying queue fds
+func (mock *Mock) Queues() []int {
 	return nil
 }
 
