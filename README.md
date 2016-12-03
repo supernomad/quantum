@@ -29,7 +29,7 @@ Currently `quantum` development is entirely in go and utilizes a few BASH script
 - docker
 - docker-compose
 - openssl
-- go 1.6
+- go 1.7
 
 #### Getting started
 To get started developing `quantum`, run the following shell commands to get your environment configured and running.
