@@ -41,6 +41,8 @@ func New(kind int, cfg *common.Config) Device {
 	switch kind {
 	case TUNDevice:
 		return newTUN(cfg)
+	case MOCKDevice:
+		return newMock(cfg)
 	}
 	return nil
 }

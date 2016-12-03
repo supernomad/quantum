@@ -16,7 +16,7 @@ import (
 var (
 	outgoing  *Outgoing
 	incoming  *Incoming
-	tun       inet.Interface
+	dev       device.Device
 	sock      socket.Socket
 	store     *backend.Mock
 	privateIP = "10.1.1.1"
@@ -32,7 +32,7 @@ func init() {
 	ipv6 := net.ParseIP("dead::beef")
 
 	store = &backend.Mock{}
-	tun = inet.New(inet.MOCKInterface, nil)
+	dev = device.New(device.MOCKDevice, nil)
 	sock = socket.New(socket.MOCKSocket, nil)
 
 	key := make([]byte, 32)
@@ -55,6 +55,6 @@ func init() {
 	wg.Add(1)
 	aggregator.Start(wg)
 
-	incoming = NewIncoming(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, tun, sock)
-	outgoing = NewOutgoing(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, tun, sock)
+	incoming = NewIncoming(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, dev, sock)
+	outgoing = NewOutgoing(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, dev, sock)
 }

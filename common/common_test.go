@@ -84,7 +84,7 @@ func TestIncrementIP(t *testing.T) {
 }
 
 func TestNewConfig(t *testing.T) {
-	os.Setenv("QUANTUM_INTERFACE_NAME", "different")
+	os.Setenv("QUANTUM_DEVICE_NAME", "different")
 	os.Setenv("QUANTUM_LISTEN_PORT", "1")
 	os.Setenv("QUANTUM_CONF_FILE", confFile)
 	os.Setenv("QUANTUM_PID_FILE", "../quantum.pid")
@@ -97,8 +97,8 @@ func TestNewConfig(t *testing.T) {
 	if cfg == nil {
 		t.Fatal("NewConfig returned a blank config")
 	}
-	if cfg.InterfaceName != "different" {
-		t.Fatalf("NewConfig didn't pick up the environment variable replacement for InterfaceName")
+	if cfg.DeviceName != "different" {
+		t.Fatalf("NewConfig didn't pick up the environment variable replacement for DeviceName")
 	}
 	if cfg.ListenPort != 1 {
 		t.Fatalf("NewConfig didn't pick up the environment variable replacement for ListenPort")

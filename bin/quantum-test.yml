@@ -1,6 +1,6 @@
 ---
 conf-file: "bin/quantum-test.yml"
-interface-name: "woot"
+device-name: "woot"
 private-ip: "10.1.1.1"
 public-ip: "10.2.2.2"
 listen-address: "10.2.2.2"

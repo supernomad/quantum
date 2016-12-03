@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	// RealInterfaceNameEnv is the environment variable the the real interface name is stored for reloads.
-	RealDeviceNameEnv = "_QUANTUM_REAL_INTERFACE_NAME"
+	// RealDeviceNameEnv is the environment variable the the real device name is stored for reloads.
+	RealDeviceNameEnv = "_QUANTUM_REAL_DEVICE_NAME_"
 )
 
 const (
