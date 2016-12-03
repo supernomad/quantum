@@ -7,11 +7,11 @@ import (
 )
 
 const (
-	// TUNDevice interface type
+	// TUNDevice type
 	TUNDevice int = 0
-	// TAPDevice interface type
+	// TAPDevice type
 	TAPDevice int = 1
-	// MOCKDevice interface type
+	// MOCKDevice type
 	MOCKDevice int = 2
 
 	ifNameSize    = 16
