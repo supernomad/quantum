@@ -296,4 +296,11 @@ func TestGenerateLocalMapping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	delete(mappings, IPtoInt(net.ParseIP("10.10.0.1")))
+
+	_, err = GenerateLocalMapping(cfg, mappings)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
