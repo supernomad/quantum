@@ -281,4 +281,19 @@ func TestGenerateLocalMapping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	mapping.MachineID = "456"
+
+	_, err = GenerateLocalMapping(cfg, mappings)
+	if err == nil {
+		t.Fatal("GenerateLocalMapping failed to properly handle an existing ip address")
+	}
+
+	cfg.PrivateIP = nil
+	mapping.MachineID = "123"
+
+	_, err = GenerateLocalMapping(cfg, mappings)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
