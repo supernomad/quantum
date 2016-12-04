@@ -10,6 +10,7 @@ import (
 
 // Mapping represents the relationship between a public/private address and encryption metadata
 type Mapping struct {
+	MachineID     string                 `json:"machineID"`
 	PrivateIP     net.IP                 `json:"privateIP"`
 	PublicKey     []byte                 `json:"publicKey"`
 	IPv4          net.IP                 `json:"ipv4,omitempty"`
@@ -32,7 +33,8 @@ func (mapping *Mapping) String() string {
 }
 
 // ParseMapping creates a new mapping based on the output of Mapping.Bytes
-func ParseMapping(data, privkey []byte) (*Mapping, error) {
+func ParseMapping(str string, privkey []byte) (*Mapping, error) {
+	data := []byte(str)
 	var mapping Mapping
 	json.Unmarshal(data, &mapping)
 
@@ -65,8 +67,9 @@ func ParseMapping(data, privkey []byte) (*Mapping, error) {
 }
 
 // NewMapping generates a new basic Mapping
-func NewMapping(privateIP, publicV4, publicV6 net.IP, port int, pubkey []byte) *Mapping {
+func NewMapping(machineID string, privateIP, publicV4, publicV6 net.IP, port int, pubkey []byte) *Mapping {
 	return &Mapping{
+		MachineID: machineID,
 		IPv4:      publicV4,
 		IPv6:      publicV6,
 		Port:      port,

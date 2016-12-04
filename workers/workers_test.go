@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/Supernomad/quantum/agg"
-	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
+	"github.com/Supernomad/quantum/datastore"
 	"github.com/Supernomad/quantum/device"
 	"github.com/Supernomad/quantum/socket"
 )
@@ -21,7 +21,7 @@ var (
 	incoming  *Incoming
 	dev       device.Device
 	sock      socket.Socket
-	store     *backend.Mock
+	store     *datastore.Mock
 	privateIP = "10.1.1.1"
 	wg        = &sync.WaitGroup{}
 )
@@ -34,7 +34,7 @@ func init() {
 	ip := net.ParseIP("10.8.0.1")
 	ipv6 := net.ParseIP("dead::beef")
 
-	store = &backend.Mock{}
+	store = &datastore.Mock{}
 	dev = device.New(device.MOCKDevice, nil)
 	sock = socket.New(socket.MOCKSocket, nil)
 
@@ -46,7 +46,7 @@ func init() {
 
 	testMapping = &common.Mapping{IPv4: ip, IPv6: ipv6, PublicKey: make([]byte, 32), Cipher: aesgcm}
 
-	store.Mapping = testMapping
+	store.InternalMapping = testMapping
 	aggregator := agg.New(
 		common.NewLogger(),
 		&common.Config{

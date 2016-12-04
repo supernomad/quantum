@@ -134,8 +134,9 @@ func TestNewMapping(t *testing.T) {
 	publicip6 := net.ParseIP("dead::beef")
 	publicport := 80
 	publicKey := make([]byte, 32)
+	machineID := "123456"
 
-	actual := NewMapping(privateIP, publicip, publicip6, publicport, publicKey)
+	actual := NewMapping(machineID, privateIP, publicip, publicip6, publicport, publicKey)
 	if !testEq(actual.IPv4, publicip) || !testEq(actual.IPv6, publicip6) || actual.Port != publicport || !testEq(actual.PrivateIP, privateIP) || !testEq(actual.PublicKey, publicKey) {
 		t.Fatalf("NewMapping did not return the right value, got: %v", actual)
 	}
@@ -147,9 +148,10 @@ func TestParseMapping(t *testing.T) {
 	publicip6 := net.ParseIP("dead::beef")
 	publicport := 80
 	publicKey := make([]byte, 32)
+	machineID := "123456"
 
-	expected := NewMapping(privateIP, publicip, publicip6, publicport, publicKey)
-	actual, err := ParseMapping(expected.Bytes(), make([]byte, 32))
+	expected := NewMapping(machineID, privateIP, publicip, publicip6, publicport, publicKey)
+	actual, err := ParseMapping(expected.String(), make([]byte, 32))
 	if err != nil {
 		t.Fatalf("Error occured during test: %s", err)
 	}

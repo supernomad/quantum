@@ -1,6 +1,9 @@
 package datastore
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"io/ioutil"
 	"net/http"
 	"path"
 	"sync"
@@ -31,7 +34,7 @@ func isError(err error, code int) bool {
 		return false
 	}
 
-	if cErr, ok := err.(Error); ok {
+	if cErr, ok := err.(client.Error); ok {
 		return cErr.Code == code
 	}
 	return false
@@ -43,7 +46,7 @@ func (etcd *Etcd) handleNetworkConfig() error {
 		if !isError(err, client.ErrorCodeKeyNotFound) {
 			return err
 		}
-		_, err := etcd.kapi.Set(context.Background(), etcd.key("config"), etcd.cfg.MachineID, &client.SetOptions{})
+		_, err := etcd.kapi.Set(context.Background(), etcd.key("config"), common.DefaultNetworkConfig.String(), &client.SetOptions{})
 		if err != nil {
 			return err
 		}
@@ -62,13 +65,15 @@ func (etcd *Etcd) handleNetworkConfig() error {
 }
 
 func (etcd *Etcd) handleLocalMapping() error {
-	mapping := common.GenerateLocalMapping(etcd.cfg, etcd.mappings)
+	mapping, err := common.GenerateLocalMapping(etcd.cfg, etcd.mappings)
+	if err != nil {
+		return err
+	}
 
 	opts := &client.SetOptions{
-		TTL:              etcd.cfg.NetworkConfig.LeaseTime,
-		NoValueOnSuccess: true,
+		TTL: etcd.cfg.NetworkConfig.LeaseTime,
 	}
-	_, err := etcd.kapi.Set(context.Background(), etcd.key("nodes", etcd.cfg.MachineID), mapping.String(), opts)
+	_, err = etcd.kapi.Set(context.Background(), etcd.key("nodes", etcd.cfg.MachineID), mapping.String(), opts)
 	if err != nil {
 		return err
 	}
@@ -78,14 +83,14 @@ func (etcd *Etcd) handleLocalMapping() error {
 }
 
 func (etcd *Etcd) key(str ...string) string {
-	return path.Join(etcd.cfg.Prefix, str...)
+	strs := []string{etcd.cfg.Prefix}
+	return path.Join(append(strs, str...)...)
 }
 
 func (etcd *Etcd) lock() (chan struct{}, error) {
 	opts := &client.SetOptions{
-		PrevExist:        client.PrevNoExist,
-		TTL:              lockTTL,
-		NoValueOnSuccess: true,
+		PrevExist: client.PrevNoExist,
+		TTL:       lockTTL,
 	}
 
 	for {
@@ -101,7 +106,7 @@ func (etcd *Etcd) lock() (chan struct{}, error) {
 		break
 	}
 
-	stopRefreshing := etcd.refresh("lock", lockTTL, 5*time.Second)
+	stopRefreshing := etcd.refresh("lock", etcd.cfg.MachineID, lockTTL, 5*time.Second)
 	return stopRefreshing, nil
 }
 
@@ -109,14 +114,13 @@ func (etcd *Etcd) refresh(key, value string, ttl, refreshInterval time.Duration)
 	stop := make(chan struct{})
 
 	go func() {
-		ticker := time.NewTicker(interval)
+		ticker := time.NewTicker(refreshInterval)
 
 		opts := &client.SetOptions{
-			PrevValue:        value,
-			PrevExist:        client.PrevExist,
-			TTL:              ttl,
-			NoValueOnSuccess: true,
-			Refresh:          true,
+			PrevValue: value,
+			PrevExist: client.PrevExist,
+			TTL:       ttl,
+			Refresh:   true,
 		}
 
 	loop:
@@ -127,7 +131,7 @@ func (etcd *Etcd) refresh(key, value string, ttl, refreshInterval time.Duration)
 			case <-ticker.C:
 				_, err := etcd.kapi.Set(context.Background(), etcd.key(key), "", opts)
 				if err != nil {
-					if isError(err, client.ErrKeyNotFound) ||
+					if isError(err, client.ErrorCodeKeyNotFound) ||
 						isError(err, client.ErrorCodePrevValueRequired) ||
 						isError(err, client.ErrorCodeTestFailed) {
 						break loop
@@ -174,7 +178,6 @@ func (etcd *Etcd) unlock(stopRefreshing chan struct{}) error {
 
 	opts := &client.DeleteOptions{
 		PrevValue: etcd.cfg.MachineID,
-		PrevExist: client.PrevExist,
 	}
 
 	_, err := etcd.kapi.Delete(context.Background(), etcd.key("lock"), opts)
@@ -228,7 +231,7 @@ func (etcd *Etcd) watch() {
 						if err != nil {
 							etcd.log.Error.Println("[ETCD]", "Error deserializing mapping:", err.Error())
 						}
-						delete(etcd.mappings, common.IPtoInt(mappings.PrivateIP))
+						delete(etcd.mappings, common.IPtoInt(mapping.PrivateIP))
 					}
 				}
 			}
@@ -237,7 +240,7 @@ func (etcd *Etcd) watch() {
 	}()
 }
 
-// GetMapping from the Etcd datastore
+// Mapping from the Etcd datastore
 func (etcd *Etcd) Mapping(ip uint32) (*common.Mapping, bool) {
 	mapping, exists := etcd.mappings[ip]
 	return mapping, exists
@@ -304,7 +307,7 @@ func (etcd *Etcd) Stop() {
 	}()
 }
 
-func generateConfig(cfg *common.Config) client.Config {
+func generateConfig(cfg *common.Config) (client.Config, error) {
 	endpointPrefix := "http://"
 	etcdCfg := client.Config{}
 
@@ -314,7 +317,7 @@ func generateConfig(cfg *common.Config) client.Config {
 	}
 
 	if cfg.TLSEnabled {
-		tlsCfg = &tls.Config{}
+		tlsCfg := &tls.Config{}
 		endpointPrefix = "https://"
 
 		if cfg.TLSKey != "" && cfg.TLSCert != "" {
@@ -343,6 +346,11 @@ func generateConfig(cfg *common.Config) client.Config {
 		}
 	}
 
+	etcdCfg.Endpoints = make([]string, len(cfg.Endpoints))
+	for i := 0; i < len(cfg.Endpoints); i++ {
+		etcdCfg.Endpoints[i] = endpointPrefix + cfg.Endpoints[i]
+	}
+
 	return etcdCfg, nil
 }
 
@@ -364,5 +372,5 @@ func newEtcd(log *common.Logger, cfg *common.Config) (Datastore, error) {
 		mappings: make(map[uint32]*common.Mapping),
 		cli:      cli,
 		kapi:     kapi,
-	}
+	}, nil
 }

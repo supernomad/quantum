@@ -30,7 +30,7 @@ func main() {
 	cfg, err := common.NewConfig()
 	handleError(log, err, "common.NewConfig()")
 
-	store, err := backend.New(backend.LIBKV, log, cfg)
+	store, err := datastore.New(datastore.ETCDDatastore, log, cfg)
 	handleError(log, err, "backend.New(backend.LIBKV, log, cfg)")
 
 	err = store.Init()

@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 
 	"github.com/Supernomad/quantum/agg"
-	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
+	"github.com/Supernomad/quantum/datastore"
 	"github.com/Supernomad/quantum/device"
 	"github.com/Supernomad/quantum/socket"
 )
@@ -16,14 +16,14 @@ type Incoming struct {
 	aggregator *agg.Agg
 	dev        device.Device
 	sock       socket.Socket
-	store      backend.Backend
+	store      datastore.Datastore
 	stop       bool
 }
 
 func (incoming *Incoming) resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
 	dip := binary.LittleEndian.Uint32(payload.IPAddress)
 
-	if mapping, ok := incoming.store.GetMapping(dip); ok {
+	if mapping, ok := incoming.store.Mapping(dip); ok {
 		return payload, mapping, true
 	}
 
@@ -93,7 +93,7 @@ func (incoming *Incoming) Stop() {
 }
 
 // NewIncoming object
-func NewIncoming(cfg *common.Config, aggregator *agg.Agg, store backend.Backend, dev device.Device, sock socket.Socket) *Incoming {
+func NewIncoming(cfg *common.Config, aggregator *agg.Agg, store datastore.Datastore, dev device.Device, sock socket.Socket) *Incoming {
 	return &Incoming{
 		cfg:        cfg,
 		aggregator: aggregator,

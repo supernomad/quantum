@@ -13,7 +13,7 @@ type Mock struct {
 	wg *sync.WaitGroup
 }
 
-// GetMapping from the mock datastore
+// Mapping from the mock datastore
 func (mock *Mock) Mapping(ip uint32) (*common.Mapping, bool) {
 	return mock.InternalMapping, true
 }

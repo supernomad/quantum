@@ -5,8 +5,8 @@ import (
 	"encoding/binary"
 
 	"github.com/Supernomad/quantum/agg"
-	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"
+	"github.com/Supernomad/quantum/datastore"
 	"github.com/Supernomad/quantum/device"
 	"github.com/Supernomad/quantum/socket"
 )
@@ -17,14 +17,14 @@ type Outgoing struct {
 	aggregator *agg.Agg
 	dev        device.Device
 	sock       socket.Socket
-	store      backend.Backend
+	store      datastore.Datastore
 	stop       bool
 }
 
 func (outgoing *Outgoing) resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
 	dip := binary.LittleEndian.Uint32(payload.Packet[16:20])
 
-	if mapping, ok := outgoing.store.GetMapping(dip); ok {
+	if mapping, ok := outgoing.store.Mapping(dip); ok {
 		if outgoing.cfg.IsIPv6Enabled && mapping.IPv6 != nil {
 			payload.Sockaddr = mapping.SockaddrInet6
 		} else if outgoing.cfg.IsIPv4Enabled && mapping.IPv4 != nil {
@@ -103,7 +103,7 @@ func (outgoing *Outgoing) Stop() {
 }
 
 // NewOutgoing object
-func NewOutgoing(cfg *common.Config, aggregator *agg.Agg, store backend.Backend, dev device.Device, sock socket.Socket) *Outgoing {
+func NewOutgoing(cfg *common.Config, aggregator *agg.Agg, store datastore.Datastore, dev device.Device, sock socket.Socket) *Outgoing {
 	return &Outgoing{
 		cfg:        cfg,
 		aggregator: aggregator,
