@@ -23,7 +23,11 @@
 > For a minimalistic configuration that can be used to generate test certificates see the included `bin/generate-etcd-certs` bash script
 
 #### Configuration
-`quantum` can be configured in any combination of four ways, cli arguments, environment variables, configuration file entries, and finally falling back to defaults. Regardless of which way `quantum` is configured all of the configuration options are available.
+`quantum` can be configured in any combination of three ways, cli arguments, environment variables, and configuration file entries. All configuration options are optional and have sane defaults, however runnig without parameters will force quantum to run in insecure mode. All three variants can be used in conjunction to allow for overriding variables depending on environment, the hierarchy is as follows:
+
+- Cli parameters override all other methods
+- Environment variables override configuration file entries but can be overriden by cli parameters
+- Configuration file entries will override defaults but can be overriden by either cli parameters or environment variables
 
 Run `quantum -h|--help` for a current list of configuration options or see the [wiki on configuration](https://github.com/Supernomad/quantum/wiki/Configuration) for further information.
 
