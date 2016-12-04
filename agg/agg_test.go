@@ -1,10 +1,11 @@
 package agg
 
 import (
-	"github.com/Supernomad/quantum/common"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/Supernomad/quantum/common"
 )
 
 func TestAgg(t *testing.T) {

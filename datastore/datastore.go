@@ -1,13 +1,17 @@
 package datastore
 
 import (
-	"github.com/Supernomad/quantum/common"
 	"sync"
+	"time"
+
+	"github.com/Supernomad/quantum/common"
 )
 
 const (
 	ETCDDatastore = iota
 	MOCKDatastore
+
+	lockTTL = 10 * time.Second
 )
 
 type Datastore interface {
@@ -17,7 +21,7 @@ type Datastore interface {
 	Stop()
 }
 
-func New(kind int, log *common.Logger, cfg *common.Config) Datastore {
+func New(kind int, log *common.Logger, cfg *common.Config) (Datastore, error) {
 	switch kind {
 	case ETCDDatastore:
 		return newEtcd(log, cfg)

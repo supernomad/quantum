@@ -1,10 +1,11 @@
 package device
 
 import (
-	"github.com/Supernomad/quantum/common"
 	"strings"
 	"syscall"
 	"unsafe"
+
+	"github.com/Supernomad/quantum/common"
 )
 
 // Tun device

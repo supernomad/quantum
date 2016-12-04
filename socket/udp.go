@@ -1,8 +1,9 @@
 package socket
 
 import (
-	"github.com/Supernomad/quantum/common"
 	"syscall"
+
+	"github.com/Supernomad/quantum/common"
 )
 
 // UDP is a generic multiqueue socket

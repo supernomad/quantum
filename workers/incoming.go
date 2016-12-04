@@ -2,6 +2,7 @@ package workers
 
 import (
 	"encoding/binary"
+
 	"github.com/Supernomad/quantum/agg"
 	"github.com/Supernomad/quantum/backend"
 	"github.com/Supernomad/quantum/common"

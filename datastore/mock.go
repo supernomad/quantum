@@ -1,14 +1,16 @@
 package datastore
 
 import (
-	"github.com/Supernomad/quantum/common"
 	"sync"
+
+	"github.com/Supernomad/quantum/common"
 )
 
 // Mock datastore
 type Mock struct {
 	InternalMapping *common.Mapping
-	wg              *sync.WaitGroup
+
+	wg *sync.WaitGroup
 }
 
 // GetMapping from the mock datastore
@@ -31,6 +33,6 @@ func (mock *Mock) Stop() {
 	mock.wg.Done()
 }
 
-func newMock(log *common.Logger, cfg *common.Config) Datastore {
-	return &Mock{}
+func newMock(log *common.Logger, cfg *common.Config) (Datastore, error) {
+	return &Mock{}, nil
 }

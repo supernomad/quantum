@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/vishvananda/netlink"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net"
 	"os"
@@ -18,6 +16,9 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/vishvananda/netlink"
+	"gopkg.in/yaml.v2"
 )
 
 const (

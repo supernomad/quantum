@@ -1,9 +1,10 @@
 package device
 
 import (
+	"net"
+
 	"github.com/Supernomad/quantum/common"
 	"github.com/vishvananda/netlink"
-	"net"
 )
 
 const (

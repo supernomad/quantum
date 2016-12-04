@@ -2,6 +2,7 @@ package common
 
 import (
 	"crypto/rand"
+
 	"golang.org/x/crypto/curve25519"
 )
 

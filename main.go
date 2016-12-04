@@ -1,18 +1,19 @@
 package main
 
 import (
-	"github.com/Supernomad/quantum/agg"
-	"github.com/Supernomad/quantum/common"
-	"github.com/Supernomad/quantum/datastore"
-	"github.com/Supernomad/quantum/device"
-	"github.com/Supernomad/quantum/socket"
-	"github.com/Supernomad/quantum/workers"
 	"io/ioutil"
 	"os"
 	"os/signal"
 	"strconv"
 	"sync"
 	"syscall"
+
+	"github.com/Supernomad/quantum/agg"
+	"github.com/Supernomad/quantum/common"
+	"github.com/Supernomad/quantum/datastore"
+	"github.com/Supernomad/quantum/device"
+	"github.com/Supernomad/quantum/socket"
+	"github.com/Supernomad/quantum/workers"
 )
 
 func handleError(log *common.Logger, err error, stack string) {

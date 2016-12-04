@@ -3,10 +3,11 @@ package agg
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Supernomad/quantum/common"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/Supernomad/quantum/common"
 )
 
 const (
