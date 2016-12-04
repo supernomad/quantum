@@ -140,7 +140,7 @@ func (cfg *Config) parseField(tag reflect.StructTag) (skip, fieldType, short, lo
 	return
 }
 
-func (cfg *Config) usage() {
+func (cfg *Config) usage(exit bool) {
 	fmt.Println("Usage of quantum:")
 	st := reflect.TypeOf(*cfg)
 
@@ -156,21 +156,26 @@ func (cfg *Config) usage() {
 		fmt.Printf("\t\t%s (default: '%s')\n", description, def)
 	}
 
-	os.Exit(1)
+	if exit {
+		os.Exit(1)
+	}
 }
 
-func (cfg *Config) version() {
+func (cfg *Config) version(exit bool) {
 	fmt.Printf("quantum: v%s\n", version)
-	os.Exit(0)
+
+	if exit {
+		os.Exit(0)
+	}
 }
 
 func (cfg *Config) parseSpecial() {
 	for _, arg := range os.Args {
 		switch {
 		case strings.HasSuffix(arg, "h") || strings.HasSuffix(arg, "help"):
-			cfg.usage()
+			cfg.usage(true)
 		case strings.HasSuffix(arg, "v") || strings.HasSuffix(arg, "version"):
-			cfg.version()
+			cfg.version(true)
 		}
 	}
 }

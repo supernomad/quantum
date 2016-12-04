@@ -104,6 +104,7 @@ func TestNewConfig(t *testing.T) {
 	os.Setenv("QUANTUM_CONF_FILE", confFile)
 	os.Setenv("QUANTUM_PID_FILE", "../quantum.pid")
 
+	os.Args = append(os.Args, "-n", "1", "--prefix", "woot", "--tls-skip-verify")
 	cfg, err := NewConfig()
 	if err != nil {
 		t.Fatalf("NewConfig returned an error, %s", err)
@@ -121,6 +122,18 @@ func TestNewConfig(t *testing.T) {
 	if cfg.Password != "Password1" {
 		t.Fatalf("NewConfig didn't pick up the config file replacement for Password")
 	}
+	if cfg.Prefix != "woot" {
+		t.Fatal("NewConfig didn't pick up the cli replacement for Prefix")
+	}
+	if cfg.NumWorkers != 1 {
+		t.Fatal("NewConfig didn't pick up the cli replacement for NumWorkers")
+	}
+	if !cfg.TLSSkipVerify {
+		t.Fatal("NewConfig didn't pick up the cli replacement for TLSSkipVerify")
+	}
+
+	cfg.usage(false)
+	cfg.version(false)
 }
 
 func TestEcdh(t *testing.T) {
