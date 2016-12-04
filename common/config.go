@@ -51,7 +51,6 @@ type Config struct {
 	PidFile         string            `skip:"false"  type:"string"    short:"pf"   long:"pid-file"          default:"/var/run/quantum.pid"  description:"The pid file to use for tracking rolling restarts."`
 	SyncInterval    time.Duration     `skip:"false"  type:"duration"  short:"si"   long:"sync-interval"     default:"60s"                   description:"The interval of full backend syncs."`
 	RefreshInterval time.Duration     `skip:"false"  type:"duration"  short:"ri"   long:"refresh-interval"  default:"120s"                  description:"The interval of dhcp lease refreshes."`
-	Datastore       string            `skip:"false"  type:"string"    short:"ds"   long:"datastore"         default:"etcd"                  description:"The type of backend key/value store, this should be 'etcd' or 'consul'."`
 	Endpoints       []string          `skip:"false"  type:"list"      short:"e"    long:"endpoints"         default:"127.0.0.1:2379"        description:"A comma delimited list of backend key/value store endpoints, in 'IPADDR:PORT' syntax."`
 	Username        string            `skip:"false"  type:"string"    short:"u"    long:"username"          default:""                      description:"The username to use for authentication with the backend datastore."`
 	Password        string            `skip:"false"  type:"string"    short:"pw"   long:"password"          default:""                      description:"The password to use for authentication with the backend datastore."`

@@ -73,12 +73,12 @@ func (etcd *Etcd) handleLocalMapping() error {
 	opts := &client.SetOptions{
 		TTL: etcd.cfg.NetworkConfig.LeaseTime,
 	}
-	_, err = etcd.kapi.Set(context.Background(), etcd.key("nodes", etcd.cfg.MachineID), mapping.String(), opts)
+	_, err = etcd.kapi.Set(context.Background(), etcd.key("nodes", etcd.cfg.PrivateIP.String()), mapping.String(), opts)
 	if err != nil {
 		return err
 	}
 	etcd.localMapping = mapping
-	etcd.stopRefreshingLease = etcd.refresh("nodes/"+etcd.cfg.MachineID, "", etcd.cfg.NetworkConfig.LeaseTime, etcd.cfg.RefreshInterval)
+	etcd.stopRefreshingLease = etcd.refresh(etcd.key("nodes", etcd.cfg.PrivateIP.String()), "", etcd.cfg.NetworkConfig.LeaseTime, etcd.cfg.RefreshInterval)
 	return nil
 }
 
@@ -106,7 +106,7 @@ func (etcd *Etcd) lock() (chan struct{}, error) {
 		break
 	}
 
-	stopRefreshing := etcd.refresh("lock", etcd.cfg.MachineID, lockTTL, 5*time.Second)
+	stopRefreshing := etcd.refresh(etcd.key("lock"), etcd.cfg.MachineID, lockTTL, 5*time.Second)
 	return stopRefreshing, nil
 }
 
@@ -129,7 +129,7 @@ func (etcd *Etcd) refresh(key, value string, ttl, refreshInterval time.Duration)
 			case <-stop:
 				break loop
 			case <-ticker.C:
-				_, err := etcd.kapi.Set(context.Background(), etcd.key(key), "", opts)
+				_, err := etcd.kapi.Set(context.Background(), key, "", opts)
 				if err != nil {
 					if isError(err, client.ErrorCodeKeyNotFound) ||
 						isError(err, client.ErrorCodePrevValueRequired) ||

@@ -103,8 +103,8 @@ func TestNewConfig(t *testing.T) {
 	if cfg.ListenPort != 1 {
 		t.Fatalf("NewConfig didn't pick up the environment variable replacement for ListenPort")
 	}
-	if cfg.Datastore != "consul" {
-		t.Fatalf("NewConfig didn't pick up the config file replacement for datastore")
+	if cfg.Password != "Password1" {
+		t.Fatalf("NewConfig didn't pick up the config file replacement for Password")
 	}
 }
 
