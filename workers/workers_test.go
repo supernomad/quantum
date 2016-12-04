@@ -11,6 +11,8 @@ import (
 	"github.com/Supernomad/quantum/socket"
 	"net"
 	"sync"
+	"testing"
+	"time"
 )
 
 var (
@@ -57,4 +59,74 @@ func init() {
 
 	incoming = NewIncoming(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, dev, sock)
 	outgoing = NewOutgoing(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, dev, sock)
+}
+
+func benchmarkIncomingPipeline(buf []byte, queue int, b *testing.B) {
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		incoming.pipeline(buf, queue)
+	}
+}
+
+func BenchmarkIncomingPipeline(b *testing.B) {
+	buf := make([]byte, common.MaxPacketLength)
+	rand.Read(buf)
+
+	payload := common.NewTunPayload(buf, common.MTU)
+	if sealed, pass := outgoing.seal(payload, testMapping); pass {
+		benchmarkIncomingPipeline(sealed.Raw, 0, b)
+	} else {
+		panic("Seal failed something is wrong")
+	}
+
+}
+
+func TestIncomingPipeline(t *testing.T) {
+	buf := make([]byte, common.MaxPacketLength)
+	rand.Read(buf)
+
+	payload := common.NewTunPayload(buf, common.MTU)
+	if sealed, pass := outgoing.seal(payload, testMapping); pass {
+		if !incoming.pipeline(sealed.Raw, 0) {
+			panic("Somthing is wrong.")
+		}
+	} else {
+		panic("Seal failed something is wrong")
+	}
+}
+
+func TestIncoming(t *testing.T) {
+	incoming.Start(0)
+	time.Sleep(2 * time.Second)
+	incoming.Stop()
+}
+
+func benchmarkOutgoingPipeline(buf []byte, queue int, b *testing.B) {
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		if !outgoing.pipeline(buf, queue) {
+			panic("Somthing is wrong.")
+		}
+	}
+}
+
+func BenchmarkOutgoingPipeline(b *testing.B) {
+	buf := make([]byte, common.MaxPacketLength)
+	rand.Read(buf)
+
+	benchmarkOutgoingPipeline(buf, 0, b)
+}
+
+func TestOutgoingPipeline(t *testing.T) {
+	buf := make([]byte, common.MaxPacketLength)
+	rand.Read(buf)
+	if !outgoing.pipeline(buf, 0) {
+		panic("Somthing is wrong.")
+	}
+}
+
+func TestOutgoing(t *testing.T) {
+	outgoing.Start(0)
+	time.Sleep(2 * time.Second)
+	outgoing.Stop()
 }
