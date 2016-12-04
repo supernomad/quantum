@@ -14,12 +14,15 @@
 |[etcd](https://github.com/coreos/etcd)  | | Packet, Digital Ocean, Rackspace |
 | | | Private datacenters, Private co-locations, and many more |
 
-#### TLS/Security Configuration
-[Etcd security configuration](https://coreos.com/etcd/docs/latest/security.html) is very well documented and implemented. It is highly recommended to fully read and understand the security setup for etcd before pushing quantum out to production. As it will directly relate to how much security `quantum` can provide. The following is the minimal configuration required to safe gaurd security:
+#### TLS/Security
+[Etcd security configuration](https://coreos.com/etcd/docs/latest/security.html) is very well documented and implemented. It is highly recommended to fully read and understand the security setup for etcd before considering quantum for production use. The security provided by `quantum` is intrinsicly linked to the security used by etcd, as the public certificates used for key generation are stored within etcd.
 
+To ensure the secure operation of `quantum` the following must be true:
 - Require TLS communication to etcd in all cases
+- Etcd is fully secured from unathorized access
 - Each server running `quantum` has its own unique TLS client certificate
-- For added security each server should also have a unique username/password
+- For added security each server should also have a unique username/password to access etcd with
+
 > For a minimalistic configuration that can be used to generate test certificates see the included `bin/generate-etcd-certs` bash script
 
 #### Configuration
@@ -75,7 +78,7 @@ To run basic unit testing and builds run:
 ``` shell
 $ cd $GOPATH/src/github.com/Supernomad/quantum
 $ bin/build.sh
-# For coverage analysis
+# For coverage analysis run with the argument `coverage`
 $ bin/build.sh coverage
 ```
 
