@@ -6,13 +6,21 @@
 > For more detailed information on the operation and configuration of `quantum` take a look at the [wiki](https://github.com/Supernomad/quantum/wiki).
 
 ### Running
-`quantum` is designed to be plug and play, however the default configuration will run `quantum` in insecure mode and assumes each node has its own data store. In reality `quantum` _needs_ to be run with TLS fully setup and configured, in order to guarantee safe operation. In general it is best practice to obtain client and server certificates signed by a legitmate authority. However this does not preclude you from running with self signed certificates, as long as those certificates are kept safe and handled correctly.
+`quantum` is designed to be essentially plug and play, however the default configuration will run `quantum` in an insecure mode and assumes each node running quantum is also running its own data store. In reality `quantum` **must** be run with TLS fully setup and configured with the backened datastore, in order to guarantee safe operation.
 
 | Supported Backend Datastores | Supported OS's | Supported Providers |
 |:------------------:|:----:|:---------:|
 |[consul](https://consul.io)  | linux | AWS, GCE, Azure |
 |[etcd](https://github.com/coreos/etcd)  | | Packet, Digital Ocean, Rackspace |
 | | | Private datacenters, Private co-locations, and many more |
+
+#### TLS/Security Configuration
+[Etcd security configuration](https://coreos.com/etcd/docs/latest/security.html) is very well documented and implemented. It is highly recommended to fully read and understand the security setup for etcd before pushing quantum out to production. As it will directly relate to how much security `quantum` can provide. The following is the minimal configuration required to safe gaurd security:
+
+- Require TLS communication to etcd in all cases
+- Each server running `quantum` has its own unique TLS client certificate
+- For added security each server should also have a unique username/password
+> For a minimalistic configuration that can be used to generate test certificates see the included `bin/generate-etcd-certs` bash script
 
 #### Configuration
 `quantum` can be configured in any combination of four ways, cli arguments, environment variables, configuration file entries, and finally falling back to defaults. Regardless of which way `quantum` is configured all of the configuration options are available.
@@ -29,7 +37,7 @@ Currently `quantum` development is entirely in go and utilizes a few BASH script
 - docker
 - docker-compose
 - openssl
-- go 1.7
+- go 1.7.x
 
 #### Getting started
 To get started developing `quantum`, run the following shell commands to get your environment configured and running.
@@ -38,10 +46,6 @@ To get started developing `quantum`, run the following shell commands to get you
 $ cd $GOPATH/src/github.com/Supernomad/quantum
 # Get build dependencies
 $ go get -t -v ./...
-$ go get golang.org/x/tools/cmd/cover
-$ go get github.com/mattn/goveralls
-$ go get github.com/golang/lint/golint
-$ go get github.com/GeertJohan/fgt
 # Run a build of quantum which will ensure your system is indeed up to date.
 $ bin/build.sh
 # Generate the required tls certificates
@@ -49,13 +53,15 @@ $ bin/generate-etcd-certs
 # Setup docker networks for testing
 $ docker network create --ipv6 --subnet=fd00:dead:beef::/64 --gateway=fd00:dead:beef::1 perf_net_v6
 $ docker network create --subnet=172.18.0.0/24 --gateway=172.18.0.1 perf_net_v4
-# Build the container to run quantum in.
+# Build the tester container
 $ docker-compose build
-# Start up docker test bench
+# Start up the docker test bench
 $ docker-compose up -d
 # Wait a few seconds for initialization to complete
 # Check on the status of the different quantum instances
 $ docker-compose logs quantum0 quantum1 quantum2
+# Run ping to ensure connectivity over quantum
+$ docker exec -it quantum1 ping 10.10.0.1
 ```
 After running the above you will have a single etcd instance and three quantum instances running. The three quantum instances are configured to run a quantum network `10.10.0.0/16`, with `quantum0` having a statically defined private ip `10.10.0.1` and `quantum1`/`quantum2` having DHCP defined private ip addresses.
 
@@ -65,6 +71,8 @@ To run basic unit testing and builds run:
 ``` shell
 $ cd $GOPATH/src/github.com/Supernomad/quantum
 $ bin/build.sh
+# For coverage analysis
+$ bin/build.sh coverage
 ```
 
 To do basic bandwidth based testing the `quantum` containers all have iperf3 installed. For example to test how much through put `quantum0` can handle from both `quantum1`/`quantum2`:
