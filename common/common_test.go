@@ -64,6 +64,21 @@ func testEq(a, b []byte) bool {
 	return true
 }
 
+func TestArrayEquals(t *testing.T) {
+	if !ArrayEquals(nil, nil) {
+		t.Fatal("ArrayEquals returned false comparing nil/nil")
+	}
+	if ArrayEquals([]byte{0}, nil) {
+		t.Fatal("ArrayEquals returned true comparing nil/non-nil")
+	}
+	if ArrayEquals([]byte{0, 1}, []byte{0}) {
+		t.Fatal("ArrayEquals returned true comparing mismatched lengths")
+	}
+	if !ArrayEquals([]byte{0, 1}, []byte{0, 1}) {
+		t.Fatal("ArrayEquals returned false for equal arrays")
+	}
+}
+
 func TestIPtoInt(t *testing.T) {
 	var expected uint32
 	actual := IPtoInt(net.ParseIP("0.0.0.0"))
@@ -236,5 +251,27 @@ func TestNewLogger(t *testing.T) {
 	}
 	if log.Info == nil {
 		t.Fatal("NewLogger returned a nil Error log.")
+	}
+}
+
+func TestGenerateLocalMapping(t *testing.T) {
+	cfg := &Config{
+		PrivateIP:     net.ParseIP("10.10.0.1"),
+		PublicIPv4:    net.ParseIP("8.8.8.8"),
+		PublicIPv6:    net.ParseIP("::"),
+		ListenPort:    1099,
+		PublicKey:     make([]byte, 32),
+		NetworkConfig: DefaultNetworkConfig,
+		MachineID:     "123",
+	}
+
+	mappings := make(map[uint32]*Mapping)
+	mapping, err := GenerateLocalMapping(cfg, mappings)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !testEq(mapping.PrivateIP.To4(), cfg.PrivateIP.To4()) {
+		t.Fatal("GenerateLocalMapping created the wrong mapping.")
 	}
 }

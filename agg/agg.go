@@ -19,18 +19,20 @@ const (
 
 // Agg a statistics aggregation object
 type Agg struct {
-	log *common.Logger
-	cfg *common.Config
-
+	log      *common.Logger
+	cfg      *common.Config
+	stop     chan struct{}
 	statsLog *StatsLog
 
+	// Aggs is a channel to send Data objects to the centralized aggregator
 	Aggs chan *Data
-	stop chan struct{}
 }
 
 // StatsLog object to hold statistics information for quantum
 type StatsLog struct {
+	// TxStats holds the packet and byte counts for transmissions
 	TxStats *common.Stats
+	// RxStats holds the packet and byte counts for reception
 	RxStats *common.Stats
 }
 
@@ -45,7 +47,7 @@ type Data struct {
 	PrivateIP string
 	Queue     int
 	Bytes     uint64
-	Direction uint64
+	Direction int
 	Dropped   bool
 }
 

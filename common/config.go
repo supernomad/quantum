@@ -61,17 +61,17 @@ type Config struct {
 	StatsRoute      string            `skip:"false"  type:"string"    short:"sr"   long:"stats-route"       default:"/stats"                description:"The api route to serve statistics data from."`
 	StatsPort       int               `skip:"false"  type:"int"       short:"sp"   long:"stats-port"        default:"1099"                  description:"The api server port."`
 	StatsAddress    string            `skip:"false"  type:"string"    short:"sa"   long:"stats-address"     default:""                      description:"The api server address."`
-	RealDeviceName  string            `skip:"true"`
-	ReuseFDS        bool              `skip:"true"`
-	MachineID       string            `skip:"true"`
-	AuthEnabled     bool              `skip:"true"`
-	TLSEnabled      bool              `skip:"true"`
-	IsIPv4Enabled   bool              `skip:"true"`
-	IsIPv6Enabled   bool              `skip:"true"`
-	ListenAddr      syscall.Sockaddr  `skip:"true"`
-	NetworkConfig   *NetworkConfig    `skip:"true"`
-	PrivateKey      []byte            `skip:"true"`
-	PublicKey       []byte            `skip:"true"`
+	RealDeviceName  string            `skip:"true"` // Used when a rolling restart is triggered to find the correct tun interface
+	ReuseFDS        bool              `skip:"true"` // Used when a rolling restart is triggered which forces quantum to reuse the passed in socket/tun fds
+	MachineID       string            `skip:"true"` // The generated machine id for this node
+	AuthEnabled     bool              `skip:"true"` // Whether or not datastore authentication is enabled (toggled by setting username/password)
+	TLSEnabled      bool              `skip:"true"` // Whether or not tls with the datastore is enabled (toggled by setting the tls parameters at run time)
+	IsIPv4Enabled   bool              `skip:"true"` // Whether or not quantum has determined that this node is ipv4 capable
+	IsIPv6Enabled   bool              `skip:"true"` // Whether or not quantum has determined that this node is ipv6 capable
+	ListenAddr      syscall.Sockaddr  `skip:"true"` // The commputed Sockaddr object to bind the underlying udp sockets to
+	NetworkConfig   *NetworkConfig    `skip:"true"` // The network config detemined by existance of the object in etcd
+	PrivateKey      []byte            `skip:"true"` // The generated ECDH private key for this run of quantum
+	PublicKey       []byte            `skip:"true"` // The generated ECDH public key for this run of quantum
 	fileData        map[string]string `skip:"true"`
 }
 
