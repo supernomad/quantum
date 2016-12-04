@@ -274,4 +274,11 @@ func TestGenerateLocalMapping(t *testing.T) {
 	if !testEq(mapping.PrivateIP.To4(), cfg.PrivateIP.To4()) {
 		t.Fatal("GenerateLocalMapping created the wrong mapping.")
 	}
+
+	mappings[IPtoInt(cfg.PrivateIP)] = mapping
+
+	_, err = GenerateLocalMapping(cfg, mappings)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
