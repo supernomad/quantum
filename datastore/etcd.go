@@ -20,6 +20,7 @@ type Etcd struct {
 	cli                 client.Client
 	kapi                client.KeysAPI
 	watchIndex          uint64
+	stopSyncing         chan struct{}
 	stopRefreshingLease chan struct{}
 	stopWatchingNodes   chan struct{}
 	wg                  *sync.WaitGroup
@@ -72,7 +73,7 @@ func (etcd *Etcd) handleLocalMapping() error {
 		return err
 	}
 	etcd.localMapping = mapping
-	etcd.stopRefreshingLease = etcd.refresh("nodes/"+etcd.cfg.MachineID, value, ttl, refreshInterval)
+	etcd.stopRefreshingLease = etcd.refresh("nodes/"+etcd.cfg.MachineID, "", etcd.cfg.NetworkConfig.LeaseTime, etcd.cfg.RefreshInterval)
 	return nil
 }
 
@@ -187,7 +188,7 @@ func (etcd *Etcd) unlock(stopRefreshing chan struct{}) error {
 	return nil
 }
 
-func (etcd *Etcd) watch() error {
+func (etcd *Etcd) watch() {
 	go func() {
 	watch:
 		opts := &client.WatcherOptions{
@@ -209,7 +210,9 @@ func (etcd *Etcd) watch() error {
 					goto watch
 				}
 
+				etcd.watchIndex = resp.Index
 				nodes := resp.Node.Nodes
+
 				switch resp.Action {
 				case "set", "update", "create":
 					for _, node := range nodes {
@@ -271,11 +274,30 @@ func (etcd *Etcd) Init() error {
 // Start the Etcd datastore
 func (etcd *Etcd) Start(wg *sync.WaitGroup) {
 	etcd.wg = wg
+	etcd.watch()
+
+	ticker := time.NewTicker(etcd.cfg.SyncInterval)
+	go func() {
+	loop:
+		for {
+			select {
+			case <-etcd.stopSyncing:
+				break loop
+			case <-ticker.C:
+				err := etcd.sync()
+				if err != nil {
+					etcd.log.Error.Println("[ETCD]", "Error syncing mappings with the backend:", err.Error())
+				}
+			}
+		}
+		close(etcd.stopSyncing)
+	}()
 }
 
 // Stop the Etcd datastore
 func (etcd *Etcd) Stop() {
 	go func() {
+		etcd.stopSyncing <- struct{}{}
 		etcd.stopWatchingNodes <- struct{}{}
 		etcd.stopRefreshingLease <- struct{}{}
 		etcd.wg.Done()
