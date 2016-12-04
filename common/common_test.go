@@ -257,8 +257,8 @@ func TestNewLogger(t *testing.T) {
 func TestGenerateLocalMapping(t *testing.T) {
 	cfg := &Config{
 		PrivateIP:     net.ParseIP("10.10.0.1"),
-		PublicIPv4:    net.ParseIP("8.8.8.8"),
-		PublicIPv6:    net.ParseIP("::"),
+		PublicIPv4:    net.ParseIP("192.167.0.1"),
+		PublicIPv6:    net.ParseIP("fd00:dead:beef::2"),
 		ListenPort:    1099,
 		PublicKey:     make([]byte, 32),
 		NetworkConfig: DefaultNetworkConfig,
@@ -297,9 +297,8 @@ func TestGenerateLocalMapping(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	delete(mappings, IPtoInt(net.ParseIP("10.10.0.1")))
-
-	_, err = GenerateLocalMapping(cfg, mappings)
+	cfg.PrivateIP = nil
+	_, err = GenerateLocalMapping(cfg, make(map[uint32]*Mapping))
 	if err != nil {
 		t.Fatal(err)
 	}
