@@ -3,6 +3,7 @@ package common
 import (
 	"net"
 	"os"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -126,7 +127,7 @@ func TestNewConfig(t *testing.T) {
 	if cfg.Prefix != "woot" {
 		t.Fatal("NewConfig didn't pick up the cli replacement for Prefix")
 	}
-	if cfg.NumWorkers != 1 {
+	if cfg.NumWorkers != runtime.NumCPU() {
 		t.Fatal("NewConfig didn't pick up the cli replacement for NumWorkers")
 	}
 	if !cfg.TLSSkipVerify {
