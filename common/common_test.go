@@ -111,7 +111,6 @@ func TestNewConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewConfig returned an error, %s", err)
 	}
-	t.Log(cfg)
 	if cfg == nil {
 		t.Fatal("NewConfig returned a blank config")
 	}
