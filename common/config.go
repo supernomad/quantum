@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	version   = "0.11.3"
+	version   = "0.12.0"
 	envPrefix = "QUANTUM_"
 	linkLocal = "fe80::/10"
 )
