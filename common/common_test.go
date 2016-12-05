@@ -104,8 +104,9 @@ func TestNewConfig(t *testing.T) {
 	os.Setenv("QUANTUM_LISTEN_PORT", "1")
 	os.Setenv("QUANTUM_CONF_FILE", confFile)
 	os.Setenv("QUANTUM_PID_FILE", "../quantum.pid")
+	os.Setenv("_QUANTUM_REAL_DEVICE_NAME_", "quantum0")
 
-	os.Args = append(os.Args, "-n", "1", "--prefix", "woot", "--tls-skip-verify")
+	os.Args = append(os.Args, "-n", "100", "--prefix", "woot", "--tls-skip-verify", "-6", "fd00:dead:beef::2")
 	cfg, err := NewConfig()
 	if err != nil {
 		t.Fatalf("NewConfig returned an error, %s", err)

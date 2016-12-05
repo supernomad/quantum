@@ -46,6 +46,7 @@ func (etcd *Etcd) handleNetworkConfig() error {
 		if !isError(err, client.ErrorCodeKeyNotFound) {
 			return err
 		}
+
 		_, err := etcd.kapi.Set(context.Background(), etcd.key("config"), common.DefaultNetworkConfig.String(), &client.SetOptions{})
 		if err != nil {
 			return err
@@ -131,12 +132,12 @@ func (etcd *Etcd) refresh(key, value string, ttl, refreshInterval time.Duration)
 			case <-ticker.C:
 				_, err := etcd.kapi.Set(context.Background(), key, "", opts)
 				if err != nil {
+					etcd.log.Error.Println("[ETCD]", "Error refreshing key in etcd:", err.Error())
 					if isError(err, client.ErrorCodeKeyNotFound) ||
 						isError(err, client.ErrorCodePrevValueRequired) ||
 						isError(err, client.ErrorCodeTestFailed) {
 						break loop
 					}
-					etcd.log.Error.Println("[ETCD]", "Error refreshing key in etcd:", err.Error())
 				}
 			}
 		}
@@ -209,7 +210,7 @@ func (etcd *Etcd) watch() {
 				resp, err := watcher.Next(context.Background())
 				if err != nil {
 					etcd.log.Error.Println("[ETCD]", "Error during watch on the etcd cluster:", err.Error())
-					time.Sleep(10 * time.Second)
+					time.Sleep(5 * time.Second)
 					goto watch
 				}
 
@@ -222,6 +223,7 @@ func (etcd *Etcd) watch() {
 						mapping, err := common.ParseMapping(node.Value, etcd.cfg.PrivateKey)
 						if err != nil {
 							etcd.log.Error.Println("[ETCD]", "Error deserializing mapping:", err.Error())
+							continue
 						}
 						etcd.mappings[common.IPtoInt(mapping.PrivateIP)] = mapping
 					}
@@ -230,6 +232,7 @@ func (etcd *Etcd) watch() {
 						mapping, err := common.ParseMapping(node.Value, etcd.cfg.PrivateKey)
 						if err != nil {
 							etcd.log.Error.Println("[ETCD]", "Error deserializing mapping:", err.Error())
+							continue
 						}
 						delete(etcd.mappings, common.IPtoInt(mapping.PrivateIP))
 					}
