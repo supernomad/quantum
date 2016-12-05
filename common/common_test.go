@@ -210,6 +210,28 @@ func TestParseNetworkConfigOnlyNetwork(t *testing.T) {
 	}
 }
 
+func TestParseNetworkConfigIncorrectFormat(t *testing.T) {
+	netCfg := &NetworkConfig{Network: "10.10.0."}
+	_, err := ParseNetworkConfig(netCfg.Bytes())
+	if err == nil {
+		t.Fatal("ParseNetworkConfig should have errored")
+	}
+
+	netCfg.Network = "10.10.0.0/16"
+	netCfg.StaticRange = "10.10.0./23"
+
+	_, err = ParseNetworkConfig(netCfg.Bytes())
+	if err == nil {
+		t.Fatal("ParseNetworkConfig should have errored")
+	}
+
+	netCfg.StaticRange = "10.20.0.0/23"
+	_, err = ParseNetworkConfig(netCfg.Bytes())
+	if err == nil {
+		t.Fatal("ParseNetworkConfig should have errored")
+	}
+}
+
 func TestNewTunPayload(t *testing.T) {
 	payload := NewTunPayload(testPacket, 2)
 	for i := 0; i < 4; i++ {
