@@ -23,7 +23,7 @@ const (
 	// NonceStart - The nonce start position
 	NonceStart = 4
 
-	// NonceEnd - The nonce end postion
+	// NonceEnd - The nonce end position
 	NonceEnd = 16
 
 	// NonceLength - The nonce length
@@ -45,7 +45,7 @@ const (
 	// FooterSize - The size of the appended data
 	FooterSize = TagLength
 
-	// MTU - The max size packet to recieve from the TUN device
+	// MTU - The max size packet to receive from the TUN device
 	MTU = MaxPacketLength - HeaderSize - FooterSize
 )
 

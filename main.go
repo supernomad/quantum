@@ -72,7 +72,7 @@ func main() {
 		sig := <-signals
 		switch {
 		case sig == syscall.SIGHUP:
-			log.Info.Println("[MAIN]", "Recieved reload signal from user. Reloading process.")
+			log.Info.Println("[MAIN]", "Received reload signal from user. Reloading process.")
 
 			sockFDS := sock.GetFDs()
 			tunFDS := dev.Queues()
@@ -96,7 +96,7 @@ func main() {
 
 			ioutil.WriteFile(cfg.PidFile, []byte(strconv.Itoa(pid)), 0644)
 		case sig == syscall.SIGINT || sig == syscall.SIGTERM || sig == syscall.SIGKILL:
-			log.Info.Println("[MAIN]", "Recieved termination signal from user. Terminating process.")
+			log.Info.Println("[MAIN]", "Received termination signal from user. Terminating process.")
 		}
 		exit <- struct{}{}
 	}()

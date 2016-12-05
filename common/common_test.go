@@ -183,7 +183,7 @@ func TestParseMapping(t *testing.T) {
 	expected := NewMapping(machineID, privateIP, publicip, publicip6, publicport, publicKey)
 	actual, err := ParseMapping(expected.String(), make([]byte, 32))
 	if err != nil {
-		t.Fatalf("Error occured during test: %s", err)
+		t.Fatalf("Error occurred during test: %s", err)
 	}
 	if !testEq(actual.IPv4, expected.IPv4) || actual.Port != expected.Port || !testEq(actual.PrivateIP, expected.PrivateIP) || !testEq(actual.PublicKey, expected.PublicKey) {
 		t.Fatalf("ParseMapping did not return the right value, got: %v, expected: %v", actual, expected)
