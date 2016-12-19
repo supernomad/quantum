@@ -1,3 +1,4 @@
+// Package workers incoming struct and func's
 // Copyright (c) 2016 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 package workers
@@ -33,7 +34,7 @@ func (incoming *Incoming) resolve(payload *common.Payload) (*common.Payload, *co
 }
 
 func (incoming *Incoming) unseal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
-	_, err := mapping.Cipher.Open(payload.Packet[:0], payload.Nonce, payload.Packet, nil)
+	_, err := mapping.Cipher.Open(payload.Packet[:0], payload.Nonce, payload.Packet, payload.IPAddress)
 	if err != nil {
 		return nil, false
 	}

@@ -1,3 +1,4 @@
+// Package common mapping struct and func's
 // Copyright (c) 2016 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 package common
@@ -42,7 +43,7 @@ func ParseMapping(str string, privkey []byte) (*Mapping, error) {
 
 	secret := GenerateSharedSecret(mapping.PublicKey, privkey)
 
-	block, err := aes.NewCipher(secret[0:16])
+	block, err := aes.NewCipher(secret)
 	if err != nil {
 		return nil, err
 	}
