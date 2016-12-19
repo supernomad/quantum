@@ -72,7 +72,7 @@ type Config struct {
 	IsIPv4Enabled   bool              `skip:"true"` // Whether or not quantum has determined that this node is ipv4 capable
 	IsIPv6Enabled   bool              `skip:"true"` // Whether or not quantum has determined that this node is ipv6 capable
 	ListenAddr      syscall.Sockaddr  `skip:"true"` // The commputed Sockaddr object to bind the underlying udp sockets to
-	NetworkConfig   *NetworkConfig    `skip:"true"` // The network config detemined by existance of the object in etcd
+	NetworkConfig   *NetworkConfig    `skip:"true"` // The network config detemined by existence of the object in etcd
 	PrivateKey      []byte            `skip:"true"` // The generated ECDH private key for this run of quantum
 	PublicKey       []byte            `skip:"true"` // The generated ECDH public key for this run of quantum
 	fileData        map[string]string `skip:"true"`
