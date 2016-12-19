@@ -16,10 +16,11 @@ echo "Building quantum..."
 go build github.com/Supernomad/quantum
 
 echo "Creating archive..."
-tar cvzf quantum_${version}_linux_amd64.tar.gz quantum
+cp $GOPATH/src/github.com/Supernomad/quantum/LICENSE LICENSE
+tar cvzf quantum_${version}_linux_amd64.tar.gz quantum LICENSE
 
 echo "Cleaning up..."
-rm quantum
+rm quantum LICENSE
 mv quantum_${version}_linux_amd64.tar.gz $old_working_dir/
 
 echo "Generation complete..."
