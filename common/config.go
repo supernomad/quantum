@@ -20,12 +20,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Supernomad/quantum/version"
 	"github.com/vishvananda/netlink"
 	"gopkg.in/yaml.v2"
 )
 
 const (
-	version   = "0.12.0"
 	envPrefix = "QUANTUM_"
 	linkLocal = "fe80::/10"
 )
@@ -169,27 +169,27 @@ func (cfg *Config) usage(exit bool) {
 }
 
 func (cfg *Config) version(exit bool) {
-	fmt.Printf("quantum: v%s\n", version)
+	fmt.Printf("quantum: v%s\n", version.VERSION)
 
 	if exit {
 		os.Exit(0)
 	}
 }
 
-func (cfg *Config) parseSpecial() {
+func (cfg *Config) parseSpecial(exit bool) {
 	for _, arg := range os.Args {
 		switch {
 		case strings.HasSuffix(arg, "h") || strings.HasSuffix(arg, "help"):
-			cfg.usage(true)
+			cfg.usage(exit)
 		case strings.HasSuffix(arg, "v") || strings.HasSuffix(arg, "version"):
-			cfg.version(true)
+			cfg.version(exit)
 		}
 	}
 }
 
 func parseArgs() (*Config, error) {
 	cfg := Config{}
-	cfg.parseSpecial()
+	cfg.parseSpecial(true)
 
 	st := reflect.TypeOf(cfg)
 	sv := reflect.ValueOf(&cfg).Elem()
@@ -273,6 +273,8 @@ func (cfg *Config) computeArgs() error {
 	if numCPU := runtime.NumCPU(); cfg.NumWorkers == 0 || cfg.NumWorkers > numCPU {
 		cfg.NumWorkers = numCPU
 	}
+
+	runtime.GOMAXPROCS(cfg.NumWorkers)
 
 	os.MkdirAll(cfg.DataDir, os.ModeDir)
 	os.MkdirAll(path.Dir(cfg.PidFile), os.ModeDir)

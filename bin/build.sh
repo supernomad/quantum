@@ -7,6 +7,8 @@ echo "Exporting GOMAXPROCS=1"
 LASTGOMAXPROCS=$GOMAXPROCS
 export GOMAXPROCS=1
 
+pushd "$( cd $(dirname $0) ; pwd -P )/.." 2>&1 > /dev/null
+
 echo "Getting deps:"
 go get -u golang.org/x/tools/cmd/cover
 go get -u github.com/mattn/goveralls
@@ -38,3 +40,5 @@ rm quantum.pid
 
 echo "Reseting GOMAXPROCS to $LASTGOMAXPROCS"
 export GOMAXPROCS=$LASTGOMAXPROCS
+
+popd 2>&1 > /dev/null
