@@ -8,7 +8,4 @@ go:
   - 1.7.x
 
 script:
-  - mkdir -p /dev/net
-  - mknod /dev/net/tun c 10 200
-  - chmod 0666 /dev/net/tun
-  - bin/build.sh coverage travis
+  - make ci

@@ -27,10 +27,10 @@ func handleError(log *common.Logger, err error, stack string) {
 }
 
 func main() {
-	log := common.NewLogger()
+	log := common.NewLogger(true, true, true, true)
 	wg := &sync.WaitGroup{}
 
-	cfg, err := common.NewConfig()
+	cfg, err := common.NewConfig(log)
 	handleError(log, err, "common.NewConfig()")
 
 	store, err := datastore.New(datastore.ETCDDatastore, log, cfg)

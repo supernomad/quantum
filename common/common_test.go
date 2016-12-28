@@ -296,7 +296,7 @@ func TestNewStats(t *testing.T) {
 }
 
 func TestNewLogger(t *testing.T) {
-	log := NewLogger()
+	log := NewLogger(false, false, false, false)
 	if log.Error == nil {
 		t.Fatal("NewLogger returned a nil Error log.")
 	}

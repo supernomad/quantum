@@ -14,7 +14,7 @@ for M in $MODULES; do
     [[ -f coverage.out ]] && cat coverage.out | grep -v "$MODE" >> full-coverage.out
 done
 
-[[ ${1,,} == "travis" ]] && goveralls -service=travis-ci -coverprofile=full-coverage.out
+[[ ${1,,} == "push" ]] && goveralls -service=travis-ci -coverprofile=full-coverage.out
 
 rm -f coverage.out
 rm -f full-coverage.out
