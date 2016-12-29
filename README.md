@@ -115,11 +115,8 @@ Work flow:
 There are a few rules:
 
 - All travis builds must successfully complete before a PR will be considered.
-  - Changes to travis to get builds working are ok, if they are within reason.
-- The `bin/build.sh` script must be run before the PR is open.
-- Documentation is added for new user facing functionality
-
-> An aside any PR can be closed with or without explanation or justification.
+- `make dev` script must be run successfuly before the PR is open.
+- Documentation is added for new user facing functionality.
 
 ---
 Copyright (c) 2016 Christian Saide <Supernomad>

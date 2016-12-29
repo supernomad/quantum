@@ -19,9 +19,9 @@ import (
 	"github.com/Supernomad/quantum/workers"
 )
 
-func handleError(log *common.Logger, err error, stack string) {
+func handleError(log *common.Logger, err error) {
 	if err != nil {
-		log.Error.Println(err.Error(), "Stack:", stack)
+		log.Error.Println(err.Error())
 		os.Exit(1)
 	}
 }
@@ -31,21 +31,21 @@ func main() {
 	wg := &sync.WaitGroup{}
 
 	cfg, err := common.NewConfig(log)
-	handleError(log, err, "common.NewConfig()")
+	handleError(log, err)
 
 	store, err := datastore.New(datastore.ETCDDatastore, log, cfg)
-	handleError(log, err, "backend.New(backend.LIBKV, log, cfg)")
+	handleError(log, err)
 
 	err = store.Init()
-	handleError(log, err, "store.Init()")
+	handleError(log, err)
 
 	dev := device.New(device.TUNDevice, cfg)
 	err = dev.Open()
-	handleError(log, err, "dev.Open()")
+	handleError(log, err)
 
 	sock := socket.New(socket.UDPSocket, cfg)
 	err = sock.Open()
-	handleError(log, err, "sock.Open()")
+	handleError(log, err)
 
 	aggregator := agg.New(log, cfg)
 
@@ -95,7 +95,7 @@ func main() {
 				Env:   os.Environ(),
 				Files: files,
 			})
-			handleError(log, err, "syscall.ForkExec(os.Args[0], os.Args, &syscall.ProcAttr{Env: os.Environ(), Files: files})")
+			handleError(log, err)
 
 			ioutil.WriteFile(cfg.PidFile, []byte(strconv.Itoa(pid)), 0644)
 		case sig == syscall.SIGINT || sig == syscall.SIGTERM || sig == syscall.SIGKILL:

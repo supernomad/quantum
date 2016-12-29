@@ -65,6 +65,6 @@ release:
 	tar cvzf quantum_$(VERSION)_linux_amd64.tar.gz quantum LICENSE; \
 	rm -f quantum
 
-ci: PUSH_COVERAGE="push" build_deps deps lint compile unit coverage
+travis: PUSH_COVERAGE="push" build_deps deps lint compile unit coverage
 
 dev: deps lint compile unit cleanup
