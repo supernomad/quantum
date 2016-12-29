@@ -5,8 +5,8 @@
 
 > For detailed information on the operation and configuration of `quantum` take a look at the [wiki](https://github.com/Supernomad/quantum/wiki).
 
-### Running
-`quantum` is designed to be essentially plug and play, however the default configuration will run `quantum` in an insecure mode and assumes each node running quantum is also running its own data store. In reality `quantum` **must** be run with TLS fully setup and configured with the backened datastore, in order to guarantee safe operation.
+### Operation
+`quantum` is designed to be essentially plug and play, however the default configuration will run `quantum` in an insecure mode and assumes each node running quantum is also running its own instance of the data store. In reality `quantum` **must** be run with TLS fully setup and configured with the backened datastore, in order to guarantee safe operation.
 
 | Supported Backend Datastores | Supported OS's | Supported Providers |
 |:------------------:|:----:|:---------:|
@@ -15,15 +15,15 @@
 | | | Private datacenters, Private co-locations, and many more |
 
 #### TLS/Security
-[Etcd security configuration](https://coreos.com/etcd/docs/latest/security.html) is very well documented and implemented. It is highly recommended to fully read and understand the security setup for etcd before considering quantum for production use. The security provided by `quantum` is intrinsicly linked to the security used by etcd, as the public certificates used for key generation are stored within etcd.
+[Etcd security configuration](https://coreos.com/etcd/docs/latest/security.html) is very well documented and implemented. It is highly recommended to fully read and understand the security setup for etcd before considering quantum for production use. The security provided by `quantum` is intrinsicly linked to the security used by etcd, as the public certificates used for secret key generation are stored within etcd.
 
 To ensure the secure operation of `quantum` the following must be true:
 - Require TLS communication to etcd in all cases
 - Etcd is fully secured from unathorized access
 - Each server running `quantum` has its own unique TLS client certificate
-- For added security each server should also have a unique username/password to access etcd with
+- For added security each server should also have a unique username/password to access etcd
 
-> For a minimalistic configuration that can be used to generate test certificates see the included `bin/generate-etcd-certs` bash script
+> For a minimalistic openssl configuration that can be used to generate test certificates see the included `dist/ssl/generate-tls-test-certs.sh` bash script
 
 #### Configuration
 `quantum` can be configured in any combination of three ways, cli arguments, environment variables, and configuration file entries. All configuration options are optional and have sane defaults, however runnig without parameters will force quantum to run in insecure mode. All three variants can be used in conjunction to allow for overriding variables depending on environment, the hierarchy is as follows:
@@ -39,6 +39,7 @@ Currently `quantum` development is entirely in go and utilizes a few BASH script
 
 #### Development Dependencies
 - bash
+- make
 - tun kernel module must be enabled
   - please see your distributions information on how to enable it.
 - docker
@@ -51,35 +52,34 @@ To get started developing `quantum`, run the following shell commands to get you
 
 ``` shell
 $ cd $GOPATH/src/github.com/Supernomad/quantum
-# Get build dependencies
-$ go get -t -v ./...
-# Run a build of quantum which will ensure your system is indeed up to date.
-$ bin/build.sh
-# Generate the required tls certificates
-$ bin/generate-etcd-certs
-# Setup docker networks for testing
-$ docker network create --ipv6 --subnet=fd00:dead:beef::/64 --gateway=fd00:dead:beef::1 perf_net_v6
-$ docker network create --subnet=172.18.0.0/24 --gateway=172.18.0.1 perf_net_v4
-# Build the tester container
-$ docker-compose build
+# Setup the dev environment
+$ make setup_dev
+# Run a full dev build including linting and unit tests
+$ make dev
 # Start up the docker test bench
 $ docker-compose up -d
 # Wait a few seconds for initialization to complete
 # Check on the status of the different quantum instances
 $ docker-compose logs quantum0 quantum1 quantum2
 # Run ping to ensure connectivity over quantum
-$ docker exec -it quantum1 ping 10.10.0.1
+$ docker exec -it quantum1 ping 10.99.0.1
+$ docker exec -it quantum2 ping 10.99.0.1
 ```
-After running the above you will have a single etcd instance and three quantum instances running. The three quantum instances are configured to run a quantum network `10.10.0.0/16`, with `quantum0` having a statically defined private ip `10.10.0.1` and `quantum1`/`quantum2` having DHCP defined private ip addresses.
+After running the above you will have a single etcd instance and three quantum instances running. The three quantum instances are configured to run a quantum network `10.99.0.0/16`, with `quantum0` having a statically defined private ip `10.99.0.1` and `quantum1`/`quantum2` having DHCP defined private ip addresses.
 
 #### Testing
-To run basic unit testing and builds run:
+To run basic unit testing and builds execute:
 
 ``` shell
 $ cd $GOPATH/src/github.com/Supernomad/quantum
-$ bin/build.sh
-# For coverage analysis run with the argument `coverage`
-$ bin/build.sh coverage
+$ make dev
+```
+
+To run code level benchmarks execute:
+
+``` shell
+# This must be executed as root due to the need to create a tun interface see device/device_test.go for details
+$ sudo -i -E bash -c "cd $GOPATH/src/github.com/Supernomad/quantum && make bench"
 ```
 
 To do basic bandwidth based testing the `quantum` containers all have iperf3 installed. For example to test how much through put `quantum0` can handle from both `quantum1`/`quantum2`:
@@ -94,11 +94,11 @@ $ docker exec -it quantum0 iperf3 -s -f M
 
 # In second shell start iperf3 client in quantum1
 $ cd $GOPATH/src/github.com/Supernomad/quantum
-$ docker exec -it quantum1 iperf3 -c 10.10.0.1 -P 2 -t 50
+$ docker exec -it quantum1 iperf3 -c 10.99.0.1 -P 2 -t 50
 
 # In third shell start iperf3 client in quantum2
 $ cd $GOPATH/src/github.com/Supernomad/quantum
-$ docker exec -it quantum2 iperf3 -c 10.10.0.1 -P 2 -t 50
+$ docker exec -it quantum2 iperf3 -c 10.99.0.1 -P 2 -t 50
 ```
 
 ### Contributing

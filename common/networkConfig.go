@@ -69,8 +69,8 @@ func (networkCfg *NetworkConfig) String() string {
 func init() {
 	defaultLeaseTime, _ := time.ParseDuration("48h")
 	DefaultNetworkConfig = &NetworkConfig{
-		Network:     "10.10.0.0/16",
-		StaticRange: "10.10.0.0/23",
+		Network:     "10.99.0.0/16",
+		StaticRange: "10.99.0.0/23",
 		LeaseTime:   defaultLeaseTime,
 	}
 

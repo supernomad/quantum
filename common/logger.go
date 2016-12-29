@@ -26,19 +26,19 @@ func NewLogger(err, info, warn, debug bool) *Logger {
 		Debug: log.New(os.Stdout, "[DEBUG]", 0),
 	}
 
-	if err {
+	if !err {
 		logger.Error.SetOutput(ioutil.Discard)
 	}
 
-	if info {
+	if !info {
 		logger.Info.SetOutput(ioutil.Discard)
 	}
 
-	if warn {
+	if !warn {
 		logger.Warn.SetOutput(ioutil.Discard)
 	}
 
-	if debug {
+	if !debug {
 		logger.Warn.SetOutput(ioutil.Discard)
 	}
 

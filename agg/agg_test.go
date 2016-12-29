@@ -14,7 +14,7 @@ import (
 
 func TestAgg(t *testing.T) {
 	agg := New(
-		common.NewLogger(),
+		common.NewLogger(false, false, false, false),
 		&common.Config{
 			StatsRoute:   "/stats",
 			StatsPort:    1099,
@@ -27,12 +27,12 @@ func TestAgg(t *testing.T) {
 	agg.Aggs <- &Data{
 		Direction: Outgoing,
 		Dropped:   false,
-		PrivateIP: "10.10.0.1",
+		PrivateIP: "10.99.0.1",
 	}
 	agg.Aggs <- &Data{
 		Direction: Outgoing,
 		Dropped:   false,
-		PrivateIP: "10.10.0.1",
+		PrivateIP: "10.99.0.1",
 	}
 	agg.Aggs <- &Data{
 		Direction: Incoming,

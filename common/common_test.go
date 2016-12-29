@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	confFile = "../bin/quantum-test.yml"
+	confFile = "../dist/test/quantum.yml"
 )
 
 var (
@@ -111,7 +111,7 @@ func TestNewConfig(t *testing.T) {
 	os.Setenv("_QUANTUM_REAL_DEVICE_NAME_", "quantum0")
 
 	os.Args = append(os.Args, "-n", "100", "--prefix", "woot", "--tls-skip-verify", "-6", "fd00:dead:beef::2")
-	cfg, err := NewConfig()
+	cfg, err := NewConfig(NewLogger(false, false, false, false))
 	if err != nil {
 		t.Fatalf("NewConfig returned an error, %s", err)
 	}
@@ -204,7 +204,7 @@ func TestParseNetworkConfig(t *testing.T) {
 }
 
 func TestParseNetworkConfigOnlyNetwork(t *testing.T) {
-	netCfg := &NetworkConfig{Network: "10.10.0.0/16"}
+	netCfg := &NetworkConfig{Network: "10.99.0.0/16"}
 	actual, err := ParseNetworkConfig(netCfg.Bytes())
 	if err != nil {
 		t.Fatal("ParseNetworkConfig returned an error:", err)
@@ -215,14 +215,14 @@ func TestParseNetworkConfigOnlyNetwork(t *testing.T) {
 }
 
 func TestParseNetworkConfigIncorrectFormat(t *testing.T) {
-	netCfg := &NetworkConfig{Network: "10.10.0."}
+	netCfg := &NetworkConfig{Network: "10.99.0."}
 	_, err := ParseNetworkConfig(netCfg.Bytes())
 	if err == nil {
 		t.Fatal("ParseNetworkConfig should have errored")
 	}
 
-	netCfg.Network = "10.10.0.0/16"
-	netCfg.StaticRange = "10.10.0./23"
+	netCfg.Network = "10.99.0.0/16"
+	netCfg.StaticRange = "10.99.0./23"
 
 	_, err = ParseNetworkConfig(netCfg.Bytes())
 	if err == nil {
@@ -307,7 +307,7 @@ func TestNewLogger(t *testing.T) {
 
 func TestGenerateLocalMapping(t *testing.T) {
 	cfg := &Config{
-		PrivateIP:     net.ParseIP("10.10.0.1"),
+		PrivateIP:     net.ParseIP("10.99.0.1"),
 		PublicIPv4:    net.ParseIP("192.167.0.1"),
 		PublicIPv6:    net.ParseIP("fd00:dead:beef::2"),
 		ListenPort:    1099,

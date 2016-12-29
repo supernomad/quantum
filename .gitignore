@@ -7,7 +7,6 @@
 # Folders
 _obj
 _test
-bin/certs
 
 # Architecture specific extensions/prefixes
 *.[568vq]
@@ -25,4 +24,9 @@ _testmain.go
 *.test
 *.prof
 *.tar.gz
-.projectile
+
+# Temp certs for etcd
+dist/ssl/data/
+dist/ssl/certs/
+dist/ssl/keys/
+dist/ssl/csrs/

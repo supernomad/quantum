@@ -17,14 +17,15 @@ services:
       - NET_RAW
     volumes:
       - $GOPATH/bin/quantum:/bin/quantum
-      - $GOPATH/src/github.com/Supernomad/quantum/bin/certs/:/etc/quantum/certs/:ro
+      - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/certs/:/etc/quantum/ssl/certs/:ro
+      - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/keys/:/etc/quantum/ssl/keys/:ro
       - quantum0:/var/lib/quantum/
     networks:
-      perf_net_v4:
+      quantum_dev_net_v4:
         ipv4_address: 172.18.0.2
-      perf_net_v6:
+      quantum_dev_net_v6:
         ipv6_address: fd00:dead:beef::2
-    entrypoint: ["/bin/start_quantum.sh", "-endpoints", "etcd.quantum.dev:2379", "-private-ip", "10.10.0.1", "--tls-cert", "/etc/quantum/certs/quantum0.quantum.dev.crt", "--tls-key", "/etc/quantum/certs/quantum0.quantum.dev.key", "--tls-ca-cert", "/etc/quantum/certs/ca.crt"]
+    entrypoint: ["/bin/start_quantum.sh", "-endpoints", "etcd.quantum.dev:2379", "-private-ip", "10.99.0.1", "--tls-cert", "/etc/quantum/ssl/certs/quantum0.quantum.dev.crt", "--tls-key", "/etc/quantum/ssl/keys/quantum0.quantum.dev.key", "--tls-ca-cert", "/etc/quantum/ssl/certs/ca.crt"]
   quantum1:
     container_name: quantum1
     build:
@@ -38,18 +39,19 @@ services:
       - NET_RAW
     volumes:
       - $GOPATH/bin/quantum:/bin/quantum
-      - $GOPATH/src/github.com/Supernomad/quantum/bin/certs/:/etc/quantum/certs/:ro
+      - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/certs/:/etc/quantum/ssl/certs/:ro
+      - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/keys/:/etc/quantum/ssl/keys/:ro
       - quantum1:/var/lib/quantum/
     environment:
       QUANTUM_ENDPOINTS: "etcd.quantum.dev:2379"
       QUANTUM_PUBLIC_IP: "172.18.0.3"
-      QUANTUM_TLS_CA_CERT: "/etc/quantum/certs/ca.crt"
-      QUANTUM_TLS_CERT: "/etc/quantum/certs/quantum1.quantum.dev.crt"
-      QUANTUM_TLS_KEY: "/etc/quantum/certs/quantum1.quantum.dev.key"
+      QUANTUM_TLS_CA_CERT: "/etc/quantum/ssl/certs/ca.crt"
+      QUANTUM_TLS_CERT: "/etc/quantum/ssl/certs/quantum1.quantum.dev.crt"
+      QUANTUM_TLS_KEY: "/etc/quantum/ssl/keys/quantum1.quantum.dev.key"
     networks:
-      perf_net_v4:
+      quantum_dev_net_v4:
         ipv4_address: 172.18.0.3
-      perf_net_v6:
+      quantum_dev_net_v6:
         ipv6_address: fd00:dead:beef::3
     entrypoint: ["/bin/start_quantum.sh"]
   quantum2:
@@ -65,15 +67,16 @@ services:
       - NET_RAW
     volumes:
       - $GOPATH/bin/quantum:/bin/quantum
-      - $GOPATH/src/github.com/Supernomad/quantum/bin/quantum.yml:/etc/quantum/quantum.yml:ro
-      - $GOPATH/src/github.com/Supernomad/quantum/bin/certs/:/etc/quantum/certs/:ro
+      - $GOPATH/src/github.com/Supernomad/quantum/dist/quantum.yml:/etc/quantum/quantum.yml:ro
+      - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/certs/:/etc/quantum/ssl/certs/:ro
+      - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/keys/:/etc/quantum/ssl/keys/:ro
       - quantum2:/var/lib/quantum/
     environment:
       QUANTUM_CONF_FILE: "/etc/quantum/quantum.yml"
     networks:
-      perf_net_v4:
+      quantum_dev_net_v4:
         ipv4_address: 172.18.0.5
-      perf_net_v6:
+      quantum_dev_net_v6:
         ipv6_address: fd00:dead:beef::5
     entrypoint: ["/bin/start_quantum.sh"]
   etcd:
@@ -84,30 +87,31 @@ services:
       - "etcd.quantum.dev:fd00:dead:beef::4"
     volumes:
       - etcd:/var/lib/etcd
-      - $GOPATH/src/github.com/Supernomad/quantum/bin/certs/:/etc/quantum/certs/:ro
+      - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/certs/:/etc/etcd/ssl/certs/:ro
+      - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/keys/:/etc/etcd/ssl/keys/:ro
     ports:
       - 2379:2379
     networks:
-      perf_net_v4:
+      quantum_dev_net_v4:
         ipv4_address: 172.18.0.4
-      perf_net_v6:
+      quantum_dev_net_v6:
         ipv6_address: fd00:dead:beef::4
     environment:
       ETCD_LISTEN_CLIENT_URLS: "https://[fd00:dead:beef::4]:2379, https://172.18.0.4:2379"
       ETCD_ADVERTISE_CLIENT_URLS: "https://[fd00:dead:beef::4]:2379, https://172.18.0.4:2379"
-      ETCD_CERT_FILE: "/etc/quantum/certs/etcd.quantum.dev.crt"
-      ETCD_KEY_FILE: "/etc/quantum/certs/etcd.quantum.dev.key"
-      ETCD_TRUSTED_CA_FILE: "/etc/quantum/certs/ca.crt"
+      ETCD_CERT_FILE: "/etc/etcd/ssl/certs/etcd.quantum.dev.crt"
+      ETCD_KEY_FILE: "/etc/etcd/ssl/keys/etcd.quantum.dev.key"
+      ETCD_TRUSTED_CA_FILE: "/etc/etcd/ssl/certs/ca.crt"
       ETCD_DATA_DIR: "/var/lib/etcd"
       ETCD_NAME: "datastore"
     entrypoint: ["/usr/local/bin/etcd", "--client-cert-auth=true"]
 networks:
-  perf_net_v4:
+  quantum_dev_net_v4:
     external:
-      name: perf_net_v4
-  perf_net_v6:
+      name: quantum_dev_net_v4
+  quantum_dev_net_v6:
     external:
-      name: perf_net_v6
+      name: quantum_dev_net_v6
 volumes:
   etcd:
     driver: local

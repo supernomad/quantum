@@ -51,7 +51,7 @@ func init() {
 
 	store.InternalMapping = testMapping
 	aggregator := agg.New(
-		common.NewLogger(),
+		common.NewLogger(false, false, false, false),
 		&common.Config{
 			StatsRoute:   "/stats",
 			StatsPort:    1099,
