@@ -1,6 +1,6 @@
-// Package workers outgoing struct and func's
 // Copyright (c) 2016 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+
 package workers
 
 import (
@@ -14,7 +14,7 @@ import (
 	"github.com/Supernomad/quantum/socket"
 )
 
-// Outgoing internal packet interface which handles reading packets off of a TUN object
+// Outgoing packet struct for handleing packets coming in off of a Device struct
 type Outgoing struct {
 	cfg        *common.Config
 	aggregator *agg.Agg

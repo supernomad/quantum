@@ -1,6 +1,7 @@
-// Package agg main struct and func's
 // Copyright (c) 2016 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+
+// Package agg contains the structs for collecting and aggregating incoming and outgoing metrics, as well as exporting those statistics via a simple REST api
 package agg
 
 import (
@@ -20,18 +21,18 @@ const (
 	Outgoing // 1
 )
 
-// Agg a statistics aggregation object
+// Agg a statistics aggregation struct
 type Agg struct {
 	log      *common.Logger
 	cfg      *common.Config
 	stop     chan struct{}
 	statsLog *StatsLog
 
-	// Aggs is a channel to send Data objects to the centralized aggregator
+	// Aggs is the channel Data structs are sent down to the centralize collection from the different workers
 	Aggs chan *Data
 }
 
-// StatsLog object to hold statistics information for quantum
+// StatsLog struct which contains the statistics information for quantum
 type StatsLog struct {
 	// TxStats holds the packet and byte counts for transmissions
 	TxStats *common.Stats
@@ -39,13 +40,13 @@ type StatsLog struct {
 	RxStats *common.Stats
 }
 
-// Bytes will return a byte slice representing the StatsLog object
+// Bytes will return the StatsLog struct as a byte slice
 func (statsl *StatsLog) Bytes() []byte {
 	data, _ := json.Marshal(statsl)
 	return data
 }
 
-// Data to use for statistics collection
+// Data is used to send statistics about an incoming packet via the Aggs channel in the Agg struct
 type Data struct {
 	PrivateIP string
 	Queue     int
@@ -114,7 +115,7 @@ func (agg *Agg) server() {
 	}
 }
 
-// Start aggregating stats data
+// Start aggregating statistics data
 func (agg *Agg) Start(wg *sync.WaitGroup) {
 	go agg.server()
 	go func() {
@@ -131,7 +132,7 @@ func (agg *Agg) Start(wg *sync.WaitGroup) {
 	}()
 }
 
-// Stop aggregating and sending stats data
+// Stop aggregating and recieving requests for statistics data
 func (agg *Agg) Stop() {
 	go func() {
 		agg.stop <- struct{}{}

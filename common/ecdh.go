@@ -1,6 +1,6 @@
-// Package common ecdh func's
 // Copyright (c) 2016 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+
 package common
 
 import (
@@ -23,7 +23,7 @@ func GenerateECKeyPair() ([]byte, []byte) {
 	return pub[:], priv[:]
 }
 
-// GenerateSharedSecret - Generates a shared secret based on the supplied public/private keys
+// GenerateSharedSecret - Generates a shared secret based on the supplied public/private eliptical curve keys
 func GenerateSharedSecret(pubkey, privkey []byte) []byte {
 	var secret, pub, priv [keyLength]byte
 

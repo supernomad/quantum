@@ -1,6 +1,7 @@
-// Package datastore interface and factory
 // Copyright (c) 2016 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+
+// Package datastore contains the structs and logic to handle synchronizing mappings across the quantum network
 package datastore
 
 import (
@@ -20,7 +21,7 @@ const (
 	lockTTL = 10 * time.Second
 )
 
-// Datastore interface for quantum to get mapping data from the backend datastore
+// Datastore interface for quantum to use for retrieving mapping data from the backend datastore
 type Datastore interface {
 	Init() error
 	Mapping(ip uint32) (*common.Mapping, bool)
@@ -28,7 +29,7 @@ type Datastore interface {
 	Stop()
 }
 
-// New datastore object
+// New creates a datastore struct based on the passed in datastore kind and user configuration
 func New(kind int, log *common.Logger, cfg *common.Config) (Datastore, error) {
 	switch kind {
 	case ETCDDatastore:

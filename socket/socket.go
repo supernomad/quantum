@@ -1,6 +1,7 @@
-// Package socket interface and factory
 // Copyright (c) 2016 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+
+// Package socket contains the structs and logic to create, maintain, and operate kernel level sockets
 package socket
 
 import (
@@ -10,15 +11,11 @@ import (
 const (
 	// UDPSocket socket type
 	UDPSocket int = 0
-	// IPSocket socket type
-	IPSocket int = 1
 	// MOCKSocket socket type
 	MOCKSocket int = 2
-
-	ipProto = 138
 )
 
-// Socket is a generic multi-queue socket interface
+// Socket interface for a generic multi-queue socket interface
 type Socket interface {
 	Read(buf []byte, queue int) (*common.Payload, bool)
 	Write(payload *common.Payload, queue int) bool
@@ -27,7 +24,7 @@ type Socket interface {
 	GetFDs() []int
 }
 
-// New Socket object
+// New generate a new Socket struct based on the supplied device kind and user configuration
 func New(kind int, cfg *common.Config) Socket {
 	switch kind {
 	case UDPSocket:

@@ -1,6 +1,6 @@
-// Package common logger struct and func's
 // Copyright (c) 2016 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+
 package common
 
 import (
@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-// Logger type to allow for a single point of logging configuration
+// Logger struct to allow for a single point for logging configuration
 type Logger struct {
 	Error *log.Logger
 	Info  *log.Logger
@@ -17,7 +17,7 @@ type Logger struct {
 	Debug *log.Logger
 }
 
-// NewLogger creates a new logger based on user config.
+// NewLogger creates a new logger struct based on user config.
 func NewLogger(err, info, warn, debug bool) *Logger {
 	logger := &Logger{
 		Error: log.New(os.Stderr, "[ERROR]", 0),

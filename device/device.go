@@ -1,6 +1,7 @@
-// Package device interface and factory
 // Copyright (c) 2016 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+
+// Package device contains the structs and logic to create, maintain, and operate kernel level networking devices
 package device
 
 import (
@@ -13,14 +14,11 @@ import (
 const (
 	// TUNDevice type
 	TUNDevice int = 0
-	// TAPDevice type
-	TAPDevice int = 1
 	// MOCKDevice type
 	MOCKDevice int = 2
 
 	ifNameSize    = 16
 	iffTun        = 0x0001
-	iffTap        = 0x0002
 	iffNoPi       = 0x1000
 	iffMultiQueue = 0x0100
 )
@@ -30,7 +28,7 @@ type ifReq struct {
 	Flags uint16
 }
 
-// Device is a generic multi-queue network device
+// Device interface for a generic multi-queue network device
 type Device interface {
 	Name() string
 	Read(buf []byte, queue int) (*common.Payload, bool)
@@ -40,7 +38,7 @@ type Device interface {
 	Queues() []int
 }
 
-// New Device object
+// New will generate a new Device struct based on the supplied device kind and user configuration
 func New(kind int, cfg *common.Config) Device {
 	switch kind {
 	case TUNDevice:

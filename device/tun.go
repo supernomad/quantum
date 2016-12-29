@@ -1,6 +1,6 @@
-// Package device tun struct and func's
 // Copyright (c) 2016 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+
 package device
 
 import (
@@ -11,7 +11,7 @@ import (
 	"github.com/Supernomad/quantum/common"
 )
 
-// Tun device
+// Tun device struct for managing a TUN networking device
 type Tun struct {
 	name   string
 	queues []int
@@ -23,7 +23,7 @@ func (tun *Tun) Name() string {
 	return tun.name
 }
 
-// Open the Tun device for communication to begin
+// Open the Tun device and configure it to operate in the quantum network
 func (tun *Tun) Open() error {
 	for i := 0; i < tun.cfg.NumWorkers; i++ {
 		if !tun.cfg.ReuseFDS {
@@ -48,7 +48,7 @@ func (tun *Tun) Open() error {
 	return nil
 }
 
-// Close the tun
+// Close the Tun device and remove associated network configuration
 func (tun *Tun) Close() error {
 	for i := 0; i < len(tun.queues); i++ {
 		if err := syscall.Close(tun.queues[i]); err != nil {
@@ -58,12 +58,12 @@ func (tun *Tun) Close() error {
 	return nil
 }
 
-// Queues will return the underlying queue fds
+// Queues will return the underlying Tun queue file descriptors
 func (tun *Tun) Queues() []int {
 	return tun.queues
 }
 
-// Read a packet off the tun
+// Read a packet off the specified Tun queue and return the *common.Payload representation
 func (tun *Tun) Read(buf []byte, queue int) (*common.Payload, bool) {
 	n, err := syscall.Read(tun.queues[queue], buf[common.PacketStart:])
 	if err != nil {
@@ -72,7 +72,7 @@ func (tun *Tun) Read(buf []byte, queue int) (*common.Payload, bool) {
 	return common.NewTunPayload(buf, n), true
 }
 
-// Write a packet to the tun
+// Write a *common.Payload to the specified Tun queue
 func (tun *Tun) Write(payload *common.Payload, queue int) bool {
 	_, err := syscall.Write(tun.queues[queue], payload.Packet)
 	if err != nil {

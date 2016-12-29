@@ -1,6 +1,6 @@
-// Package datastore etcd struct and func's
 // Copyright (c) 2016 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+
 package datastore
 
 import (
@@ -17,7 +17,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Etcd datastore
+// Etcd datastore struct for interacting with the coreos etcd key/value store
 type Etcd struct {
 	log                 *common.Logger
 	cfg                 *common.Config
@@ -246,7 +246,7 @@ func (etcd *Etcd) watch() {
 	}()
 }
 
-// Mapping from the Etcd datastore
+// Mapping returns a mapping and true based on the supplied uint32 if it exists within the datastore, otherwise it returns nil and false
 func (etcd *Etcd) Mapping(ip uint32) (*common.Mapping, bool) {
 	mapping, exists := etcd.mappings[ip]
 	return mapping, exists
@@ -280,7 +280,7 @@ func (etcd *Etcd) Init() error {
 	return etcd.unlock(stopRefreshing)
 }
 
-// Start the Etcd datastore
+// Start synchronizing with the backend
 func (etcd *Etcd) Start(wg *sync.WaitGroup) {
 	etcd.wg = wg
 	etcd.watch()
@@ -303,7 +303,7 @@ func (etcd *Etcd) Start(wg *sync.WaitGroup) {
 	}()
 }
 
-// Stop the Etcd datastore
+// Stop synchronizing with the backend
 func (etcd *Etcd) Stop() {
 	go func() {
 		etcd.stopSyncing <- struct{}{}

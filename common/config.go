@@ -1,6 +1,6 @@
-// Package common config struct and func's
 // Copyright (c) 2016 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+
 package common
 
 import (
@@ -38,7 +38,7 @@ var (
 	allV6      = net.ParseIP("::")
 )
 
-// Config handles marshalling user supplied configuration data
+// Config struct that handles marshalling in user supplied configuration data
 type Config struct {
 	ConfFile        string           `skip:"false"  type:"string"    short:"c"    long:"conf-file"         default:""                      description:"The configuration file to use to configure quantum."`
 	DeviceName      string           `skip:"false"  type:"string"    short:"i"    long:"device-name"       default:"quantum%d"             description:"The name to give the TUN device quantum uses, append '%d' to have auto incrementing names."`
@@ -359,7 +359,7 @@ func (cfg *Config) computeArgs() error {
 	return ioutil.WriteFile(cfg.PidFile, []byte(strconv.Itoa(pid)), os.ModePerm)
 }
 
-// NewConfig object
+// NewConfig creates a new Config struct based on user supplied input
 func NewConfig(log *Logger) (*Config, error) {
 	cfg, err := parseArgs(log)
 	if err != nil {

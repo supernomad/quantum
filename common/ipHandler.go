@@ -1,6 +1,6 @@
-// Package common ip addressing func's mainly used for dhcp
 // Copyright (c) 2016 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+
 package common
 
 import (
@@ -38,7 +38,7 @@ func getFreeIP(cfg *Config, mappings map[uint32]*Mapping) (net.IP, error) {
 	return nil, errors.New("there are no available ip addresses in the configured network")
 }
 
-// GenerateLocalMapping will take in the user defined configuration and the currently defined mappings to determine the local node mapping.
+// GenerateLocalMapping will take in the user defined configuration plus the currently defined mappings, in order to determine the local mapping.
 func GenerateLocalMapping(cfg *Config, mappings map[uint32]*Mapping) (*Mapping, error) {
 	if cfg.PrivateIP == nil {
 		if mapping, exists := getLocalMappingIfExists(cfg.MachineID, mappings); exists {
