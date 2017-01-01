@@ -53,21 +53,21 @@ func (outgoing *Outgoing) seal(payload *common.Payload, mapping *common.Mapping)
 }
 
 func (outgoing *Outgoing) stats(dropped bool, queue int, payload *common.Payload, mapping *common.Mapping) {
-	aggData := &agg.Data{
+	aggStat := &common.Stat{
 		Queue:     queue,
-		Direction: agg.Outgoing,
+		Direction: common.OutgoingStat,
 		Dropped:   dropped,
 	}
 
 	if payload != nil {
-		aggData.Bytes += uint64(payload.Length)
+		aggStat.Bytes += uint64(payload.Length)
 	}
 
 	if mapping != nil {
-		aggData.PrivateIP = mapping.PrivateIP.String()
+		aggStat.PrivateIP = mapping.PrivateIP.String()
 	}
 
-	outgoing.aggregator.Aggs <- aggData
+	outgoing.aggregator.Aggs <- aggStat
 }
 
 func (outgoing *Outgoing) pipeline(buf []byte, queue int) bool {

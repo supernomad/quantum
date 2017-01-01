@@ -11,31 +11,48 @@ import (
 	"syscall"
 )
 
-// Mapping represents the relationship between a public/private address and encryption metadata
+// Mapping represents the relationship between a public/private address along with encryption metadata for a particular node in the quantum network.
 type Mapping struct {
-	MachineID     string                 `json:"machineID"`
-	PrivateIP     net.IP                 `json:"privateIP"`
-	PublicKey     []byte                 `json:"publicKey"`
-	IPv4          net.IP                 `json:"ipv4,omitempty"`
-	IPv6          net.IP                 `json:"ipv6,omitempty"`
-	Port          int                    `json:"port"`
-	Cipher        cipher.AEAD            `json:"-"`
+	// The unique machine id within the quantum network.
+	MachineID string `json:"machineID"`
+
+	// The private ip address within the quantum network.
+	PrivateIP net.IP `json:"privateIP"`
+
+	// The public key to be used during encryption/decryption of packets.
+	PublicKey []byte `json:"publicKey"`
+
+	// The public ipv4 address of the node represented by this mapping, which may or may not exist.
+	IPv4 net.IP `json:"ipv4,omitempty"`
+
+	// The public ipv6 address of the node represented by this mapping, which may or may not exist.
+	IPv6 net.IP `json:"ipv6,omitempty"`
+
+	// The port where quantum is listening for remote packets.
+	Port int `json:"port"`
+
+	// The AEAD object to use for encryption/decryption of packets
+	Cipher cipher.AEAD `json:"-"`
+
+	// The ipv4 syscall.Sockaddr object for sending data to the node represented by this mapping.
 	SockaddrInet4 *syscall.SockaddrInet4 `json:"-"`
+
+	// The ipv6 syscall.Sockaddr object for sending data to the node represented by this mapping.
 	SockaddrInet6 *syscall.SockaddrInet6 `json:"-"`
 }
 
-// Bytes returns the mapping as a byte slice
+// Bytes returns a byte slice representation of a Mapping object, if there is an error while marshalling data a nil slice is returned.
 func (mapping *Mapping) Bytes() []byte {
 	buf, _ := json.Marshal(mapping)
 	return buf
 }
 
-// String returns the mapping as a string
+// Bytes returns a string representation of a Mapping object, if there is an error while marshalling data an empty string is returned.
 func (mapping *Mapping) String() string {
 	return string(mapping.Bytes())
 }
 
-// ParseMapping creates a new mapping based on the output of Mapping.Bytes
+// ParseMapping creates a new mapping based on the output of a Mapping.Bytes call.
 func ParseMapping(str string, privkey []byte) (*Mapping, error) {
 	data := []byte(str)
 	var mapping Mapping
@@ -69,7 +86,7 @@ func ParseMapping(str string, privkey []byte) (*Mapping, error) {
 	return &mapping, nil
 }
 
-// NewMapping generates a new basic Mapping
+// NewMapping generates a new basic Mapping with no cryptographic metadata.
 func NewMapping(machineID string, privateIP, publicV4, publicV6 net.IP, port int, pubkey []byte) *Mapping {
 	return &Mapping{
 		MachineID: machineID,

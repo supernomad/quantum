@@ -13,17 +13,28 @@ import (
 // DefaultNetworkConfig to use when the NetworkConfig is not specified in the backend datastore.
 var DefaultNetworkConfig *NetworkConfig
 
-// NetworkConfig object to represent the current network.
+// NetworkConfig object to represent the current network setup.
 type NetworkConfig struct {
-	Network     string        `json:"network"`
-	StaticRange string        `json:"staticRange"`
-	LeaseTime   time.Duration `json:"leaseTime"`
-	BaseIP      net.IP        `json:"-"`
-	IPNet       *net.IPNet    `json:"-"`
-	StaticNet   *net.IPNet    `json:"-"`
+	// The network range that represents the quantum network.
+	Network string `json:"network"`
+
+	// The reserved static ip address range which should be skipped for DHCP assignments.
+	StaticRange string `json:"staticRange"`
+
+	// The length of time to hold the assigned DHCP lease.
+	LeaseTime time.Duration `json:"leaseTime"`
+
+	// The base ip address of the quantum network.
+	BaseIP net.IP `json:"-"`
+
+	// The IPNet representation of the quantum network.
+	IPNet *net.IPNet `json:"-"`
+
+	// The IPNet representation of the reserved static ip address range
+	StaticNet *net.IPNet `json:"-"`
 }
 
-// ParseNetworkConfig from the return of the backend datastore
+// ParseNetworkConfig from the data stored in the backend datastore
 func ParseNetworkConfig(data []byte) (*NetworkConfig, error) {
 	var networkCfg NetworkConfig
 	json.Unmarshal(data, &networkCfg)
@@ -55,13 +66,13 @@ func ParseNetworkConfig(data []byte) (*NetworkConfig, error) {
 	return &networkCfg, nil
 }
 
-// Bytes representation of a NetworkConfig object
+// Bytes returns a byte slice representation of a NetworkConfig object, if there is an error while marshalling data a nil slice is returned
 func (networkCfg *NetworkConfig) Bytes() []byte {
 	buf, _ := json.Marshal(networkCfg)
 	return buf
 }
 
-// String representation of a NetworkConfig object
+// Bytes returns a string representation of a NetworkConfig object, if there is an error while marshalling data an empty string is returned
 func (networkCfg *NetworkConfig) String() string {
 	return string(networkCfg.Bytes())
 }

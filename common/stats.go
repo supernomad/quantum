@@ -7,23 +7,44 @@ import (
 	"encoding/json"
 )
 
-// Stats object for incoming/outgoing statistics
+// StatDirection determines which work the stat object came from either incoming or outgoing.
+type StatDirection int
+
+const (
+	// IncomingStat i.e. RX stats
+	IncomingStat StatDirection = iota // 0
+	// OutgoingStat i.e. TX stats
+	OutgoingStat // 1
+)
+
+// Stats object for monitoring incoming or outgoing statistics
 type Stats struct {
-	DroppedPackets uint64            `json:"droppedPackets"`
-	Packets        uint64            `json:"packets"`
-	DroppedBytes   uint64            `json:"droppedBytes"`
-	Bytes          uint64            `json:"bytes"`
-	Links          map[string]*Stats `json:"links,omitempty"`
-	Queues         []*Stats          `json:"queues,omitempty"`
+	// The number of packets quantum has dropped due to failing either nating or cryptography.
+	DroppedPackets uint64 `json:"droppedPackets"`
+
+	// The number of packets successfully handled by quantum.
+	Packets uint64 `json:"packets"`
+
+	// The number of bytes quantum has dropped due to failing either nating or cryptography.
+	DroppedBytes uint64 `json:"droppedBytes"`
+
+	// The number of bytes successfully handled by quantum.
+	Bytes uint64 `json:"bytes"`
+
+	// The stats for individual links that represent the network traffic of this node in relation to remote nodes.
+	Links map[string]*Stats `json:"links,omitempty"`
+
+	// The stats for indivifual queues within quantm.
+	Queues []*Stats `json:"queues,omitempty"`
 }
 
-// String the Stats object
+// String returns a string representation of the Stats object, if there is an error while marshalling data an empty string is returned.
 func (stats *Stats) String() string {
 	data, _ := json.MarshalIndent(stats, "", "    ")
 	return string(data)
 }
 
-// NewStats object with links
+// NewStats generates a new stats object to monitor quantum with.
 func NewStats(numQueues int) *Stats {
 	queues := make([]*Stats, numQueues)
 	for i := 0; i < numQueues; i++ {
@@ -33,4 +54,32 @@ func NewStats(numQueues int) *Stats {
 		Links:  make(map[string]*Stats),
 		Queues: queues,
 	}
+}
+
+// StatsLog struct which contains the packet and byte statistics information for quantum
+type StatsLog struct {
+	// TxStats holds the packet and byte counts for packet transmission
+	TxStats *Stats
+	// RxStats holds the packet and byte counts for packet reception
+	RxStats *Stats
+}
+
+// Bytes returns a byte slice representation of the StatsLog object, if there is an error while marshalling data a nil slice is returned.
+func (statsl *StatsLog) Bytes() []byte {
+	data, _ := json.Marshal(statsl)
+	return data
+}
+
+// String returns a string representation of the StatsLog object, if there is an error while marshalling data an empty string is returned.
+func (statsl *StatsLog) String() string {
+	return string(statsl.Bytes())
+}
+
+// Stat is used to represent statistics about a single incoming or outgoing packet
+type Stat struct {
+	PrivateIP string
+	Queue     int
+	Bytes     uint64
+	Direction StatDirection
+	Dropped   bool
 }

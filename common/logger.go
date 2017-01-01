@@ -25,7 +25,7 @@ const (
 	DebugLogger
 )
 
-// Logger struct to allow for a single point for logging configuration
+// Logger struct which allows for a single global point for logging configuration
 type Logger struct {
 	Error *log.Logger
 	Info  *log.Logger

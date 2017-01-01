@@ -38,7 +38,17 @@ var (
 	allV6      = net.ParseIP("::")
 )
 
-// Config struct that handles marshalling in user supplied configuration data
+/*
+Config struct that handles marshalling in user supplied configuration data from cli arguments, environment variables, and configuration file entries.
+
+The user supplied configuration is processed via a structured hierarchy:
+- Cli arguments override both environment variables and configuration file entries.
+- Environment variables will override file entries but can be overridden by cli arguments.
+- Configuration file entries will be overridden by both environment variables and cli arguments.
+- Defaults are used in the case that the use does not define a configuration argument.
+
+There are two special functions used here, which are 'help' and 'version' which will print out information and exit the application regardless of where in the argument lists they reside.
+*/
 type Config struct {
 	ConfFile        string            `skip:"false"  type:"string"    short:"c"    long:"conf-file"         default:""                      description:"The configuration file to use to configure quantum."`
 	DeviceName      string            `skip:"false"  type:"string"    short:"i"    long:"device-name"       default:"quantum%d"             description:"The name to give the TUN device quantum uses, append '%d' to have auto incrementing names."`
@@ -110,43 +120,6 @@ func (cfg *Config) fileArg(long string) (string, bool) {
 	return value, ok
 }
 
-func (cfg *Config) parseFile() error {
-	if cfg.ConfFile != "" {
-		buf, err := ioutil.ReadFile(cfg.ConfFile)
-		if err != nil {
-			return err
-		}
-
-		data := make(map[string]string)
-		ext := path.Ext(cfg.ConfFile)
-		switch {
-		case ".json" == ext:
-			err = json.Unmarshal(buf, &data)
-		case ".yaml" == ext || ".yml" == ext:
-			err = yaml.Unmarshal(buf, &data)
-		default:
-			err = errors.New("the configuration file is not in a supported format")
-		}
-
-		if err != nil {
-			return err
-		}
-
-		cfg.fileData = data
-	}
-	return nil
-}
-
-func (cfg *Config) parseField(tag reflect.StructTag) (skip, fieldType, short, long, def, description string) {
-	skip = tag.Get("skip")
-	fieldType = tag.Get("type")
-	short = tag.Get("short")
-	long = tag.Get("long")
-	def = tag.Get("default")
-	description = tag.Get("description")
-	return
-}
-
 func (cfg *Config) usage(exit bool) {
 	cfg.log.Info.Println("Usage of quantum:")
 	st := reflect.TypeOf(*cfg)
@@ -176,25 +149,57 @@ func (cfg *Config) version(exit bool) {
 	}
 }
 
+func (cfg *Config) parseFile() error {
+	if cfg.ConfFile != "" {
+		buf, err := ioutil.ReadFile(cfg.ConfFile)
+		if err != nil {
+			return err
+		}
+
+		data := make(map[string]string)
+		ext := path.Ext(cfg.ConfFile)
+		switch {
+		case ".json" == ext:
+			err = json.Unmarshal(buf, &data)
+		case ".yaml" == ext || ".yml" == ext:
+			err = yaml.Unmarshal(buf, &data)
+		default:
+			return errors.New("the supplied configuration file is not in a supported format, quantum only supports 'json', or 'yaml' configuration files")
+		}
+
+		if err != nil {
+			return err
+		}
+
+		cfg.fileData = data
+	}
+	return nil
+}
+
+func (cfg *Config) parseField(tag reflect.StructTag) (skip, fieldType, short, long, def, description string) {
+	skip = tag.Get("skip")
+	fieldType = tag.Get("type")
+	short = tag.Get("short")
+	long = tag.Get("long")
+	def = tag.Get("default")
+	description = tag.Get("description")
+	return
+}
+
 func (cfg *Config) parseSpecial(exit bool) {
 	for _, arg := range os.Args {
 		switch {
-		case strings.HasSuffix(arg, "h") || strings.HasSuffix(arg, "help"):
+		case arg == "-h" || arg == "--h" || arg == "-help" || arg == "--help":
 			cfg.usage(exit)
-		case strings.HasSuffix(arg, "v") || strings.HasSuffix(arg, "version"):
+		case arg == "-v" || arg == "--v" || arg == "-version" || arg == "--version":
 			cfg.version(exit)
 		}
 	}
 }
 
-func parseArgs(log *Logger) (*Config, error) {
-	cfg := Config{
-		log: log,
-	}
-	cfg.parseSpecial(true)
-
-	st := reflect.TypeOf(cfg)
-	sv := reflect.ValueOf(&cfg).Elem()
+func (cfg *Config) parseArgs() error {
+	st := reflect.TypeOf(*cfg)
+	sv := reflect.ValueOf(cfg).Elem()
 
 	numFields := st.NumField()
 	for i := 0; i < numFields; i++ {
@@ -221,25 +226,25 @@ func parseArgs(log *Logger) (*Config, error) {
 		case "int":
 			i, err := strconv.Atoi(raw)
 			if err != nil {
-				return nil, err
+				return errors.New("error parsing value for '" + long + "' got, '" + raw + "', expected an 'int'")
 			}
 			fieldValue.Set(reflect.ValueOf(i))
 		case "duration":
 			dur, err := time.ParseDuration(raw)
 			if err != nil {
-				return nil, err
+				return errors.New("error parsing value for '" + long + "' got, '" + raw + "', expected a 'duration' Example: '10s' or '2d'")
 			}
 			fieldValue.Set(reflect.ValueOf(dur))
 		case "ip":
 			ip := net.ParseIP(raw)
 			if ip == nil && raw != "" {
-				return nil, errors.New("invalid ip address")
+				return errors.New("error parsing value for '" + long + "' got, '" + raw + "', expected an 'ip' Example: '10.0.0.1' or 'fd42:dead:beef::1'")
 			}
 			fieldValue.Set(reflect.ValueOf(ip))
 		case "bool":
 			b, err := strconv.ParseBool(raw)
 			if err != nil {
-				return nil, err
+				return errors.New("error parsing value for '" + long + "' got, '" + raw + "', expected a 'bool'")
 			}
 			fieldValue.Set(reflect.ValueOf(b))
 		case "list":
@@ -248,7 +253,7 @@ func parseArgs(log *Logger) (*Config, error) {
 		case "string":
 			fieldValue.Set(reflect.ValueOf(raw))
 		default:
-			return nil, errors.New("unknown configuration type")
+			return errors.New("build error unknown configuration type")
 		}
 
 		if field.Name == "ConfFile" {
@@ -256,7 +261,7 @@ func parseArgs(log *Logger) (*Config, error) {
 		}
 	}
 
-	return &cfg, nil
+	return nil
 }
 
 func (cfg *Config) computeArgs() error {
@@ -300,7 +305,7 @@ func (cfg *Config) computeArgs() error {
 	if cfg.PublicIPv4 == nil {
 		routes, err := netlink.RouteGet(googleV4)
 		if err != nil {
-			return err
+			return errors.New("error retrieving ipv4 route information, check to ensure valid network configuration exists on at the very least the loopback interface")
 		}
 		if !ArrayEquals(routes[0].Src, loopbackV4) {
 			cfg.PublicIPv4 = routes[0].Src
@@ -313,11 +318,11 @@ func (cfg *Config) computeArgs() error {
 	if cfg.PublicIPv6 == nil {
 		routes, err := netlink.RouteGet(googleV6)
 		if err != nil {
-			return err
+			return errors.New("error retrieving ipv6 route information, check to ensure valid network configuration exists on at the very least the loopback interface")
 		}
 		_, ipNet, err := net.ParseCIDR(linkLocal)
 		if err != nil {
-			return err
+			return errors.New("error parsing ipv6 linkLocal addressing")
 		}
 		if !ArrayEquals(routes[0].Src, loopbackV6) && !ipNet.Contains(routes[0].Src) {
 			cfg.PublicIPv6 = routes[0].Src
@@ -340,7 +345,7 @@ func (cfg *Config) computeArgs() error {
 			copy(sa.Addr[:], allV4.To4()[:])
 			cfg.ListenAddr = sa
 		default:
-			return errors.New("impossible situation occurred, neither ipv4 or ipv6 is active. check your networking configuration you must have public internet access to use autoconfiguration")
+			return errors.New("an impossible situation occurred, neither ipv4 or ipv6 is available, check your networking configuration you must have public internet access to use automatic configuration")
 		}
 	} else if addr := cfg.ListenIP.To4(); addr != nil {
 		sa := &syscall.SockaddrInet4{Port: cfg.ListenPort}
@@ -351,20 +356,28 @@ func (cfg *Config) computeArgs() error {
 		copy(sa.Addr[:], addr[:])
 		cfg.ListenAddr = sa
 	} else {
-		return errors.New("impossible situation occurred, neither ipv4 or ipv6 is active. check your networking configuration you must have public internet access to use autoconfiguration")
+		return errors.New("an impossible situation occurred, neither ipv4 or ipv6 is available, check your networking configuration you must have public internet access to use automatic configuration")
 	}
 
 	pid := os.Getpid()
 	return ioutil.WriteFile(cfg.PidFile, []byte(strconv.Itoa(pid)), os.ModePerm)
 }
 
-// NewConfig creates a new Config struct based on user supplied input
+// NewConfig creates a new Config struct based on user supplied input.
 func NewConfig(log *Logger) (*Config, error) {
-	cfg, err := parseArgs(log)
-	if err != nil {
+	cfg := &Config{
+		log: log,
+	}
+
+	// Handle help and version
+	cfg.parseSpecial(true)
+
+	// Handle parsing in user supplied config
+	if err := cfg.parseArgs(); err != nil {
 		return nil, err
 	}
 
+	// Compute internal configuration based on the user supplied configuration
 	if err := cfg.computeArgs(); err != nil {
 		return nil, err
 	}

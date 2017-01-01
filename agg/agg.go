@@ -4,7 +4,6 @@
 package agg
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
@@ -13,53 +12,23 @@ import (
 	"github.com/Supernomad/quantum/common"
 )
 
-const (
-	// Incoming i.e. RX stats
-	Incoming = iota // 0
-	// Outgoing i.e. TX stats
-	Outgoing // 1
-)
-
 // Agg a statistics aggregation struct
 type Agg struct {
 	log      *common.Logger
 	cfg      *common.Config
 	stop     chan struct{}
-	statsLog *StatsLog
+	statsLog *common.StatsLog
 
 	// Aggs is the channel Data structs are sent to for aggregation and export via the rest api
-	Aggs chan *Data
+	Aggs chan *common.Stat
 }
 
-// StatsLog struct which contains the packet and byte statistics information for quantum
-type StatsLog struct {
-	// TxStats holds the packet and byte counts for packet transmission
-	TxStats *common.Stats
-	// RxStats holds the packet and byte counts for packet reception
-	RxStats *common.Stats
-}
-
-// Bytes will return the StatsLog struct as a byte slice, if there is an error while marshalling data a nil slice is returned
-func (statsl *StatsLog) Bytes() []byte {
-	data, _ := json.Marshal(statsl)
-	return data
-}
-
-// Data is used to send statistics about an incoming packet via the Aggs channel in the Agg struct
-type Data struct {
-	PrivateIP string
-	Queue     int
-	Bytes     uint64
-	Direction int
-	Dropped   bool
-}
-
-func handleStats(stats *common.Stats, aggData *Data) {
-	if !aggData.Dropped {
-		stats.Bytes += aggData.Bytes
+func handleStats(stats *common.Stats, aggStat *common.Stat) {
+	if !aggStat.Dropped {
+		stats.Bytes += aggStat.Bytes
 		stats.Packets++
 	} else {
-		stats.DroppedBytes += aggData.Bytes
+		stats.DroppedBytes += aggStat.Bytes
 		stats.DroppedPackets++
 	}
 }
@@ -77,31 +46,31 @@ func (agg *Agg) returnStats(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (agg *Agg) pipeline(aggData *Data) {
-	agg.log.Debug.Println("[AGG]", "Statistics data recieved:", aggData)
+func (agg *Agg) pipeline(aggStat *common.Stat) {
+	agg.log.Debug.Println("[AGG]", "Statistics data recieved:", aggStat)
 
 	var stats *common.Stats
-	switch aggData.Direction {
-	case Incoming:
+	switch aggStat.Direction {
+	case common.IncomingStat:
 		stats = agg.statsLog.RxStats
-	case Outgoing:
+	case common.OutgoingStat:
 		stats = agg.statsLog.TxStats
 	}
 
-	handleStats(stats, aggData)
-	handleStats(stats.Queues[aggData.Queue], aggData)
+	handleStats(stats, aggStat)
+	handleStats(stats.Queues[aggStat.Queue], aggStat)
 
-	if aggData.PrivateIP == "" {
+	if aggStat.PrivateIP == "" {
 		return
 	}
 
-	if linkStats, ok := stats.Links[aggData.PrivateIP]; ok {
-		handleStats(linkStats, aggData)
+	if linkStats, ok := stats.Links[aggStat.PrivateIP]; ok {
+		handleStats(linkStats, aggStat)
 	} else {
 		linkStats = &common.Stats{}
-		handleStats(linkStats, aggData)
+		handleStats(linkStats, aggStat)
 
-		stats.Links[aggData.PrivateIP] = linkStats
+		stats.Links[aggStat.PrivateIP] = linkStats
 	}
 }
 
@@ -127,8 +96,8 @@ func (agg *Agg) Start(wg *sync.WaitGroup) {
 			select {
 			case <-agg.stop:
 				break loop
-			case aggData := <-agg.Aggs:
-				agg.pipeline(aggData)
+			case aggStat := <-agg.Aggs:
+				agg.pipeline(aggStat)
 			}
 		}
 
@@ -153,11 +122,11 @@ func New(log *common.Logger, cfg *common.Config) *Agg {
 	return &Agg{
 		log: log,
 		cfg: cfg,
-		statsLog: &StatsLog{
+		statsLog: &common.StatsLog{
 			RxStats: common.NewStats(cfg.NumWorkers),
 			TxStats: common.NewStats(cfg.NumWorkers),
 		},
 		stop: make(chan struct{}),
-		Aggs: make(chan *Data, 1024*1024),
+		Aggs: make(chan *common.Stat, 1024*1024),
 	}
 }

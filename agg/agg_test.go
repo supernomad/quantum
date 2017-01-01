@@ -29,7 +29,7 @@ func Example() {
 	}
 
 	fmt.Println(string(body))
-	// Output: {"TxStats":{"droppedPackets":0,"packets":2,"droppedBytes":0,"bytes":0,"links":{"10.99.0.1":{"droppedPackets":0,"packets":2,"droppedBytes":0,"bytes":0}},"queues":[{"droppedPackets":0,"packets":2,"droppedBytes":0,"bytes":0}]},"RxStats":{"droppedPackets":1,"packets":0,"droppedBytes":0,"bytes":0,"queues":[{"droppedPackets":1,"packets":0,"droppedBytes":0,"bytes":0}]}}
+	// Output: {"TxStats":{"droppedPackets":0,"packets":2,"droppedBytes":0,"bytes":40,"links":{"10.99.0.1":{"droppedPackets":0,"packets":2,"droppedBytes":0,"bytes":40}},"queues":[{"droppedPackets":0,"packets":2,"droppedBytes":0,"bytes":40}]},"RxStats":{"droppedPackets":1,"packets":1,"droppedBytes":20,"bytes":20,"links":{"10.99.0.1":{"droppedPackets":0,"packets":1,"droppedBytes":0,"bytes":20}},"queues":[{"droppedPackets":1,"packets":1,"droppedBytes":20,"bytes":20}]}}
 }
 
 func TestAgg(t *testing.T) {
@@ -44,20 +44,30 @@ func TestAgg(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	agg.Start(wg)
-	agg.Aggs <- &Data{
-		Direction: Outgoing,
+	agg.Aggs <- &common.Stat{
+		Direction: common.OutgoingStat,
 		Dropped:   false,
 		PrivateIP: "10.99.0.1",
+		Bytes:     20,
 	}
-	agg.Aggs <- &Data{
-		Direction: Outgoing,
+	agg.Aggs <- &common.Stat{
+		Direction: common.OutgoingStat,
 		Dropped:   false,
 		PrivateIP: "10.99.0.1",
+		Bytes:     20,
 	}
-	agg.Aggs <- &Data{
-		Direction: Incoming,
+	agg.Aggs <- &common.Stat{
+		Direction: common.IncomingStat,
 		Dropped:   true,
+		Bytes:     20,
 	}
+	agg.Aggs <- &common.Stat{
+		Direction: common.IncomingStat,
+		Dropped:   false,
+		PrivateIP: "10.99.0.1",
+		Bytes:     20,
+	}
+
 	time.Sleep(2 * time.Second)
 	_, err := http.Get("http://127.0.0.1:1099/stats")
 	if err != nil {
