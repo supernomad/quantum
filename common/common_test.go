@@ -111,7 +111,7 @@ func TestNewConfig(t *testing.T) {
 	os.Setenv("_QUANTUM_REAL_DEVICE_NAME_", "quantum0")
 
 	os.Args = append(os.Args, "-n", "100", "--prefix", "woot", "--tls-skip-verify", "-6", "fd00:dead:beef::2")
-	cfg, err := NewConfig(NewLogger(false, false, false, false))
+	cfg, err := NewConfig(NewLogger(NoopLogger))
 	if err != nil {
 		t.Fatalf("NewConfig returned an error, %s", err)
 	}
@@ -296,12 +296,18 @@ func TestNewStats(t *testing.T) {
 }
 
 func TestNewLogger(t *testing.T) {
-	log := NewLogger(false, false, false, false)
+	log := NewLogger(NoopLogger)
 	if log.Error == nil {
 		t.Fatal("NewLogger returned a nil Error log.")
 	}
+	if log.Warn == nil {
+		t.Fatal("NewLogger returned a nil Warn log.")
+	}
 	if log.Info == nil {
-		t.Fatal("NewLogger returned a nil Error log.")
+		t.Fatal("NewLogger returned a nil Info log.")
+	}
+	if log.Debug == nil {
+		t.Fatal("NewLogger returned a nil Debug log.")
 	}
 }
 

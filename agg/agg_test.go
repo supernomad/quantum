@@ -14,7 +14,7 @@ import (
 
 func TestAgg(t *testing.T) {
 	agg := New(
-		common.NewLogger(false, false, false, false),
+		common.NewLogger(common.NoopLogger),
 		&common.Config{
 			StatsRoute:   "/stats",
 			StatsPort:    1099,

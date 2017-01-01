@@ -9,6 +9,19 @@ import (
 	"os"
 )
 
+const (
+	// NoopLogger will noop all logging calls this is only used for testing
+	NoopLogger = iota
+	// ErrorLogger will only output error logs
+	ErrorLogger
+	// WarnLogger will output warn/error logs
+	WarnLogger
+	// InfoLogger will output info/warn/error logs
+	InfoLogger
+	// DebugLogger will output debug/info/warn/error logs
+	DebugLogger
+)
+
 // Logger struct to allow for a single point for logging configuration
 type Logger struct {
 	Error *log.Logger
@@ -18,27 +31,27 @@ type Logger struct {
 }
 
 // NewLogger creates a new logger struct based on user config.
-func NewLogger(err, info, warn, debug bool) *Logger {
+func NewLogger(kind int) *Logger {
 	logger := &Logger{
-		Error: log.New(os.Stderr, "[ERROR]", 0),
-		Info:  log.New(os.Stdout, "[INFO]", 0),
-		Warn:  log.New(os.Stderr, "[WARN]", 0),
-		Debug: log.New(os.Stdout, "[DEBUG]", 0),
+		Error: log.New(os.Stderr, "[ERROR] ", 0),
+		Warn:  log.New(os.Stderr, "[WARN] ", 0),
+		Info:  log.New(os.Stdout, "[INFO] ", 0),
+		Debug: log.New(os.Stdout, "[DEBUG] ", 0),
 	}
 
-	if !err {
+	if ErrorLogger > kind {
 		logger.Error.SetOutput(ioutil.Discard)
 	}
 
-	if !info {
-		logger.Info.SetOutput(ioutil.Discard)
-	}
-
-	if !warn {
+	if WarnLogger > kind {
 		logger.Warn.SetOutput(ioutil.Discard)
 	}
 
-	if !debug {
+	if InfoLogger > kind {
+		logger.Info.SetOutput(ioutil.Discard)
+	}
+
+	if DebugLogger > kind {
 		logger.Warn.SetOutput(ioutil.Discard)
 	}
 

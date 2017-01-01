@@ -28,7 +28,7 @@ func handleError(log *common.Logger, err error) {
 }
 
 func main() {
-	log := common.NewLogger(true, true, true, true)
+	log := common.NewLogger(common.InfoLogger)
 	wg := &sync.WaitGroup{}
 
 	cfg, err := common.NewConfig(log)
