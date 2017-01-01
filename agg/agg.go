@@ -2,6 +2,8 @@
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 // Package agg contains the structs for collecting and aggregating incoming and outgoing metrics, as well as exporting those statistics via a simple REST api
+//
+// The REST api that agg offers is extremely simple and exposes a single route `/stats`. The statistics returned from the this endpoint represent monotonically increasing counters and will reset during rolling restarts as well as wrap to 0 in the event the counter is greater than the size of a uint64.
 package agg
 
 import (
@@ -28,7 +30,7 @@ type Agg struct {
 	stop     chan struct{}
 	statsLog *StatsLog
 
-	// Aggs is the channel Data structs are sent down to the centralize collection from the different workers
+	// Aggs is the channel Data structs are sent to for aggregation and export via the rest api
 	Aggs chan *Data
 }
 

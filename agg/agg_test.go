@@ -4,6 +4,8 @@
 package agg
 
 import (
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"sync"
 	"testing"
@@ -11,6 +13,24 @@ import (
 
 	"github.com/Supernomad/quantum/common"
 )
+
+func ExampleAgg() {
+	resp, err := http.Get("http://127.0.0.1:1099/stats")
+	if err != nil {
+		fmt.Println("Error getting statistics:", err.Error())
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error parsing response body:", err.Error())
+		panic(err)
+	}
+
+	fmt.Println(string(body))
+	// Output: {"TxStats":{"droppedPackets":0,"packets":2,"droppedBytes":0,"bytes":0,"links":{"10.99.0.1":{"droppedPackets":0,"packets":2,"droppedBytes":0,"bytes":0}},"queues":[{"droppedPackets":0,"packets":2,"droppedBytes":0,"bytes":0}]},"RxStats":{"droppedPackets":1,"packets":0,"droppedBytes":0,"bytes":0,"queues":[{"droppedPackets":1,"packets":0,"droppedBytes":0,"bytes":0}]}}
+}
 
 func TestAgg(t *testing.T) {
 	agg := New(
