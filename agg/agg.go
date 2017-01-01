@@ -12,7 +12,7 @@ import (
 	"github.com/Supernomad/quantum/common"
 )
 
-// Agg a statistics aggregation struct
+// Agg a statistics aggregation struct.
 type Agg struct {
 	log      *common.Logger
 	cfg      *common.Config
@@ -87,7 +87,7 @@ func (agg *Agg) server() {
 	}
 }
 
-// Start aggregating statistics data
+// Start aggregating and serving requests for statistics data.
 func (agg *Agg) Start(wg *sync.WaitGroup) {
 	go agg.server()
 	go func() {
@@ -110,14 +110,14 @@ func (agg *Agg) Start(wg *sync.WaitGroup) {
 	}()
 }
 
-// Stop aggregating and recieving requests for statistics data
+// Stop aggregating and recieving requests for statistics data.
 func (agg *Agg) Stop() {
 	go func() {
 		agg.stop <- struct{}{}
 	}()
 }
 
-// New Agg instance pointer
+// New generates an Agg instance for aggregating statistics data for quantum and exposing those statistics via a REST api interface.
 func New(log *common.Logger, cfg *common.Config) *Agg {
 	return &Agg{
 		log: log,

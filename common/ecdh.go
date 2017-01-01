@@ -13,7 +13,7 @@ const (
 	keyLength = 32 // 256bit key length
 )
 
-// GenerateECKeyPair - Generates a new eliptical curve key-pair using curve25519 as the underlying cryptographic function
+// GenerateECKeyPair - Generates a new eliptical curve key-pair using curve25519 as the underlying cryptographic function.
 func GenerateECKeyPair() ([]byte, []byte) {
 	var pub, priv [keyLength]byte
 
@@ -23,7 +23,7 @@ func GenerateECKeyPair() ([]byte, []byte) {
 	return pub[:], priv[:]
 }
 
-// GenerateSharedSecret - Generates a shared secret based on the supplied public/private curve25519 eliptical curve keys
+// GenerateSharedSecret - Generates a shared secret based on the supplied public/private curve25519 eliptical curve keys.
 func GenerateSharedSecret(pubkey, privkey []byte) []byte {
 	var secret, pub, priv [keyLength]byte
 

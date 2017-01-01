@@ -30,11 +30,11 @@ type NetworkConfig struct {
 	// The IPNet representation of the quantum network.
 	IPNet *net.IPNet `json:"-"`
 
-	// The IPNet representation of the reserved static ip address range
+	// The IPNet representation of the reserved static ip address range.
 	StaticNet *net.IPNet `json:"-"`
 }
 
-// ParseNetworkConfig from the data stored in the backend datastore
+// ParseNetworkConfig from the data stored in the backend datastore.
 func ParseNetworkConfig(data []byte) (*NetworkConfig, error) {
 	var networkCfg NetworkConfig
 	json.Unmarshal(data, &networkCfg)
@@ -66,13 +66,13 @@ func ParseNetworkConfig(data []byte) (*NetworkConfig, error) {
 	return &networkCfg, nil
 }
 
-// Bytes returns a byte slice representation of a NetworkConfig object, if there is an error while marshalling data a nil slice is returned
+// Bytes returns a byte slice representation of a NetworkConfig object, if there is an error while marshalling data a nil slice is returned.
 func (networkCfg *NetworkConfig) Bytes() []byte {
 	buf, _ := json.Marshal(networkCfg)
 	return buf
 }
 
-// Bytes returns a string representation of a NetworkConfig object, if there is an error while marshalling data an empty string is returned
+// Bytes returns a string representation of a NetworkConfig object, if there is an error while marshalling data an empty string is returned.
 func (networkCfg *NetworkConfig) String() string {
 	return string(networkCfg.Bytes())
 }

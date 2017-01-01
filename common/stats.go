@@ -13,6 +13,7 @@ type StatDirection int
 const (
 	// IncomingStat i.e. RX stats
 	IncomingStat StatDirection = iota // 0
+
 	// OutgoingStat i.e. TX stats
 	OutgoingStat // 1
 )
@@ -56,11 +57,12 @@ func NewStats(numQueues int) *Stats {
 	}
 }
 
-// StatsLog struct which contains the packet and byte statistics information for quantum
+// StatsLog struct which contains the packet and byte statistics information for quantum.
 type StatsLog struct {
-	// TxStats holds the packet and byte counts for packet transmission
+	// TxStats holds the packet and byte counts for packet transmission.
 	TxStats *Stats
-	// RxStats holds the packet and byte counts for packet reception
+
+	// RxStats holds the packet and byte counts for packet reception.
 	RxStats *Stats
 }
 
@@ -75,11 +77,20 @@ func (statsl *StatsLog) String() string {
 	return string(statsl.Bytes())
 }
 
-// Stat is used to represent statistics about a single incoming or outgoing packet
+// Stat is used to represent statistics about a single incoming or outgoing packet.
 type Stat struct {
+	// The remote private ip associated with the packet.
 	PrivateIP string
-	Queue     int
-	Bytes     uint64
+
+	// The queue handling the packet.
+	Queue int
+
+	// The size of the packet in bytes.
+	Bytes uint64
+
+	// The direction of the packet, either incoming or outgoing.
 	Direction StatDirection
-	Dropped   bool
+
+	// Whether or not the packet was dropped.
+	Dropped bool
 }

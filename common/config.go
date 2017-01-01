@@ -42,16 +42,12 @@ var (
 Config struct that handles marshalling in user supplied configuration data from cli arguments, environment variables, and configuration file entries.
 
 The user supplied configuration is processed via a structured hierarchy:
+	- Cli arguments override both environment variables and configuration file entries.
+	- Environment variables will override file entries but can be overridden by cli arguments.
+	- Configuration file entries will be overridden by both environment variables and cli arguments.
+	- Defaults are used in the case that the use does not define a configuration argument.
 
-- Cli arguments override both environment variables and configuration file entries.
-
-- Environment variables will override file entries but can be overridden by cli arguments.
-
-- Configuration file entries will be overridden by both environment variables and cli arguments.
-
-- Defaults are used in the case that the use does not define a configuration argument.
-
-There are two special functions used here, which are 'help' and 'version' which will print out information and exit the application regardless of where in the argument lists they reside.
+The only exceptions to the above are the two special cli argments '-h'|'--help' or '-v'|'--version' which will output usage information or version information respectively and then exit the application.
 */
 type Config struct {
 	ConfFile        string            `skip:"false"  type:"string"    short:"c"    long:"conf-file"         default:""                      description:"The configuration file to use to configure quantum."`
@@ -373,15 +369,15 @@ func NewConfig(log *Logger) (*Config, error) {
 		log: log,
 	}
 
-	// Handle help and version
+	// Handle the help and version commands if the exist
 	cfg.parseSpecial(true)
 
-	// Handle parsing in user supplied config
+	// Handle parsing user supplied configuration data
 	if err := cfg.parseArgs(); err != nil {
 		return nil, err
 	}
 
-	// Compute internal configuration based on the user supplied configuration
+	// Compute internal configuration based on the user supplied configuration data
 	if err := cfg.computeArgs(); err != nil {
 		return nil, err
 	}

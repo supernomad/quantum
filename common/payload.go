@@ -28,7 +28,7 @@ type Payload struct {
 	Length int
 }
 
-// NewTunPayload is used to generate a payload based on a received TUN packet
+// NewTunPayload is used to generate a payload based on a received TUN packet.
 func NewTunPayload(raw []byte, packetLength int) *Payload {
 	ip := raw[IPStart:IPEnd]
 	nonce := raw[NonceStart:NonceEnd]
@@ -43,7 +43,7 @@ func NewTunPayload(raw []byte, packetLength int) *Payload {
 	}
 }
 
-// NewSockPayload is used to generate a payload based on a received Socket packet
+// NewSockPayload is used to generate a payload based on a received Socket packet.
 func NewSockPayload(raw []byte, packetLength int) *Payload {
 	ip := raw[IPStart:IPEnd]
 	nonce := raw[NonceStart:NonceEnd]

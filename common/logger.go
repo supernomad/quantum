@@ -13,19 +13,23 @@ import (
 type LoggerType int
 
 const (
-	// NoopLogger will noop all logging calls this is only used for testing
+	// NoopLogger will noop all logging calls this is only used for testing.
 	NoopLogger LoggerType = iota
-	// ErrorLogger will only output error logs
+
+	// ErrorLogger will only output error logs.
 	ErrorLogger
-	// WarnLogger will output warn/error logs
+
+	// WarnLogger will output warn/error logs.
 	WarnLogger
-	// InfoLogger will output info/warn/error logs
+
+	// InfoLogger will output info/warn/error logs.
 	InfoLogger
-	// DebugLogger will output debug/info/warn/error logs
+
+	// DebugLogger will output debug/info/warn/error logs.
 	DebugLogger
 )
 
-// Logger struct which allows for a single global point for logging configuration
+// Logger struct which allows for a single global point for logging configuration.
 type Logger struct {
 	Error *log.Logger
 	Info  *log.Logger
