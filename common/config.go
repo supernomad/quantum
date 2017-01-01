@@ -42,9 +42,13 @@ var (
 Config struct that handles marshalling in user supplied configuration data from cli arguments, environment variables, and configuration file entries.
 
 The user supplied configuration is processed via a structured hierarchy:
+
 - Cli arguments override both environment variables and configuration file entries.
+
 - Environment variables will override file entries but can be overridden by cli arguments.
+
 - Configuration file entries will be overridden by both environment variables and cli arguments.
+
 - Defaults are used in the case that the use does not define a configuration argument.
 
 There are two special functions used here, which are 'help' and 'version' which will print out information and exit the application regardless of where in the argument lists they reside.
