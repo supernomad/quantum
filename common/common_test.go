@@ -4,6 +4,7 @@
 package common
 
 import (
+	"fmt"
 	"net"
 	"os"
 	"runtime"
@@ -67,6 +68,31 @@ func testEq(a, b []byte) bool {
 	}
 
 	return true
+}
+
+func ExampleIPtoInt() {
+	ipAddr := net.ParseIP("1.0.0.0")
+	ipInt := IPtoInt(ipAddr)
+
+	fmt.Println(ipInt)
+	// Output: 1
+}
+
+func ExampleIncrementIP() {
+	ipAddr := net.ParseIP("0.0.0.1")
+	IncrementIP(ipAddr)
+
+	fmt.Println(ipAddr)
+	// Output: 0.0.0.2
+}
+
+func ExampleArrayEquals() {
+	a := []byte{0, 1}
+	b := []byte{0, 1}
+	c := []byte{1, 1}
+
+	fmt.Println(ArrayEquals(a, b), ArrayEquals(nil, nil), ArrayEquals(a, c), ArrayEquals(a, nil))
+	// Output: true true false false
 }
 
 func TestArrayEquals(t *testing.T) {

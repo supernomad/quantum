@@ -69,17 +69,13 @@ func IncrementIP(ip net.IP) {
 
 // ArrayEquals returns true if both byte slices contain the same data
 //
-// NOTE: this is a very slow method and should be limited in use
+// NOTE: this is a very slow func and should be limited in use
 func ArrayEquals(a, b []byte) bool {
 	if a == nil && b == nil {
 		return true
 	}
 
-	if a == nil || b == nil {
-		return false
-	}
-
-	if len(a) != len(b) {
+	if a == nil || b == nil || len(a) != len(b) {
 		return false
 	}
 

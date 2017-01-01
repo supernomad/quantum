@@ -32,15 +32,15 @@ type Agg struct {
 	Aggs chan *Data
 }
 
-// StatsLog struct which contains the statistics information for quantum
+// StatsLog struct which contains the packet and byte statistics information for quantum
 type StatsLog struct {
-	// TxStats holds the packet and byte counts for transmissions
+	// TxStats holds the packet and byte counts for packet transmission
 	TxStats *common.Stats
-	// RxStats holds the packet and byte counts for reception
+	// RxStats holds the packet and byte counts for packet reception
 	RxStats *common.Stats
 }
 
-// Bytes will return the StatsLog struct as a byte slice
+// Bytes will return the StatsLog struct as a byte slice, if there is an error while marshalling data a nil slice is returned
 func (statsl *StatsLog) Bytes() []byte {
 	data, _ := json.Marshal(statsl)
 	return data
@@ -66,17 +66,21 @@ func handleStats(stats *common.Stats, aggData *Data) {
 }
 
 func (agg *Agg) returnStats(w http.ResponseWriter, r *http.Request) {
+	agg.log.Debug.Println("[AGG]", "Recieved an api request:", r)
+
 	header := w.Header()
 	header.Set("Content-Type", "application/json")
 	header.Set("Server", "quantum")
 
 	_, err := w.Write(agg.statsLog.Bytes())
 	if err != nil {
-		agg.log.Error.Println(err.Error())
+		agg.log.Error.Println("[AGG]", "Error writing stats api response:", err.Error())
 	}
 }
 
 func (agg *Agg) pipeline(aggData *Data) {
+	agg.log.Debug.Println("[AGG]", "Statistics data recieved:", aggData)
+
 	var stats *common.Stats
 	switch aggData.Direction {
 	case Incoming:
@@ -108,7 +112,7 @@ func (agg *Agg) server() {
 	for {
 		err := http.ListenAndServe(listenAddress, nil)
 		if err != nil {
-			agg.log.Error.Println(err.Error())
+			agg.log.Error.Println("[AGG]", "Error initializing stats api:", err.Error())
 		}
 
 		time.Sleep(10 * time.Second)
@@ -119,7 +123,6 @@ func (agg *Agg) server() {
 func (agg *Agg) Start(wg *sync.WaitGroup) {
 	go agg.server()
 	go func() {
-		defer wg.Done()
 	loop:
 		for {
 			select {
@@ -129,6 +132,13 @@ func (agg *Agg) Start(wg *sync.WaitGroup) {
 				agg.pipeline(aggData)
 			}
 		}
+
+		close(agg.Aggs)
+		close(agg.stop)
+
+		agg.log.Info.Println("[AGG]", "Shutdown signal recieved, shutting down.")
+
+		wg.Done()
 	}()
 }
 
