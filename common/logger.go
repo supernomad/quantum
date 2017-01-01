@@ -9,9 +9,12 @@ import (
 	"os"
 )
 
+// LoggerType will determine the logging level of the logger object created.
+type LoggerType int
+
 const (
 	// NoopLogger will noop all logging calls this is only used for testing
-	NoopLogger = iota
+	NoopLogger LoggerType = iota
 	// ErrorLogger will only output error logs
 	ErrorLogger
 	// WarnLogger will output warn/error logs
@@ -30,8 +33,8 @@ type Logger struct {
 	Debug *log.Logger
 }
 
-// NewLogger creates a new logger struct based on user config.
-func NewLogger(kind int) *Logger {
+// NewLogger creates a new logger struct based on the supplied LoggerType.
+func NewLogger(loggerType LoggerType) *Logger {
 	logger := &Logger{
 		Error: log.New(os.Stderr, "[ERROR] ", 0),
 		Warn:  log.New(os.Stderr, "[WARN] ", 0),
@@ -39,19 +42,19 @@ func NewLogger(kind int) *Logger {
 		Debug: log.New(os.Stdout, "[DEBUG] ", 0),
 	}
 
-	if ErrorLogger > kind {
+	if ErrorLogger > loggerType {
 		logger.Error.SetOutput(ioutil.Discard)
 	}
 
-	if WarnLogger > kind {
+	if WarnLogger > loggerType {
 		logger.Warn.SetOutput(ioutil.Discard)
 	}
 
-	if InfoLogger > kind {
+	if InfoLogger > loggerType {
 		logger.Info.SetOutput(ioutil.Discard)
 	}
 
-	if DebugLogger > kind {
+	if DebugLogger > loggerType {
 		logger.Warn.SetOutput(ioutil.Discard)
 	}
 
