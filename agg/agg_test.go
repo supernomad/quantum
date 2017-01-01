@@ -14,7 +14,7 @@ import (
 	"github.com/Supernomad/quantum/common"
 )
 
-func ExampleAgg() {
+func Example() {
 	resp, err := http.Get("http://127.0.0.1:1099/stats")
 	if err != nil {
 		fmt.Println("Error getting statistics:", err.Error())
