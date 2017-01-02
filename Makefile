@@ -72,3 +72,5 @@ release:
 ci: build_deps deps lint compile unit coverage
 
 dev: deps lint compile unit coverage cleanup
+
+full: deps lint compile bench coverage cleanup

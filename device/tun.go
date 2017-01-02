@@ -103,7 +103,7 @@ func createTUN(name string) (string, int, error) {
 	_, _, errNo := syscall.Syscall(syscall.SYS_IOCTL, uintptr(queue), uintptr(syscall.TUNSETIFF), uintptr(unsafe.Pointer(&req)))
 	if errNo != 0 {
 		syscall.Close(queue)
-		return "", -1, errors.New("error setting the TUN device parameters: " + err.Error())
+		return "", -1, errors.New("error setting the TUN device parameters")
 	}
 
 	return string(req.Name[:strings.Index(string(req.Name[:]), "\000")]), queue, nil
