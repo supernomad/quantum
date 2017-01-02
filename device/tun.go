@@ -5,11 +5,13 @@ package device
 
 import (
 	"errors"
+	"net"
 	"strings"
 	"syscall"
 	"unsafe"
 
 	"github.com/Supernomad/quantum/common"
+	"github.com/vishvananda/netlink"
 )
 
 // Tun device struct for managing a multi-queue TUN networking device.
@@ -77,7 +79,7 @@ func newTUN(cfg *common.Config) (Device, error) {
 	}
 
 	if !tun.cfg.ReuseFDS {
-		err := initDevice(tun.name, tun.cfg.PrivateIP.String(), tun.cfg.NetworkConfig)
+		err := initTun(tun.name, tun.cfg.PrivateIP.String(), tun.cfg.NetworkConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -105,4 +107,39 @@ func createTUN(name string) (string, int, error) {
 	}
 
 	return string(req.Name[:strings.Index(string(req.Name[:]), "\000")]), queue, nil
+}
+
+func initTun(name, src string, networkCfg *common.NetworkConfig) error {
+	link, err := netlink.LinkByName(name)
+	if err != nil {
+		return errors.New("error getting the virutal network device from the kernel: " + err.Error())
+	}
+	err = netlink.LinkSetUp(link)
+	if err != nil {
+		return errors.New("error upping the virutal network device: " + err.Error())
+	}
+	err = netlink.LinkSetMTU(link, common.MTU)
+	if err != nil {
+		return errors.New("error setting the virutal network device MTU: " + err.Error())
+	}
+	addr, err := netlink.ParseAddr(src + "/32")
+	if err != nil {
+		return errors.New("error parsing the virutal network device address: " + err.Error())
+	}
+	err = netlink.AddrAdd(link, addr)
+	if err != nil {
+		return errors.New("error setting the virutal network device address: " + err.Error())
+	}
+	route := &netlink.Route{
+		LinkIndex: link.Attrs().Index,
+		Scope:     netlink.SCOPE_LINK,
+		Protocol:  2,
+		Src:       net.ParseIP(src),
+		Dst:       networkCfg.IPNet,
+	}
+	err = netlink.RouteAdd(route)
+	if err != nil {
+		return errors.New("error setting the virutal network device network routes: " + err.Error())
+	}
+	return nil
 }
