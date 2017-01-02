@@ -8,8 +8,10 @@ setup_dev: build_deps gen_certs gen_docker_network build_docker
 
 install_go:
 	@echo "Installing golang...."
+	@cd /usr/local
+	@rm -rf go/
 	@curl -L -o go.tar.gz https://storage.googleapis.com/golang/go$(GO_VERSION).linux-amd64.tar.gz
-	@tar xvzf go.tar.gz -C /usr/local
+	@tar xzf go.tar.gz
 
 gen_certs:
 	@echo "Generating etcd certificates..."
