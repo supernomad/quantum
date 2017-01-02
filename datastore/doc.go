@@ -2,11 +2,14 @@
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 /*
-Package datastore contains the structs and logic to handle accessing and managing a backend datastore. This datastore will be responsible for managing distribution of all network mappings, and global configuration throughout the quantum network.
+Package datastore contains the structs and logic to handle accessing and managing a backend datastore. The datastore contains all network mappings for the nodes participating in the quantum network, as well as global configuration for the network.
 
-This package is designed to be extended and is based off of a simple interface defined in, 'device/device.go'. With this simple interface it is feasible to implement a myriad of datastore backends, from other key/value stores like https://www.consul.io to sql databases like https://www.postgresql.org/.
+The design of the datastore module is to expose a single method that represents accessing a network mapping. This is wrapped in a simple interface to allow for extending quantum to support multiple backends in the future.
 
-The basic design of the datastore as it stands is an in memory cache in the form of a golang map object, that is synchronized with the datastore in background go routines. This allows for very fast operation of the worker routines that depend on the data while still allowing for consistent results.
+The basic architechture is to have an in memory map object that is synchronized in the background. This allows the read only worker threads efficient access to the data, while still ensuring data consistency.
+
+Currently supported datastores:
+	https://github.com/coreos/etcd
 
 The data structure itself is as follows:
 	Key: Private ip of the node

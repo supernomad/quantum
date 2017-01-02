@@ -6,6 +6,7 @@ package datastore
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"path"
@@ -47,12 +48,13 @@ func (etcd *Etcd) handleNetworkConfig() error {
 	resp, err := etcd.kapi.Get(context.Background(), etcd.key("config"), &client.GetOptions{})
 	if err != nil {
 		if !isError(err, client.ErrorCodeKeyNotFound) {
-			return err
+			return errors.New("error retrieving the network configuration from etcd: " + err.Error())
 		}
 
+		etcd.log.Warn.Println("[ETCD]", "Using default network configuration.")
 		_, err := etcd.kapi.Set(context.Background(), etcd.key("config"), common.DefaultNetworkConfig.String(), &client.SetOptions{})
 		if err != nil {
-			return err
+			return errors.New("error setting the default network configuration in etcd: " + err.Error())
 		}
 
 		etcd.cfg.NetworkConfig = common.DefaultNetworkConfig
@@ -61,7 +63,7 @@ func (etcd *Etcd) handleNetworkConfig() error {
 
 	networkCfg, err := common.ParseNetworkConfig([]byte(resp.Node.Value))
 	if err != nil {
-		return err
+		return errors.New("error parsing the network configuration retrieved from etcd: " + err.Error())
 	}
 
 	etcd.cfg.NetworkConfig = networkCfg
@@ -71,7 +73,7 @@ func (etcd *Etcd) handleNetworkConfig() error {
 func (etcd *Etcd) handleLocalMapping() error {
 	mapping, err := common.GenerateLocalMapping(etcd.cfg, etcd.mappings)
 	if err != nil {
-		return err
+		return errors.New("error generating the local network mapping: " + err.Error())
 	}
 
 	opts := &client.SetOptions{
@@ -79,7 +81,7 @@ func (etcd *Etcd) handleLocalMapping() error {
 	}
 	_, err = etcd.kapi.Set(context.Background(), etcd.key("nodes", etcd.cfg.PrivateIP.String()), mapping.String(), opts)
 	if err != nil {
-		return err
+		return errors.New("error setting the local network mapping in etcd: " + err.Error())
 	}
 	etcd.localMapping = mapping
 	etcd.stopRefreshingLease = etcd.refresh(etcd.key("nodes", etcd.cfg.PrivateIP.String()), "", etcd.cfg.NetworkConfig.LeaseTime, etcd.cfg.RefreshInterval)
@@ -101,7 +103,7 @@ func (etcd *Etcd) lock() (chan struct{}, error) {
 		_, err := etcd.kapi.Set(context.Background(), etcd.key("lock"), etcd.cfg.MachineID, opts)
 
 		if err != nil && !isError(err, client.ErrorCodeNodeExist) {
-			return nil, err
+			return nil, errors.New("error retrieving the lock on etcd: " + err.Error())
 		} else if isError(err, client.ErrorCodeNodeExist) {
 			time.Sleep(lockTTL)
 			continue
@@ -135,7 +137,7 @@ func (etcd *Etcd) refresh(key, value string, ttl, refreshInterval time.Duration)
 			case <-ticker.C:
 				_, err := etcd.kapi.Set(context.Background(), key, "", opts)
 				if err != nil {
-					etcd.log.Error.Println("[ETCD]", "Error refreshing key in etcd:", err.Error())
+					etcd.log.Error.Println("[ETCD]", "Error refreshing key in etcd: "+err.Error())
 					if isError(err, client.ErrorCodeKeyNotFound) ||
 						isError(err, client.ErrorCodePrevValueRequired) ||
 						isError(err, client.ErrorCodeTestFailed) {
@@ -158,7 +160,7 @@ func (etcd *Etcd) sync() error {
 
 	if err != nil {
 		if !isError(err, client.ErrorCodeKeyNotFound) {
-			return err
+			return errors.New("error retrieving the mapping list from etcd: " + err.Error())
 		}
 		nodes = make(client.Nodes, 0)
 	} else {
@@ -169,7 +171,7 @@ func (etcd *Etcd) sync() error {
 	for _, node := range nodes {
 		mapping, err := common.ParseMapping(node.Value, etcd.cfg.PrivateKey)
 		if err != nil {
-			return err
+			return errors.New("error parsing a mapping retrieved from etcd: " + err.Error())
 		}
 		mappings[common.IPtoInt(mapping.PrivateIP)] = mapping
 	}
@@ -190,7 +192,7 @@ func (etcd *Etcd) unlock(stopRefreshing chan struct{}) error {
 		!isError(err, client.ErrorCodeKeyNotFound) &&
 		!isError(err, client.ErrorCodePrevValueRequired) &&
 		!isError(err, client.ErrorCodeTestFailed) {
-		return err
+		return errors.New("error releasing the etcd lock: " + err.Error())
 	}
 	return nil
 }
@@ -212,7 +214,7 @@ func (etcd *Etcd) watch() {
 			default:
 				resp, err := watcher.Next(context.Background())
 				if err != nil {
-					etcd.log.Error.Println("[ETCD]", "Error during watch on the etcd cluster:", err.Error())
+					etcd.log.Error.Println("[ETCD]", "Error during watch on the etcd cluster: "+err.Error())
 					time.Sleep(5 * time.Second)
 					goto watch
 				}
@@ -225,7 +227,7 @@ func (etcd *Etcd) watch() {
 					for _, node := range nodes {
 						mapping, err := common.ParseMapping(node.Value, etcd.cfg.PrivateKey)
 						if err != nil {
-							etcd.log.Error.Println("[ETCD]", "Error deserializing mapping:", err.Error())
+							etcd.log.Error.Println("[ETCD]", "Error parsing mapping: "+err.Error())
 							continue
 						}
 						etcd.mappings[common.IPtoInt(mapping.PrivateIP)] = mapping
@@ -234,7 +236,7 @@ func (etcd *Etcd) watch() {
 					for _, node := range nodes {
 						mapping, err := common.ParseMapping(node.Value, etcd.cfg.PrivateKey)
 						if err != nil {
-							etcd.log.Error.Println("[ETCD]", "Error deserializing mapping:", err.Error())
+							etcd.log.Error.Println("[ETCD]", "Error parsing mapping: "+err.Error())
 							continue
 						}
 						delete(etcd.mappings, common.IPtoInt(mapping.PrivateIP))
@@ -295,7 +297,7 @@ func (etcd *Etcd) Start(wg *sync.WaitGroup) {
 			case <-ticker.C:
 				err := etcd.sync()
 				if err != nil {
-					etcd.log.Error.Println("[ETCD]", "Error syncing mappings with the backend:", err.Error())
+					etcd.log.Error.Println("[ETCD]", "Error synchronizing mappings with the backend: "+err.Error())
 				}
 			}
 		}
@@ -331,7 +333,7 @@ func generateConfig(cfg *common.Config) (client.Config, error) {
 		if cfg.TLSKey != "" && cfg.TLSCert != "" {
 			cert, err := tls.LoadX509KeyPair(cfg.TLSCert, cfg.TLSKey)
 			if err != nil {
-				return etcdCfg, err
+				return etcdCfg, errors.New("error reading the supplied tls certificate and/or key: " + err.Error())
 			}
 			tlsCfg.Certificates = []tls.Certificate{cert}
 			tlsCfg.BuildNameToCertificate()
@@ -342,7 +344,7 @@ func generateConfig(cfg *common.Config) (client.Config, error) {
 		if cfg.TLSCA != "" {
 			cert, err := ioutil.ReadFile(cfg.TLSCA)
 			if err != nil {
-				return etcdCfg, err
+				return etcdCfg, errors.New("error reading the supplied tls ca certificate: " + err.Error())
 			}
 			tlsCfg.RootCAs = x509.NewCertPool()
 			tlsCfg.RootCAs.AppendCertsFromPEM(cert)
@@ -370,7 +372,7 @@ func newEtcd(log *common.Logger, cfg *common.Config) (Datastore, error) {
 
 	cli, err := client.New(etcdCfg)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("error creating client connection to etcd: " + err.Error())
 	}
 
 	kapi := client.NewKeysAPI(cli)
