@@ -59,7 +59,7 @@ func NewLogger(loggerType LoggerType) *Logger {
 	}
 
 	if DebugLogger > loggerType {
-		logger.Warn.SetOutput(ioutil.Discard)
+		logger.Debug.SetOutput(ioutil.Discard)
 	}
 
 	return logger
