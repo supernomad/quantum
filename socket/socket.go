@@ -20,10 +20,19 @@ const (
 
 // Socket interface for a generic multi-queue socket interface.
 type Socket interface {
+	// Read should return a formatted *common.Payload, based on the provided byte slice, off the specified socket queue.
 	Read(buf []byte, queue int) (*common.Payload, bool)
+
+	// Write should handle being passed a formatted *common.Payload, and write the underlying raw data to the specified socket queue.
 	Write(payload *common.Payload, queue int) bool
+
+	// Open should handle creating and configuring the socket.
 	Open() error
+
+	// Close should gracefully destroy the socket.
 	Close() error
+
+	// GetFDs should return all underlying queue file descriptors to pass along during a rolling restart.
 	GetFDs() []int
 }
 
