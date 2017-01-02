@@ -4,6 +4,7 @@
 package socket
 
 import (
+	"errors"
 	"syscall"
 
 	"github.com/Supernomad/quantum/common"
@@ -24,7 +25,7 @@ func (sock *UDP) Open() error {
 		if !sock.cfg.ReuseFDS {
 			queue, err = createUDP(sock.cfg.IsIPv6Enabled)
 			if err != nil {
-				return err
+				return errors.New("error creating the UDP socket: " + err.Error())
 			}
 			err = initUDP(queue, sock.cfg.ListenAddr)
 			if err != nil {
@@ -42,7 +43,7 @@ func (sock *UDP) Open() error {
 func (sock *UDP) Close() error {
 	for i := 0; i < len(sock.queues); i++ {
 		if err := syscall.Close(sock.queues[i]); err != nil {
-			return err
+			return errors.New("error closing the socket queues: " + err.Error())
 		}
 	}
 	return nil
@@ -79,12 +80,12 @@ func newUDP(cfg *common.Config) *UDP {
 func initUDP(queue int, sa syscall.Sockaddr) error {
 	err := syscall.SetsockoptInt(queue, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
 	if err != nil {
-		return err
+		return errors.New("error setting the UDP socket parameters: " + err.Error())
 	}
 
 	err = syscall.Bind(queue, sa)
 	if err != nil {
-		return err
+		return errors.New("error binding the UDP socket to the configured listen address: " + err.Error())
 	}
 
 	return nil
