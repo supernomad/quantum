@@ -18,7 +18,7 @@ const (
 	// TUNDevice type creates and manages a TUN based network device.
 	TUNDevice Type = iota
 
-	// MOCKDevice type creates ana manages a mocked our network device for testing.
+	// MOCKDevice type creates and manages a mocked out network device for testing.
 	MOCKDevice
 )
 

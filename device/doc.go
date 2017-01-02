@@ -2,9 +2,9 @@
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 /*
-Package device contains the structs and logic to create, configure, and maintain virutal network devices. Each network device type is represented by a struct adhearing to the included Device interface, which describes a generic multi-queue virutal network device.
+Package device contains the structs and logic to create, configure, and maintain virutal multi-queue network devices. Each network device type is represented by a struct adhearing to the included Device interface, which describes a generic multi-queue virutal network device.
 
-Currently supported datastores:
+Currently supported devices:
 	- TUN device
 */
 package device

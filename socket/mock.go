@@ -7,31 +7,31 @@ import (
 	"github.com/Supernomad/quantum/common"
 )
 
-// Mock socket
+// Mock socket struct to use for testing.
 type Mock struct {
 }
 
-// Read which just returns the supplied buffer in the form of a *common.Payload
+// Read which just returns the supplied buffer in the form of a *common.Payload.
 func (mock *Mock) Read(buf []byte, queue int) (*common.Payload, bool) {
 	return common.NewSockPayload(buf, len(buf)), true
 }
 
-// Write which is a noop
+// Write which is a noop.
 func (mock *Mock) Write(payload *common.Payload, queue int) bool {
 	return true
 }
 
-// Open which is a noop
+// Open which is a noop.
 func (mock *Mock) Open() error {
 	return nil
 }
 
-// Close which is a noop
+// Close which is a noop.
 func (mock *Mock) Close() error {
 	return nil
 }
 
-// GetFDs which is a noop
+// GetFDs which is a noop.
 func (mock *Mock) GetFDs() []int {
 	return nil
 }
