@@ -38,7 +38,7 @@ deps:
 	go get -t -v './...'
 
 lint:
-	@echo "Running fmt/vet/lint"; \
+	@echo "Running fmt/vet/lint..."; \
 	fgt go fmt './...' && \
 	fgt go vet './...' && \
 	fgt golint './...'

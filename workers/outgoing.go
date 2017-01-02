@@ -14,7 +14,7 @@ import (
 	"github.com/Supernomad/quantum/socket"
 )
 
-// Outgoing packet struct for handleing packets coming in off of a Device struct
+// Outgoing packet struct for handleing packets coming in off of a Device struct which are destined for a Socket struct.
 type Outgoing struct {
 	cfg        *common.Config
 	aggregator *agg.Agg
@@ -86,11 +86,16 @@ func (outgoing *Outgoing) pipeline(buf []byte, queue int) bool {
 		outgoing.stats(true, queue, payload, mapping)
 		return ok
 	}
+	ok = outgoing.sock.Write(payload, queue)
+	if !ok {
+		outgoing.stats(true, queue, payload, mapping)
+		return ok
+	}
 	outgoing.stats(false, queue, payload, mapping)
-	return outgoing.sock.Write(payload, queue)
+	return true
 }
 
-// Start handling packets
+// Start handling packets.
 func (outgoing *Outgoing) Start(queue int) {
 	go func() {
 		buf := make([]byte, common.MaxPacketLength)
@@ -100,12 +105,12 @@ func (outgoing *Outgoing) Start(queue int) {
 	}()
 }
 
-// Stop handling packets
+// Stop handling packets and shutdown.
 func (outgoing *Outgoing) Stop() {
 	outgoing.stop = true
 }
 
-// NewOutgoing object
+// NewOutgoing generates an Outgoing worker which once started will handle packets coming from the local node destined for remote nodes in the quantum network.
 func NewOutgoing(cfg *common.Config, aggregator *agg.Agg, store datastore.Datastore, dev device.Device, sock socket.Socket) *Outgoing {
 	return &Outgoing{
 		cfg:        cfg,

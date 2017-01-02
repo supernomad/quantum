@@ -13,7 +13,7 @@ import (
 	"github.com/Supernomad/quantum/socket"
 )
 
-// Incoming packet struct for handleing packets coming in off of a Socket struct
+// Incoming packet struct for handleing packets coming in off of a Socket struct which are destined for a Device struct.
 type Incoming struct {
 	cfg        *common.Config
 	aggregator *agg.Agg
@@ -76,11 +76,16 @@ func (incoming *Incoming) pipeline(buf []byte, queue int) bool {
 		incoming.stats(true, queue, payload, mapping)
 		return ok
 	}
+	ok = incoming.dev.Write(payload, queue)
+	if !ok {
+		incoming.stats(true, queue, payload, mapping)
+		return ok
+	}
 	incoming.stats(false, queue, payload, mapping)
-	return incoming.dev.Write(payload, queue)
+	return true
 }
 
-// Start handling packets
+// Start handling packets.
 func (incoming *Incoming) Start(queue int) {
 	go func() {
 		buf := make([]byte, common.MaxPacketLength)
@@ -90,12 +95,12 @@ func (incoming *Incoming) Start(queue int) {
 	}()
 }
 
-// Stop handling packets
+// Stop handling packets.
 func (incoming *Incoming) Stop() {
 	incoming.stop = true
 }
 
-// NewIncoming object
+// NewIncoming generates a new Incoming worker which once started will handle packets coming from the remote nodes in the quantum network destined for the local node.
 func NewIncoming(cfg *common.Config, aggregator *agg.Agg, store datastore.Datastore, dev device.Device, sock socket.Socket) *Incoming {
 	return &Incoming{
 		cfg:        cfg,
