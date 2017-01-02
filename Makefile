@@ -12,6 +12,7 @@ install_go:
 	@rm -rf go/
 	@curl -L -o go.tar.gz https://storage.googleapis.com/golang/go$(GO_VERSION).linux-amd64.tar.gz
 	@tar xzf go.tar.gz
+	@chmod +x go/bin/*
 
 gen_certs:
 	@echo "Generating etcd certificates..."
