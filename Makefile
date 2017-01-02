@@ -2,8 +2,14 @@
 # Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 PUSH_COVERAGE=""
+GO_VERSION="1.7.4"
 
 setup_dev: build_deps gen_certs gen_docker_network build_docker
+
+install_go:
+	@echo "Installing golang...."
+	@curl -L -o go.tar.gz https://storage.googleapis.com/golang/go$(GO_VERSION).linux-amd64.tar.gz
+	@tar xvzf go.tar.gz -C /usr/local
 
 gen_certs:
 	@echo "Generating etcd certificates..."
@@ -73,4 +79,4 @@ ci: build_deps deps lint compile unit coverage
 
 dev: deps lint compile unit coverage cleanup
 
-full: deps lint compile bench coverage cleanup
+full: install_go build_deps deps lint compile bench coverage cleanup
