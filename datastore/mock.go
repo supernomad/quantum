@@ -9,29 +9,29 @@ import (
 	"github.com/Supernomad/quantum/common"
 )
 
-// Mock datastore
+// Mock datastore struct for testing.
 type Mock struct {
 	InternalMapping *common.Mapping
 
 	wg *sync.WaitGroup
 }
 
-// Mapping always returns the internal mapping and true
+// Mapping always returns the internal mapping and true.
 func (mock *Mock) Mapping(ip uint32) (*common.Mapping, bool) {
 	return mock.InternalMapping, true
 }
 
-// Init which is a noop
+// Init which is a noop.
 func (mock *Mock) Init() error {
 	return nil
 }
 
-// Start which is a noop
+// Start which is a noop.
 func (mock *Mock) Start(wg *sync.WaitGroup) {
 	mock.wg = wg
 }
 
-// Stop which is a noop
+// Stop which is a noop.
 func (mock *Mock) Stop() {
 	mock.wg.Done()
 }

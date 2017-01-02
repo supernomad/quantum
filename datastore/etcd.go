@@ -17,7 +17,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Etcd datastore struct for interacting with the coreos etcd key/value store
+// Etcd datastore struct for interacting with the coreos etcd key/value datastore.
 type Etcd struct {
 	log                 *common.Logger
 	cfg                 *common.Config
@@ -246,13 +246,13 @@ func (etcd *Etcd) watch() {
 	}()
 }
 
-// Mapping returns a mapping and true based on the supplied uint32 if it exists within the datastore, otherwise it returns nil and false
+// Mapping returns a mapping and true based on the supplied uint32 representation of an ipv4 address if it exists within the datastore, otherwise it returns nil for the mapping and false.
 func (etcd *Etcd) Mapping(ip uint32) (*common.Mapping, bool) {
 	mapping, exists := etcd.mappings[ip]
 	return mapping, exists
 }
 
-// Init the Etcd datastore
+// Init the Etcd datastore which will open any necesary connections, preform an initial sync of the datastore, and define the local mapping in the datastore.
 func (etcd *Etcd) Init() error {
 	stopRefreshing, err := etcd.lock()
 	if err != nil {
@@ -280,7 +280,7 @@ func (etcd *Etcd) Init() error {
 	return etcd.unlock(stopRefreshing)
 }
 
-// Start synchronizing with the backend
+// Start periodic synchronization, and DHCP lease refresh with the datastore, as well as start watching for changes in network topology.
 func (etcd *Etcd) Start(wg *sync.WaitGroup) {
 	etcd.wg = wg
 	etcd.watch()
@@ -300,16 +300,18 @@ func (etcd *Etcd) Start(wg *sync.WaitGroup) {
 			}
 		}
 		close(etcd.stopSyncing)
+		ticker.Stop()
+
+		etcd.wg.Done()
 	}()
 }
 
-// Stop synchronizing with the backend
+// Stop synchronizing with the backend and shutdown open connections.
 func (etcd *Etcd) Stop() {
 	go func() {
 		etcd.stopSyncing <- struct{}{}
 		etcd.stopWatchingNodes <- struct{}{}
 		etcd.stopRefreshingLease <- struct{}{}
-		etcd.wg.Done()
 	}()
 }
 
