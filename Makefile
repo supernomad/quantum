@@ -43,12 +43,16 @@ lint:
 	@fgt go vet './...'
 	@fgt golint './...'
 
+race:
+	@echo "Running unit tests with race checking enabled..."
+	@go test -race './...'
+
 bench:
-	@echo "Running tests with benchmarking enabled..."
+	@echo "Running unit tests with benchmarking enabled..."
 	@go test -bench . -benchmem './...'
 
 unit:
-	@echo "Running tests with benchmarking disabled..."
+	@echo "Running unit tests with benchmarking disabled..."
 	@go test './...'
 
 coverage:
@@ -65,7 +69,6 @@ release:
 	@tar czf quantum_$(VERSION)_linux_amd64.tar.gz quantum LICENSE
 	@rm -f quantum
 
-travis: build_deps deps lint compile unit
-	@$(MAKE) PUSH_COVERAGE="push" coverage
+ci: build_deps deps lint compile unit coverage
 
 dev: deps lint compile unit coverage cleanup

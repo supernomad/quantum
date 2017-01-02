@@ -22,7 +22,17 @@ type Signaler struct {
 	signals chan os.Signal
 }
 
-func (sig *Signaler) reload() error {
+func (sig *Signaler) fork(exec bool, files []uintptr) (int, error) {
+	if exec {
+		return syscall.ForkExec(os.Args[0], os.Args, &syscall.ProcAttr{
+			Env:   os.Environ(),
+			Files: files,
+		})
+	}
+	return -1, nil
+}
+
+func (sig *Signaler) reload(exec bool) error {
 	sig.log.Info.Println("[MAIN]", "Received reload signal from user. Reloading process...")
 
 	files := make([]uintptr, 3+len(sig.fds))
@@ -38,10 +48,7 @@ func (sig *Signaler) reload() error {
 		os.Setenv(k, v)
 	}
 
-	pid, err := syscall.ForkExec(os.Args[0], os.Args, &syscall.ProcAttr{
-		Env:   os.Environ(),
-		Files: files,
-	})
+	pid, err := sig.fork(exec, files)
 	if err != nil {
 		return errors.New("error execing new instance of quantum during reload: " + err.Error())
 	}
@@ -53,19 +60,19 @@ func (sig *Signaler) reload() error {
 	return nil
 }
 
-func (sig *Signaler) terminate() error {
+func (sig *Signaler) terminate(exec bool) error {
 	sig.log.Info.Println("[MAIN]", "Received termination signal from user. Terminating process.")
 	return nil
 }
 
 // Wait for a configured os or user signal to be passed to the quantum process.
-func (sig *Signaler) Wait() error {
+func (sig *Signaler) Wait(exec bool) error {
 	s := <-sig.signals
 	switch s {
 	case syscall.SIGHUP:
-		return sig.reload()
+		return sig.reload(exec)
 	case syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT:
-		return sig.terminate()
+		return sig.terminate(exec)
 	default:
 		return errors.New("build error recieved undefined signal")
 	}

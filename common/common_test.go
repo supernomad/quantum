@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"runtime"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -384,5 +385,42 @@ func TestGenerateLocalMapping(t *testing.T) {
 	_, err = GenerateLocalMapping(cfg, make(map[uint32]*Mapping))
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestStatsLogBytes(t *testing.T) {
+	statsl := &StatsLog{
+		TxStats: &Stats{},
+		RxStats: &Stats{},
+	}
+
+	slice := statsl.Bytes(false)
+	if slice == nil {
+		t.Fatal("StatsLog Bytes returned nil slice")
+	}
+	str := statsl.String(true)
+	if str == "" {
+		t.Fatal("StatsLog String returned empty string")
+	}
+}
+
+func TestSignaler(t *testing.T) {
+	log := NewLogger(NoopLogger)
+	cfg, err := NewConfig(log)
+	signaler := NewSignaler(log, cfg, []int{}, map[string]string{})
+
+	go func() {
+		time.Sleep(1 * time.Second)
+		signaler.signals <- syscall.SIGHUP
+		time.Sleep(1 * time.Second)
+		signaler.signals <- syscall.SIGINT
+	}()
+	err = signaler.Wait(false)
+	if err != nil {
+		t.Fatal("Wait returned an error: " + err.Error())
+	}
+	err = signaler.Wait(false)
+	if err != nil {
+		t.Fatal("Wait returned an error: " + err.Error())
 	}
 }

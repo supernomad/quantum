@@ -8,4 +8,4 @@ go:
   - 1.7.x
 
 script:
-  - make travis
+  - make PUSH_COVERAGE="push" ci

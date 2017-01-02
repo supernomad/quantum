@@ -64,7 +64,7 @@ func main() {
 	log.Info.Printf("[MAIN] TUN public IPv6 address:  %s", cfg.PublicIPv6)
 	log.Info.Printf("[MAIN] Listening on UDP port:    %d", cfg.ListenPort)
 
-	err = signaler.Wait()
+	err = signaler.Wait(true)
 	handleError(log, err)
 
 	aggregator.Stop()
