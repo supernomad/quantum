@@ -71,3 +71,29 @@ func BenchmarkWrite(b *testing.B) {
 
 	benchmarkWrite(payload, 0, b)
 }
+
+func TestMock(t *testing.T) {
+	mock, _ := New(MOCKDevice, &common.Config{})
+	buf := make([]byte, common.MaxPacketLength)
+
+	payload, ok := mock.Read(buf, 0)
+	if payload == nil || !ok {
+		t.Fatal("Mock Read should always return a valid payload and nil error.")
+	}
+
+	if mock.Name() == "" {
+		t.Fatal("Mock Name should return a non empty string.")
+	}
+
+	if !mock.Write(payload, 0) {
+		t.Fatal("Mock Write should always return true.")
+	}
+
+	if mock.Queues() != nil {
+		t.Fatal("Mock Queues should always return nil.")
+	}
+
+	if mock.Close() != nil {
+		t.Fatal("Mock Close should always return nil.")
+	}
+}
