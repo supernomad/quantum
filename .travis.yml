@@ -4,8 +4,11 @@
 
 language: go
 
+sudo: true
+
 go:
   - 1.7.x
 
 script:
-  - make PUSH_COVERAGE="push" ci
+  - sudo -i -E bash -c "cd $(pwd) && make full"
+#  - make PUSH_COVERAGE="push" ci
