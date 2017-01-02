@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path"
-	"sync"
 	"time"
 
 	"github.com/Supernomad/quantum/common"
@@ -30,7 +29,6 @@ type Etcd struct {
 	stopSyncing         chan struct{}
 	stopRefreshingLease chan struct{}
 	stopWatchingNodes   chan struct{}
-	wg                  *sync.WaitGroup
 }
 
 func isError(err error, code int) bool {
@@ -283,8 +281,7 @@ func (etcd *Etcd) Init() error {
 }
 
 // Start periodic synchronization, and DHCP lease refresh with the datastore, as well as start watching for changes in network topology.
-func (etcd *Etcd) Start(wg *sync.WaitGroup) {
-	etcd.wg = wg
+func (etcd *Etcd) Start() {
 	etcd.watch()
 
 	ticker := time.NewTicker(etcd.cfg.SyncInterval)
@@ -303,8 +300,6 @@ func (etcd *Etcd) Start(wg *sync.WaitGroup) {
 		}
 		close(etcd.stopSyncing)
 		ticker.Stop()
-
-		etcd.wg.Done()
 	}()
 }
 

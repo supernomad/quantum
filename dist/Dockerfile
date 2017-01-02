@@ -12,6 +12,6 @@ RUN apt-get update \
         iputils-ping \
     && rm -rf /var/lib/apt/lists/*
 
-COPY ./dist/start_quantum.sh /bin/start_quantum.sh
+COPY ./start_quantum.sh /bin/start_quantum.sh
 
 RUN chmod 770 /bin/start_quantum.sh

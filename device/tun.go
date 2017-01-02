@@ -24,31 +24,6 @@ func (tun *Tun) Name() string {
 	return tun.name
 }
 
-// Open the Tun device and configure it to operate in the quantum network.
-func (tun *Tun) Open() error {
-	for i := 0; i < tun.cfg.NumWorkers; i++ {
-		if !tun.cfg.ReuseFDS {
-			ifName, queue, err := createTUN(tun.name)
-			if err != nil {
-				return err
-			}
-			tun.queues[i] = queue
-			tun.name = ifName
-		} else {
-			tun.queues[i] = 3 + i
-			tun.name = tun.cfg.RealDeviceName
-		}
-	}
-
-	if !tun.cfg.ReuseFDS {
-		err := initDevice(tun.name, tun.cfg.PrivateIP.String(), tun.cfg.NetworkConfig)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // Close the Tun device and remove associated network configuration.
 func (tun *Tun) Close() error {
 	for i := 0; i < len(tun.queues); i++ {
@@ -82,11 +57,33 @@ func (tun *Tun) Write(payload *common.Payload, queue int) bool {
 	return true
 }
 
-func newTUN(cfg *common.Config) Device {
+func newTUN(cfg *common.Config) (Device, error) {
 	queues := make([]int, cfg.NumWorkers)
 	name := cfg.DeviceName
+	tun := &Tun{name: name, cfg: cfg, queues: queues}
 
-	return &Tun{name: name, cfg: cfg, queues: queues}
+	for i := 0; i < tun.cfg.NumWorkers; i++ {
+		if !tun.cfg.ReuseFDS {
+			ifName, queue, err := createTUN(tun.name)
+			if err != nil {
+				return nil, err
+			}
+			tun.queues[i] = queue
+			tun.name = ifName
+		} else {
+			tun.queues[i] = 3 + i
+			tun.name = tun.cfg.RealDeviceName
+		}
+	}
+
+	if !tun.cfg.ReuseFDS {
+		err := initDevice(tun.name, tun.cfg.PrivateIP.String(), tun.cfg.NetworkConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return tun, nil
 }
 
 func createTUN(name string) (string, int, error) {

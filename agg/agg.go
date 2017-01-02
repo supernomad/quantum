@@ -6,7 +6,6 @@ package agg
 import (
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/Supernomad/quantum/common"
@@ -88,7 +87,7 @@ func (agg *Agg) server() {
 }
 
 // Start aggregating and serving requests for statistics data.
-func (agg *Agg) Start(wg *sync.WaitGroup) {
+func (agg *Agg) Start() {
 	go agg.server()
 	go func() {
 	loop:
@@ -100,21 +99,13 @@ func (agg *Agg) Start(wg *sync.WaitGroup) {
 				agg.pipeline(aggStat)
 			}
 		}
-
-		close(agg.Aggs)
 		close(agg.stop)
-
-		agg.log.Info.Println("[AGG]", "Shutdown signal recieved, shutting down.")
-
-		wg.Done()
 	}()
 }
 
 // Stop aggregating and recieving requests for statistics data.
 func (agg *Agg) Stop() {
-	go func() {
-		agg.stop <- struct{}{}
-	}()
+	agg.stop <- struct{}{}
 }
 
 // New generates an Agg instance for aggregating statistics data for quantum and exposing those statistics via a REST api interface.

@@ -45,9 +45,6 @@ type Device interface {
 	// Write should handle being passed a formatted *common.Payload, and write the underlying raw data to the specified device queue.
 	Write(payload *common.Payload, queue int) bool
 
-	// Open should handle creating and configuring the virtual network device.
-	Open() error
-
 	// Close should gracefully destroy the virtual network device.
 	Close() error
 
@@ -56,14 +53,14 @@ type Device interface {
 }
 
 // New will generate a new Device struct based on the supplied device deviceType and user configuration
-func New(deviceType Type, cfg *common.Config) Device {
+func New(deviceType Type, cfg *common.Config) (Device, error) {
 	switch deviceType {
 	case TUNDevice:
 		return newTUN(cfg)
 	case MOCKDevice:
 		return newMock(cfg)
 	}
-	return nil
+	return nil, errors.New("build error device type undefined")
 }
 
 func initDevice(name, src string, networkCfg *common.NetworkConfig) error {

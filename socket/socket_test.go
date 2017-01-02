@@ -35,8 +35,10 @@ func BenchmarkWrite(b *testing.B) {
 		NumWorkers: 1,
 		ListenAddr: sa,
 	}
-	sock := New(UDPSocket, cfg)
-	sock.Open()
+	sock, err := New(UDPSocket, cfg)
+	if err != nil {
+		b.Fatal(err)
+	}
 
 	buf := make([]byte, common.MaxPacketLength)
 	rand.Read(buf)

@@ -8,7 +8,6 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"net"
-	"sync"
 	"testing"
 	"time"
 
@@ -26,7 +25,6 @@ var (
 	sock      socket.Socket
 	store     *datastore.Mock
 	privateIP = "10.1.1.1"
-	wg        = &sync.WaitGroup{}
 )
 
 var (
@@ -38,8 +36,8 @@ func init() {
 	ipv6 := net.ParseIP("dead::beef")
 
 	store = &datastore.Mock{}
-	dev = device.New(device.MOCKDevice, nil)
-	sock = socket.New(socket.MOCKSocket, nil)
+	dev, _ = device.New(device.MOCKDevice, nil)
+	sock, _ = socket.New(socket.MOCKSocket, nil)
 
 	key := make([]byte, 32)
 	rand.Read(key)
@@ -58,8 +56,7 @@ func init() {
 			StatsAddress: "127.0.0.1",
 			NumWorkers:   1,
 		})
-	wg.Add(1)
-	aggregator.Start(wg)
+	aggregator.Start()
 
 	incoming = NewIncoming(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, dev, sock)
 	outgoing = NewOutgoing(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, dev, sock)

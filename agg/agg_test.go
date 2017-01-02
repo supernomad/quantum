@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"sync"
 	"testing"
 	"time"
 
@@ -41,9 +40,7 @@ func TestAgg(t *testing.T) {
 			StatsAddress: "127.0.0.1",
 			NumWorkers:   1,
 		})
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	agg.Start(wg)
+	agg.Start()
 	agg.Aggs <- &common.Stat{
 		Direction: common.OutgoingStat,
 		Dropped:   false,
@@ -74,5 +71,4 @@ func TestAgg(t *testing.T) {
 		t.Fatal(err)
 	}
 	agg.Stop()
-	wg.Wait()
 }

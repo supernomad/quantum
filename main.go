@@ -1,16 +1,10 @@
 // Copyright (c) 2016 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
-// Package main contains the main entrypoint for quantum
 package main
 
 import (
-	"io/ioutil"
 	"os"
-	"os/signal"
-	"strconv"
-	"sync"
-	"syscall"
 
 	"github.com/Supernomad/quantum/agg"
 	"github.com/Supernomad/quantum/common"
@@ -29,7 +23,6 @@ func handleError(log *common.Logger, err error) {
 
 func main() {
 	log := common.NewLogger(common.InfoLogger)
-	wg := &sync.WaitGroup{}
 
 	cfg, err := common.NewConfig(log)
 	handleError(log, err)
@@ -40,12 +33,10 @@ func main() {
 	err = store.Init()
 	handleError(log, err)
 
-	dev := device.New(device.TUNDevice, cfg)
-	err = dev.Open()
+	dev, err := device.New(device.TUNDevice, cfg)
 	handleError(log, err)
 
-	sock := socket.New(socket.UDPSocket, cfg)
-	err = sock.Open()
+	sock, err := socket.New(socket.UDPSocket, cfg)
 	handleError(log, err)
 
 	aggregator := agg.New(log, cfg)
@@ -53,65 +44,35 @@ func main() {
 	outgoing := workers.NewOutgoing(cfg, aggregator, store, dev, sock)
 	incoming := workers.NewIncoming(cfg, aggregator, store, dev, sock)
 
-	wg.Add(2)
-	aggregator.Start(wg)
-	store.Start(wg)
+	aggregator.Start()
+	store.Start()
 	for i := 0; i < cfg.NumWorkers; i++ {
 		incoming.Start(i)
 		outgoing.Start(i)
 	}
 
-	log.Info.Println("[MAIN]", "Listening on TUN device:  ", dev.Name())
-	log.Info.Println("[MAIN]", "TUN network space:        ", cfg.NetworkConfig.Network)
-	log.Info.Println("[MAIN]", "TUN private IP address:   ", cfg.PrivateIP)
-	log.Info.Println("[MAIN]", "TUN public IPv4 address:  ", cfg.PublicIPv4)
-	log.Info.Println("[MAIN]", "TUN public IPv6 address:  ", cfg.PublicIPv6)
-	log.Info.Println("[MAIN]", "Listening on UDP port:    ", strconv.Itoa(cfg.ListenPort))
+	log.Info.Printf("[MAIN] Listening on TUN device:  %s", dev.Name())
+	log.Info.Printf("[MAIN] TUN network space:        %s", cfg.NetworkConfig.Network)
+	log.Info.Printf("[MAIN] TUN private IP address:   %s", cfg.PrivateIP)
+	log.Info.Printf("[MAIN] TUN public IPv4 address:  %s", cfg.PublicIPv4)
+	log.Info.Printf("[MAIN] TUN public IPv6 address:  %s", cfg.PublicIPv6)
+	log.Info.Printf("[MAIN] Listening on UDP port:    %d", cfg.ListenPort)
 
-	exit := make(chan struct{})
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
+	fds := make([]int, cfg.NumWorkers*2)
+	copy(fds[0:cfg.NumWorkers], dev.Queues())
+	copy(fds[cfg.NumWorkers:cfg.NumWorkers*2], sock.Queues())
 
-	go func() {
-		sig := <-signals
-		switch {
-		case sig == syscall.SIGHUP:
-			log.Info.Println("[MAIN]", "Received reload signal from user. Reloading process.")
+	signaler := common.NewSignaler(log, cfg, fds, map[string]string{common.RealDeviceNameEnv: dev.Name()})
 
-			sockFDS := sock.GetFDs()
-			tunFDS := dev.Queues()
-
-			files := make([]uintptr, 3+cfg.NumWorkers*2)
-			files[0] = os.Stdin.Fd()
-			files[1] = os.Stdout.Fd()
-			files[2] = os.Stderr.Fd()
-
-			for i := 0; i < cfg.NumWorkers; i++ {
-				files[3+i] = uintptr(tunFDS[i])
-				files[3+i+cfg.NumWorkers] = uintptr(sockFDS[i])
-			}
-
-			os.Setenv(common.RealDeviceNameEnv, dev.Name())
-			pid, err := syscall.ForkExec(os.Args[0], os.Args, &syscall.ProcAttr{
-				Env:   os.Environ(),
-				Files: files,
-			})
-			handleError(log, err)
-
-			ioutil.WriteFile(cfg.PidFile, []byte(strconv.Itoa(pid)), 0644)
-		case sig == syscall.SIGINT || sig == syscall.SIGTERM || sig == syscall.SIGKILL:
-			log.Info.Println("[MAIN]", "Received termination signal from user. Terminating process.")
-		}
-		exit <- struct{}{}
-	}()
-	<-exit
+	err = signaler.Wait()
+	handleError(log, err)
 
 	aggregator.Stop()
 	store.Stop()
+
 	incoming.Stop()
 	outgoing.Stop()
 
 	sock.Close()
 	dev.Close()
-	wg.Wait()
 }

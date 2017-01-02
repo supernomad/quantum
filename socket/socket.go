@@ -4,6 +4,8 @@
 package socket
 
 import (
+	"errors"
+
 	"github.com/Supernomad/quantum/common"
 )
 
@@ -26,23 +28,20 @@ type Socket interface {
 	// Write should handle being passed a formatted *common.Payload, and write the underlying raw data to the specified socket queue.
 	Write(payload *common.Payload, queue int) bool
 
-	// Open should handle creating and configuring the socket.
-	Open() error
-
 	// Close should gracefully destroy the socket.
 	Close() error
 
-	// GetFDs should return all underlying queue file descriptors to pass along during a rolling restart.
-	GetFDs() []int
+	// Queues should return all underlying queue file descriptors to pass along during a rolling restart.
+	Queues() []int
 }
 
 // New generate a new Socket struct based on the supplied device socketType and user configuration.
-func New(socketType Type, cfg *common.Config) Socket {
+func New(socketType Type, cfg *common.Config) (Socket, error) {
 	switch socketType {
 	case UDPSocket:
 		return newUDP(cfg)
 	case MOCKSocket:
 		return newMock(cfg)
 	}
-	return nil
+	return nil, errors.New("build error socket type undefined")
 }

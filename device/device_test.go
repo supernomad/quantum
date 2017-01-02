@@ -37,9 +37,10 @@ func BenchmarkWrite(b *testing.B) {
 			NetworkConfig: common.DefaultNetworkConfig,
 			ReuseFDS:      false,
 		}
-		tun = New(TUNDevice, cfg)
+		var err error
+		tun, err = New(TUNDevice, cfg)
 
-		if err := tun.Open(); err != nil {
+		if err != nil {
 			panic(err.Error())
 		}
 	}

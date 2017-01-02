@@ -5,7 +5,6 @@ package datastore
 
 import (
 	"errors"
-	"sync"
 	"time"
 
 	"github.com/Supernomad/quantum/common"
@@ -33,7 +32,7 @@ type Datastore interface {
 	Mapping(ip uint32) (*common.Mapping, bool)
 
 	// Start should kick off any routines that need to run in the background to groom the mappings and manage the datastore state.
-	Start(wg *sync.WaitGroup)
+	Start()
 
 	// Stop should fully shutdown all operation and ensure that all connections are terminated gracefully.
 	Stop()

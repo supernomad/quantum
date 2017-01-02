@@ -21,21 +21,16 @@ func (mock *Mock) Write(payload *common.Payload, queue int) bool {
 	return true
 }
 
-// Open which is a noop.
-func (mock *Mock) Open() error {
-	return nil
-}
-
 // Close which is a noop.
 func (mock *Mock) Close() error {
 	return nil
 }
 
-// GetFDs which is a noop.
-func (mock *Mock) GetFDs() []int {
+// Queues which is a noop.
+func (mock *Mock) Queues() []int {
 	return nil
 }
 
-func newMock(cfg *common.Config) *Mock {
-	return &Mock{}
+func newMock(cfg *common.Config) (Socket, error) {
+	return &Mock{}, nil
 }

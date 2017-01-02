@@ -16,29 +16,6 @@ type UDP struct {
 	cfg    *common.Config
 }
 
-// Open the UDP socket and configure it to operate within the quantum network.
-func (sock *UDP) Open() error {
-	for i := 0; i < sock.cfg.NumWorkers; i++ {
-		var queue int
-		var err error
-
-		if !sock.cfg.ReuseFDS {
-			queue, err = createUDP(sock.cfg.IsIPv6Enabled)
-			if err != nil {
-				return errors.New("error creating the UDP socket: " + err.Error())
-			}
-			err = initUDP(queue, sock.cfg.ListenAddr)
-			if err != nil {
-				return err
-			}
-		} else {
-			queue = 3 + sock.cfg.NumWorkers + i
-		}
-		sock.queues[i] = queue
-	}
-	return nil
-}
-
 // Close the UDP socket and remove associated network configuration.
 func (sock *UDP) Close() error {
 	for i := 0; i < len(sock.queues); i++ {
@@ -49,8 +26,8 @@ func (sock *UDP) Close() error {
 	return nil
 }
 
-// GetFDs will return the underlying UDP socket file descriptors.
-func (sock *UDP) GetFDs() []int {
+// Queues will return the underlying UDP socket file descriptors.
+func (sock *UDP) Queues() []int {
 	return sock.queues
 }
 
@@ -72,9 +49,28 @@ func (sock *UDP) Write(payload *common.Payload, queue int) bool {
 	return true
 }
 
-func newUDP(cfg *common.Config) *UDP {
+func newUDP(cfg *common.Config) (*UDP, error) {
 	queues := make([]int, cfg.NumWorkers)
-	return &UDP{queues: queues, cfg: cfg}
+	sock := &UDP{queues: queues, cfg: cfg}
+	for i := 0; i < sock.cfg.NumWorkers; i++ {
+		var queue int
+		var err error
+
+		if !sock.cfg.ReuseFDS {
+			queue, err = createUDP(sock.cfg.IsIPv6Enabled)
+			if err != nil {
+				return sock, errors.New("error creating the UDP socket: " + err.Error())
+			}
+			err = initUDP(queue, sock.cfg.ListenAddr)
+			if err != nil {
+				return sock, err
+			}
+		} else {
+			queue = 3 + sock.cfg.NumWorkers + i
+		}
+		sock.queues[i] = queue
+	}
+	return sock, nil
 }
 
 func initUDP(queue int, sa syscall.Sockaddr) error {
