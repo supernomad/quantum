@@ -55,9 +55,9 @@ type Device interface {
 	Queues() []int
 }
 
-// New will generate a new Device struct based on the supplied device kind and user configuration
-func New(kind int, cfg *common.Config) Device {
-	switch kind {
+// New will generate a new Device struct based on the supplied device deviceType and user configuration
+func New(deviceType Type, cfg *common.Config) Device {
+	switch deviceType {
 	case TUNDevice:
 		return newTUN(cfg)
 	case MOCKDevice:
