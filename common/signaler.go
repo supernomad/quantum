@@ -24,10 +24,7 @@ type Signaler struct {
 
 func (sig *Signaler) fork(exec bool, files []uintptr) (int, error) {
 	if exec {
-		return syscall.ForkExec(os.Args[0], os.Args, &syscall.ProcAttr{
-			Env:   os.Environ(),
-			Files: files,
-		})
+		return syscall.ForkExec(os.Args[0], os.Args, &syscall.ProcAttr{Env: os.Environ(), Files: files})
 	}
 	return -1, nil
 }

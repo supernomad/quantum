@@ -407,7 +407,7 @@ func TestStatsLogBytes(t *testing.T) {
 func TestSignaler(t *testing.T) {
 	log := NewLogger(NoopLogger)
 	cfg, err := NewConfig(log)
-	signaler := NewSignaler(log, cfg, []int{}, map[string]string{})
+	signaler := NewSignaler(log, cfg, []int{1}, map[string]string{"QUANTUM_TESTING": "woot"})
 
 	go func() {
 		time.Sleep(1 * time.Second)
@@ -415,6 +415,7 @@ func TestSignaler(t *testing.T) {
 		time.Sleep(1 * time.Second)
 		signaler.signals <- syscall.SIGINT
 	}()
+
 	err = signaler.Wait(false)
 	if err != nil {
 		t.Fatal("Wait returned an error: " + err.Error())
