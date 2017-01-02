@@ -4,6 +4,7 @@
 package device
 
 import (
+	"errors"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -52,7 +53,7 @@ func (tun *Tun) Open() error {
 func (tun *Tun) Close() error {
 	for i := 0; i < len(tun.queues); i++ {
 		if err := syscall.Close(tun.queues[i]); err != nil {
-			return err
+			return errors.New("error closing the device queues: " + err.Error())
 		}
 	}
 	return nil
@@ -97,13 +98,13 @@ func createTUN(name string) (string, int, error) {
 	queue, err := syscall.Open("/dev/net/tun", syscall.O_RDWR, 0)
 	if err != nil {
 		syscall.Close(queue)
-		return "", -1, err
+		return "", -1, errors.New("error opening the /dev/net/tun char file: " + err.Error())
 	}
 
 	_, _, errNo := syscall.Syscall(syscall.SYS_IOCTL, uintptr(queue), uintptr(syscall.TUNSETIFF), uintptr(unsafe.Pointer(&req)))
 	if errNo != 0 {
 		syscall.Close(queue)
-		return "", -1, err
+		return "", -1, errors.New("error setting the TUN device parameters: " + err.Error())
 	}
 
 	return string(req.Name[:strings.Index(string(req.Name[:]), "\000")]), queue, nil

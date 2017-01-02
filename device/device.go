@@ -4,6 +4,7 @@
 package device
 
 import (
+	"errors"
 	"net"
 
 	"github.com/Supernomad/quantum/common"
@@ -68,23 +69,23 @@ func New(kind int, cfg *common.Config) Device {
 func initDevice(name, src string, networkCfg *common.NetworkConfig) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
-		return err
+		return errors.New("error getting the virutal network device from the kernel: " + err.Error())
 	}
 	err = netlink.LinkSetUp(link)
 	if err != nil {
-		return err
+		return errors.New("error upping the virutal network device: " + err.Error())
 	}
 	err = netlink.LinkSetMTU(link, common.MTU)
 	if err != nil {
-		return err
+		return errors.New("error setting the virutal network device MTU: " + err.Error())
 	}
 	addr, err := netlink.ParseAddr(src + "/32")
 	if err != nil {
-		return err
+		return errors.New("error parsing the virutal network device address: " + err.Error())
 	}
 	err = netlink.AddrAdd(link, addr)
 	if err != nil {
-		return err
+		return errors.New("error setting the virutal network device address: " + err.Error())
 	}
 	route := &netlink.Route{
 		LinkIndex: link.Attrs().Index,
@@ -93,5 +94,9 @@ func initDevice(name, src string, networkCfg *common.NetworkConfig) error {
 		Src:       net.ParseIP(src),
 		Dst:       networkCfg.IPNet,
 	}
-	return netlink.RouteAdd(route)
+	err = netlink.RouteAdd(route)
+	if err != nil {
+		return errors.New("error setting the virutal network device network routes: " + err.Error())
+	}
+	return nil
 }
