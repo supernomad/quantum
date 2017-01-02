@@ -26,9 +26,16 @@ const (
 
 // Datastore interface for quantum to use for retrieving mapping data from the backend datastore.
 type Datastore interface {
+	// Init should handle setting up the datastore connections, and initializing the mappings/local mapping.
 	Init() error
+
+	// Mapping should return the mapping and true if it exists, if not the mapping should be nil and false should be returned along with it.
 	Mapping(ip uint32) (*common.Mapping, bool)
+
+	// Start should kick off any routines that need to run in the background to groom the mappings and manage the datastore state.
 	Start(wg *sync.WaitGroup)
+
+	// Stop should fully shutdown all operation and ensure that all connections are terminated gracefully.
 	Stop()
 }
 
