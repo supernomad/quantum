@@ -66,6 +66,6 @@ release:
 	@rm -f quantum
 
 travis: build_deps deps lint compile unit
-	$(MAKE) PUSH_COVERAGE="push" coverage
+	@$(MAKE) PUSH_COVERAGE="push" coverage
 
 dev: deps lint compile unit coverage cleanup

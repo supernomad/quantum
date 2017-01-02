@@ -51,18 +51,18 @@ func main() {
 		outgoing.Start(i)
 	}
 
+	fds := make([]int, cfg.NumWorkers*2)
+	copy(fds[0:cfg.NumWorkers], dev.Queues())
+	copy(fds[cfg.NumWorkers:cfg.NumWorkers*2], sock.Queues())
+
+	signaler := common.NewSignaler(log, cfg, fds, map[string]string{common.RealDeviceNameEnv: dev.Name()})
+
 	log.Info.Printf("[MAIN] Listening on TUN device:  %s", dev.Name())
 	log.Info.Printf("[MAIN] TUN network space:        %s", cfg.NetworkConfig.Network)
 	log.Info.Printf("[MAIN] TUN private IP address:   %s", cfg.PrivateIP)
 	log.Info.Printf("[MAIN] TUN public IPv4 address:  %s", cfg.PublicIPv4)
 	log.Info.Printf("[MAIN] TUN public IPv6 address:  %s", cfg.PublicIPv6)
 	log.Info.Printf("[MAIN] Listening on UDP port:    %d", cfg.ListenPort)
-
-	fds := make([]int, cfg.NumWorkers*2)
-	copy(fds[0:cfg.NumWorkers], dev.Queues())
-	copy(fds[cfg.NumWorkers:cfg.NumWorkers*2], sock.Queues())
-
-	signaler := common.NewSignaler(log, cfg, fds, map[string]string{common.RealDeviceNameEnv: dev.Name()})
 
 	err = signaler.Wait()
 	handleError(log, err)
@@ -73,6 +73,9 @@ func main() {
 	incoming.Stop()
 	outgoing.Stop()
 
-	sock.Close()
-	dev.Close()
+	err = sock.Close()
+	handleError(log, err)
+
+	err = dev.Close()
+	handleError(log, err)
 }
