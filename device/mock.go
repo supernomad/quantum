@@ -7,36 +7,36 @@ import (
 	"github.com/Supernomad/quantum/common"
 )
 
-// Mock device
+// Mock device struct to use for testing.
 type Mock struct {
 }
 
-// Name of the device
+// Name of the mock device.
 func (mock *Mock) Name() string {
 	return "Mocked Device"
 }
 
-// Read which just returns the supplied buffer in the form of a *common.Payload
+// Read which just returns the supplied buffer in the form of a *common.Payload.
 func (mock *Mock) Read(buf []byte, queue int) (*common.Payload, bool) {
 	return common.NewTunPayload(buf, common.MTU), true
 }
 
-// Write which is a noop
+// Write which is a noop.
 func (mock *Mock) Write(payload *common.Payload, queue int) bool {
 	return true
 }
 
-// Open which is a noop
+// Open which is a noop.
 func (mock *Mock) Open() error {
 	return nil
 }
 
-// Close which is a noop
+// Close which is a noop.
 func (mock *Mock) Close() error {
 	return nil
 }
 
-// Queues which is a noop
+// Queues which is a noop.
 func (mock *Mock) Queues() []int {
 	return nil
 }

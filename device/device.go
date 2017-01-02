@@ -1,7 +1,6 @@
 // Copyright (c) 2016 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
-// Package device contains the structs and logic to create, maintain, and operate kernel level networking devices
 package device
 
 import (
@@ -11,12 +10,18 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-const (
-	// TUNDevice type
-	TUNDevice int = 0
-	// MOCKDevice type
-	MOCKDevice int = 2
+// Type defines what kind of virual network device to use.
+type Type int
 
+const (
+	// TUNDevice type creates and manages a TUN based network device.
+	TUNDevice Type = iota
+
+	// MOCKDevice type creates ana manages a mocked our network device for testing.
+	MOCKDevice
+)
+
+const (
 	ifNameSize    = 16
 	iffTun        = 0x0001
 	iffNoPi       = 0x1000
@@ -28,13 +33,24 @@ type ifReq struct {
 	Flags uint16
 }
 
-// Device interface for a generic multi-queue network device
+// Device interface for a generic multi-queue network device.
 type Device interface {
+	// Should return the name of the virual network device.
 	Name() string
+
+	// Read should return a formatted *common.Payload, based on the provided byte slice, off the specified device queue.
 	Read(buf []byte, queue int) (*common.Payload, bool)
+
+	// Write should handle being passed a formatted *common.Payload, and write the underlying raw data to the specified device queue.
 	Write(payload *common.Payload, queue int) bool
+
+	// Open should handle creating and configuring the virtual network device.
 	Open() error
+
+	// Close should gracefully destroy the virtual network device.
 	Close() error
+
+	// Queues should return all underlying queue file descriptors to pass along during a rolling restart.
 	Queues() []int
 }
 
