@@ -67,14 +67,19 @@ type StatsLog struct {
 }
 
 // Bytes returns a byte slice representation of the StatsLog object, if there is an error while marshalling data a nil slice is returned.
-func (statsl *StatsLog) Bytes() []byte {
-	data, _ := json.Marshal(statsl)
+func (statsl *StatsLog) Bytes(pretty bool) []byte {
+	var data []byte
+	if pretty {
+		data, _ = json.MarshalIndent(statsl, "", "    ")
+	} else {
+		data, _ = json.Marshal(statsl)
+	}
 	return data
 }
 
 // String returns a string representation of the StatsLog object, if there is an error while marshalling data an empty string is returned.
-func (statsl *StatsLog) String() string {
-	return string(statsl.Bytes())
+func (statsl *StatsLog) String(pretty bool) string {
+	return string(statsl.Bytes(pretty))
 }
 
 // Stat is used to represent statistics about a single incoming or outgoing packet.

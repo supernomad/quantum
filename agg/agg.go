@@ -39,7 +39,13 @@ func (agg *Agg) returnStats(w http.ResponseWriter, r *http.Request) {
 	header.Set("Content-Type", "application/json")
 	header.Set("Server", "quantum")
 
-	_, err := w.Write(agg.statsLog.Bytes())
+	var err error
+	if val := r.FormValue("pretty"); val != "" {
+		_, err = w.Write(agg.statsLog.Bytes(true))
+	} else {
+		_, err = w.Write(agg.statsLog.Bytes(false))
+	}
+
 	if err != nil {
 		agg.log.Error.Println("[AGG]", "Error writing stats api response:", err.Error())
 	}
