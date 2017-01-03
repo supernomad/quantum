@@ -5,12 +5,12 @@ machine:
     PATH: "/usr/local/go/bin:$PATH"
 dependencies:
   override:
-    - sudo bash -c "export PATH=$PATH && cd $(pwd) && make dependancies"
+    - sudo bash -c "export PATH=$PATH && export GOPATH=$GOPATH && cd $(pwd) && make dependancies"
 
 compile:
   override:
-    - sudo bash -c "export PATH=$PATH && cd $(pwd) && make ci"
+    - sudo bash -c "export PATH=$PATH && export GOPATH=$GOPATH && cd $(pwd) && make ci"
 
 test:
   override:
-    - sudo bash -c "export PATH=$PATH && cd $(pwd) && make benchmark"
+    - sudo bash -c "export PATH=$PATH && export GOPATH=$GOPATH && cd $(pwd) && make benchmark"
