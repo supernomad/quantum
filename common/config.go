@@ -52,7 +52,7 @@ The only exceptions to the above are the two special cli argments '-h'|'--help' 
 type Config struct {
 	ConfFile        string            `skip:"false"  type:"string"    short:"c"    long:"conf-file"         default:""                      description:"The configuration file to use to configure quantum."`
 	DeviceName      string            `skip:"false"  type:"string"    short:"i"    long:"device-name"       default:"quantum%d"             description:"The name to give the TUN device quantum uses, append '%d' to have auto incrementing names."`
-	NumWorkers      int               `skip:"false"  type:"int"       short:"n"    long:"workers"           default:"0"                     description:"The number of quantum workers to use, set to 0 for a worker per available cpu core."`
+	NumWorkers      int               `skip:"false"  type:"int"       short:"n"    long:"workers"           default:"1"                     description:"The number of quantum workers to use, set to 0 for a worker per available cpu core."`
 	PrivateIP       net.IP            `skip:"false"  type:"ip"        short:"ip"   long:"private-ip"        default:""                      description:"The private ip address to assign this quantum instance."`
 	ListenIP        net.IP            `skip:"false"  type:"ip"        short:"lip"  long:"listen-ip"         default:""                      description:"The local server ip to listen on, leave blank of automatic association."`
 	ListenPort      int               `skip:"false"  type:"int"       short:"p"    long:"listen-port"       default:"1099"                  description:"The local server port to listen on."`
@@ -277,11 +277,12 @@ func (cfg *Config) computeArgs() error {
 		cfg.AuthEnabled = true
 	}
 
-	if numCPU := runtime.NumCPU(); cfg.NumWorkers == 0 || cfg.NumWorkers > numCPU {
+	numCPU := runtime.NumCPU()
+	if cfg.NumWorkers <= 0 || cfg.NumWorkers > numCPU {
 		cfg.NumWorkers = numCPU
 	}
 
-	runtime.GOMAXPROCS(cfg.NumWorkers)
+	runtime.GOMAXPROCS(numCPU)
 
 	os.MkdirAll(cfg.DataDir, os.ModeDir)
 	os.MkdirAll(path.Dir(cfg.PidFile), os.ModeDir)

@@ -5,6 +5,7 @@ package workers
 
 import (
 	"encoding/binary"
+	"runtime"
 
 	"github.com/Supernomad/quantum/agg"
 	"github.com/Supernomad/quantum/common"
@@ -88,6 +89,9 @@ func (incoming *Incoming) pipeline(buf []byte, queue int) bool {
 // Start handling packets.
 func (incoming *Incoming) Start(queue int) {
 	go func() {
+		// We don't want this routine migrating between threads.
+		runtime.LockOSThread()
+
 		buf := make([]byte, common.MaxPacketLength)
 		for !incoming.stop {
 			incoming.pipeline(buf, queue)
