@@ -1,20 +1,16 @@
 machine:
   timezone:
     America/New_York
-
+  environment:
+    PATH: "/usr/local/go/bin:$PATH"
 dependencies:
   override:
-    - sudo -i -E bash -c "cd $(pwd) && make install_go"
-    - sudo -i -E bash -c "cd $(pwd) && make build_deps"
-    - sudo -i -E bash -c "cd $(pwd) && make deps"
+    - sudo -i -E bash -c "cd $(pwd) && make dependancies"
 
 compile:
   override:
-    - sudo -i -E bash -c "cd $(pwd) && make lint"
-    - sudo -i -E bash -c "cd $(pwd) && make compile"
+    - sudo -i -E bash -c "cd $(pwd) && make ci"
 
 test:
   override:
-    - sudo -i -E bash -c "cd $(pwd) && make bench"
-    - sudo -i -E bash -c "cd $(pwd) && make coverage"
-    - sudo -i -E bash -c "cd $(pwd) && make cleanup"
+    - sudo -i -E bash -c "cd $(pwd) && make benchmark"

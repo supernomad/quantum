@@ -78,7 +78,11 @@ release:
 	@tar czf quantum_$(VERSION)_linux_amd64.tar.gz quantum LICENSE
 	@rm -f quantum
 
-ci: build_deps deps lint compile unit coverage
+dependancies: install_go build_deps deps
+
+benchmark: bench coverage cleanup
+
+ci: lint compile
 
 dev: deps lint compile unit coverage cleanup
 
