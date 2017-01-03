@@ -1,0 +1,15 @@
+machine:
+  timezone:
+    America/New_York
+
+dependencies:
+  override:
+    - true
+
+compile:
+  override:
+    - sudo -i -E bash -c "cd $(pwd) && make full"
+
+test:
+  override:
+    - true
