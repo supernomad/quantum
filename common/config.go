@@ -121,7 +121,7 @@ func (cfg *Config) fileArg(long string) (string, bool) {
 }
 
 func (cfg *Config) usage(exit bool) {
-	cfg.log.Info.Println("Usage of quantum:")
+	cfg.log.Plain.Println("Usage of quantum:")
 	st := reflect.TypeOf(*cfg)
 
 	numFields := st.NumField()
@@ -132,8 +132,8 @@ func (cfg *Config) usage(exit bool) {
 			continue
 		}
 
-		cfg.log.Info.Printf("\t-%s|--%s  (%s)\n", short, long, fieldType)
-		cfg.log.Info.Printf("\t\t%s (default: '%s')\n", description, def)
+		cfg.log.Plain.Printf("\t-%s|--%s  (%s)\n", short, long, fieldType)
+		cfg.log.Plain.Printf("\t\t%s (default: '%s')\n", description, def)
 	}
 
 	if exit {
@@ -142,7 +142,7 @@ func (cfg *Config) usage(exit bool) {
 }
 
 func (cfg *Config) version(exit bool) {
-	cfg.log.Info.Printf("quantum: v%s\n", version.VERSION)
+	cfg.log.Plain.Printf("quantum: v%s\n", version.VERSION)
 
 	if exit {
 		os.Exit(0)
