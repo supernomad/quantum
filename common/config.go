@@ -281,8 +281,6 @@ func (cfg *Config) computeArgs() error {
 		cfg.NumWorkers = numCPU
 	}
 
-	runtime.GOMAXPROCS(cfg.NumWorkers)
-
 	os.MkdirAll(cfg.DataDir, os.ModeDir)
 	os.MkdirAll(path.Dir(cfg.PidFile), os.ModeDir)
 

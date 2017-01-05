@@ -6,6 +6,7 @@ package workers
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"runtime"
 
 	"github.com/Supernomad/quantum/agg"
 	"github.com/Supernomad/quantum/common"
@@ -98,6 +99,9 @@ func (outgoing *Outgoing) pipeline(buf []byte, queue int) bool {
 // Start handling packets.
 func (outgoing *Outgoing) Start(queue int) {
 	go func() {
+		// We want to pin this routine to a specific thread to reduce switching costs.
+		runtime.LockOSThread()
+
 		buf := make([]byte, common.MaxPacketLength)
 		for !outgoing.stop {
 			outgoing.pipeline(buf, queue)

@@ -5,6 +5,7 @@
 version: "2"
 services:
   quantum0:
+    cpuset: "2,3"
     container_name: quantum0
     build:
       context: "./dist"
@@ -27,6 +28,7 @@ services:
         ipv6_address: fd00:dead:beef::2
     entrypoint: ["/bin/start_quantum.sh", "-endpoints", "etcd.quantum.dev:2379", "-private-ip", "10.99.0.1", "--tls-cert", "/etc/quantum/ssl/certs/quantum0.quantum.dev.crt", "--tls-key", "/etc/quantum/ssl/keys/quantum0.quantum.dev.key", "--tls-ca-cert", "/etc/quantum/ssl/certs/ca.crt"]
   quantum1:
+    cpuset: "0,1,2"
     container_name: quantum1
     build:
       context: "./dist"
@@ -55,6 +57,7 @@ services:
         ipv6_address: fd00:dead:beef::3
     entrypoint: ["/bin/start_quantum.sh"]
   quantum2:
+    cpuset: "1"
     container_name: quantum2
     build:
       context: "./dist"
