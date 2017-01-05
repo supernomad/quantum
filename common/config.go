@@ -57,7 +57,9 @@ type Config struct {
 	ListenIP        net.IP            `skip:"false"  type:"ip"        short:"lip"  long:"listen-ip"         default:""                      description:"The local server ip to listen on, leave blank of automatic association."`
 	ListenPort      int               `skip:"false"  type:"int"       short:"p"    long:"listen-port"       default:"1099"                  description:"The local server port to listen on."`
 	PublicIPv4      net.IP            `skip:"false"  type:"ip"        short:"4"    long:"public-v4"         default:""                      description:"The public ipv4 address to associate with this quantum instance, leave blank for automatic association."`
+	DisableIPv4     bool              `skip:"false"  type:"bool"      short:"d4"   long:"disable-v4"        default:"false"                 description:"Whether or not to disable public ipv4 auto addressing. Use this if you know the server doesn't have public ipv4 addressing."`
 	PublicIPv6      net.IP            `skip:"false"  type:"ip"        short:"6"    long:"public-v6"         default:""                      description:"The public ipv6 address to associate with this quantum instance, leave blank for automatic association."`
+	DisableIPv6     bool              `skip:"false"  type:"bool"      short:"d6"   long:"disable-v6"        default:"false"                 description:"Whether or not to disable public ipv6 auto addressing. Use this if you know the server doesn't have public ipv6 addressing."`
 	Prefix          string            `skip:"false"  type:"string"    short:"pr"   long:"prefix"            default:"quantum"               description:"The prefix to store quantum configuration data under in the backend key/value store."`
 	DataDir         string            `skip:"false"  type:"string"    short:"d"    long:"data-dir"          default:"/var/lib/quantum"      description:"The directory to store local quantum state to."`
 	PidFile         string            `skip:"false"  type:"string"    short:"pf"   long:"pid-file"          default:"/var/run/quantum.pid"  description:"The pid file to use for tracking rolling restarts."`
@@ -300,7 +302,7 @@ func (cfg *Config) computeArgs() error {
 		cfg.ReuseFDS = true
 	}
 
-	if cfg.PublicIPv4 == nil {
+	if cfg.PublicIPv4 == nil && !cfg.DisableIPv4 {
 		routes, err := netlink.RouteGet(googleV4)
 		if err != nil {
 			return errors.New("error retrieving ipv4 route information, check to ensure valid network configuration exists on at the very least the loopback interface")
@@ -309,11 +311,13 @@ func (cfg *Config) computeArgs() error {
 			cfg.PublicIPv4 = routes[0].Src
 			cfg.IsIPv4Enabled = true
 		}
+	} else if cfg.DisableIPv4 {
+		cfg.IsIPv4Enabled = false
 	} else {
 		cfg.IsIPv4Enabled = true
 	}
 
-	if cfg.PublicIPv6 == nil {
+	if cfg.PublicIPv6 == nil && !cfg.DisableIPv6 {
 		routes, err := netlink.RouteGet(googleV6)
 		if err != nil {
 			return errors.New("error retrieving ipv6 route information, check to ensure valid network configuration exists on at the very least the loopback interface")
@@ -326,6 +330,8 @@ func (cfg *Config) computeArgs() error {
 			cfg.PublicIPv6 = routes[0].Src
 			cfg.IsIPv6Enabled = true
 		}
+	} else if cfg.DisableIPv6 {
+		cfg.IsIPv6Enabled = false
 	} else {
 		cfg.IsIPv6Enabled = true
 	}

@@ -6,5 +6,5 @@ package version
 
 const (
 	// VERSION is the current version of the quantum application
-	VERSION = "0.12.3"
+	VERSION = "0.12.4"
 )
