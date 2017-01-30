@@ -5,12 +5,12 @@ After=network.target
 [Service]
 Type=simple
 Restart=on-failure
-EnvironmentFile=/etc/default/quantum
-EnvironmentFile=/etc/quantum/quantum.env
+EnvironmentFile=-/etc/default/quantum
+EnvironmentFile=-/etc/quantum/quantum.env
 PIDFile=/var/run/quantum.pid
 ExecReload=/bin/kill -HUP $MAINPID
 ExecStop=/bin/kill -TERM $MAINPID
-ExecStart=/usr/sbin/quantum --conf-file /etc/quantum/quantum.yml
+ExecStart=/usr/sbin/quantum
 
 [Install]
 WantedBy=default.target
