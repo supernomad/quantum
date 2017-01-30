@@ -35,6 +35,11 @@ func (incoming *Incoming) resolve(payload *common.Payload) (*common.Payload, *co
 }
 
 func (incoming *Incoming) unseal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
+	// This local node and the remote node are unencrypted so traffic between them should be considered "plain text"
+	if incoming.cfg.Unencrypted && mapping.Unencrypted {
+		return payload, true
+	}
+
 	_, err := mapping.Cipher.Open(payload.Packet[:0], payload.Nonce, payload.Packet, payload.IPAddress)
 	if err != nil {
 		return nil, false

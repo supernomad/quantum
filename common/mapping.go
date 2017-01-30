@@ -31,7 +31,10 @@ type Mapping struct {
 	// The port where quantum is listening for remote packets.
 	Port int `json:"port"`
 
-	// The AEAD object to use for encryption/decryption of packets
+	// Whether or not the node requires encrypted traffic.
+	Unencrypted bool `json:"unencrypted"`
+
+	// The AEAD cipher object to use for encryption/decryption of packets
 	Cipher cipher.AEAD `json:"-"`
 
 	// The ipv4 syscall.Sockaddr object for sending data to the node represented by this mapping.
@@ -87,13 +90,14 @@ func ParseMapping(str string, privkey []byte) (*Mapping, error) {
 }
 
 // NewMapping generates a new basic Mapping with no cryptographic metadata.
-func NewMapping(machineID string, privateIP, publicV4, publicV6 net.IP, port int, pubkey []byte) *Mapping {
+func NewMapping(cfg *Config) *Mapping {
 	return &Mapping{
-		MachineID: machineID,
-		IPv4:      publicV4,
-		IPv6:      publicV6,
-		Port:      port,
-		PrivateIP: privateIP,
-		PublicKey: pubkey,
+		MachineID:   cfg.MachineID,
+		Unencrypted: cfg.Unencrypted,
+		IPv4:        cfg.PublicIPv4,
+		IPv6:        cfg.PublicIPv6,
+		Port:        cfg.ListenPort,
+		PrivateIP:   cfg.PrivateIP,
+		PublicKey:   cfg.PublicKey,
 	}
 }

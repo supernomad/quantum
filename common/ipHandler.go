@@ -54,5 +54,5 @@ func GenerateLocalMapping(cfg *Config, mappings map[uint32]*Mapping) (*Mapping, 
 		return nil, errors.New("statically assigned private ip address belongs to another server")
 	}
 
-	return NewMapping(cfg.MachineID, cfg.PrivateIP, cfg.PublicIPv4, cfg.PublicIPv6, cfg.ListenPort, cfg.PublicKey), nil
+	return NewMapping(cfg), nil
 }

@@ -59,13 +59,13 @@ $ make dev
 # Start up the docker test bench
 $ docker-compose up -d
 # Wait a few seconds for initialization to complete
-# Check on the status of the different quantum instances
+# Check on the status of the different quantum containers
 $ docker-compose logs quantum0 quantum1 quantum2
 # Run ping to ensure connectivity over quantum
 $ docker exec -it quantum1 ping 10.99.0.1
 $ docker exec -it quantum2 ping 10.99.0.1
 ```
-After running the above you will have a single etcd instance and three quantum instances running. The three quantum instances are configured to run a quantum network `10.99.0.0/16`, with `quantum0` having a statically defined private ip `10.99.0.1` and `quantum1`/`quantum2` having DHCP defined private ip addresses.
+After running the above you will have a single etcd container and three quantum containers running. The three quantum containers are configured to run a quantum network `10.99.0.0/16`, with `quantum0` having a statically defined private ip `10.99.0.1` and `quantum1`/`quantum2` having DHCP defined private ip addresses.
 
 #### Testing
 To run basic unit testing and builds execute:
@@ -79,13 +79,13 @@ To run code level benchmarks execute:
 
 ``` shell
 # This must be executed as root due to the need to create a tun interface see device/device_test.go for details
-$ sudo -i -E bash -c "cd $GOPATH/src/github.com/Supernomad/quantum && make bench"
+$ sudo -i bash -c "cd $GOPATH/src/github.com/Supernomad/quantum; PATH='$PATH' GOPATH='$GOPATH' make bench"
 ```
 
-To do basic bandwidth based testing the `quantum` containers all have iperf3 installed. For example to test how much through put `quantum0` can handle from both `quantum1`/`quantum2`:
+To do basic bandwidth based testing the `quantum` containers all have iperf3 installed. For example to test how much throughput `quantum0` can handle from both `quantum1`/`quantum2`:
 
 ``` shell
-# Assuming the three development quantum instances are started
+# Assuming the three development quantum containers are started
 # Start three shells
 
 # In first shell start iperf3 server

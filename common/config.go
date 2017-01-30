@@ -51,6 +51,7 @@ The only exceptions to the above are the two special cli argments '-h'|'--help' 
 */
 type Config struct {
 	ConfFile        string            `skip:"false"  type:"string"    short:"c"    long:"conf-file"         default:""                      description:"The configuration file to use to configure quantum."`
+	Unencrypted     bool              `skip:"false"  type:"bool"      short:"ue"   long:"unencrypted"       default:"false"                 description:"Whether or not to authenticate the TLS certificates of the backend key/value store."`
 	DeviceName      string            `skip:"false"  type:"string"    short:"i"    long:"device-name"       default:"quantum%d"             description:"The name to give the TUN device quantum uses, append '%d' to have auto incrementing names."`
 	NumWorkers      int               `skip:"false"  type:"int"       short:"n"    long:"workers"           default:"0"                     description:"The number of quantum workers to use, set to 0 for a worker per available cpu core."`
 	PrivateIP       net.IP            `skip:"false"  type:"ip"        short:"ip"   long:"private-ip"        default:""                      description:"The private ip address to assign this quantum instance."`

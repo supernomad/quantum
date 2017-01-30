@@ -189,28 +189,32 @@ func TestEcdh(t *testing.T) {
 }
 
 func TestNewMapping(t *testing.T) {
-	privateIP := net.ParseIP("0.0.0.0")
-	publicip := net.ParseIP("1.1.1.1")
-	publicip6 := net.ParseIP("dead::beef")
-	publicport := 80
-	publicKey := make([]byte, 32)
-	machineID := "123456"
+	cfg := &Config{
+		PrivateIP:  net.ParseIP("0.0.0.0"),
+		PublicIPv4: net.ParseIP("1.1.1.1"),
+		PublicIPv6: net.ParseIP("dead::beef"),
+		ListenPort: 80,
+		PublicKey:  make([]byte, 32),
+		MachineID:  "123456",
+	}
 
-	actual := NewMapping(machineID, privateIP, publicip, publicip6, publicport, publicKey)
-	if !testEq(actual.IPv4, publicip) || !testEq(actual.IPv6, publicip6) || actual.Port != publicport || !testEq(actual.PrivateIP, privateIP) || !testEq(actual.PublicKey, publicKey) {
+	actual := NewMapping(cfg)
+	if !testEq(actual.IPv4, cfg.PublicIPv4) || !testEq(actual.IPv6, cfg.PublicIPv6) || actual.Port != cfg.ListenPort || !testEq(actual.PrivateIP, cfg.PrivateIP) || !testEq(actual.PublicKey, cfg.PublicKey) {
 		t.Fatalf("NewMapping did not return the right value, got: %v", actual)
 	}
 }
 
 func TestParseMapping(t *testing.T) {
-	privateIP := net.ParseIP("0.0.0.0")
-	publicip := net.ParseIP("1.1.1.1")
-	publicip6 := net.ParseIP("dead::beef")
-	publicport := 80
-	publicKey := make([]byte, 32)
-	machineID := "123456"
+	cfg := &Config{
+		PrivateIP:  net.ParseIP("0.0.0.0"),
+		PublicIPv4: net.ParseIP("1.1.1.1"),
+		PublicIPv6: net.ParseIP("dead::beef"),
+		ListenPort: 80,
+		PublicKey:  make([]byte, 32),
+		MachineID:  "123456",
+	}
 
-	expected := NewMapping(machineID, privateIP, publicip, publicip6, publicport, publicKey)
+	expected := NewMapping(cfg)
 	actual, err := ParseMapping(expected.String(), make([]byte, 32))
 	if err != nil {
 		t.Fatalf("Error occurred during test: %s", err)

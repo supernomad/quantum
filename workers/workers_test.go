@@ -19,16 +19,14 @@ import (
 )
 
 var (
-	outgoing  *Outgoing
-	incoming  *Incoming
+	testMapping, testMappingUnencrypted *common.Mapping
+	outgoing, outgoingUnencrypted       *Outgoing
+	incoming, incomingUnencrypted       *Incoming
+	store, storeUnencrypted             *datastore.Mock
+
 	dev       device.Device
 	sock      socket.Socket
-	store     *datastore.Mock
 	privateIP = "10.1.1.1"
-)
-
-var (
-	testMapping *common.Mapping
 )
 
 func init() {
@@ -36,6 +34,7 @@ func init() {
 	ipv6 := net.ParseIP("dead::beef")
 
 	store = &datastore.Mock{}
+	storeUnencrypted = &datastore.Mock{}
 	dev, _ = device.New(device.MOCKDevice, nil)
 	sock, _ = socket.New(socket.MOCKSocket, nil)
 
@@ -46,8 +45,11 @@ func init() {
 	aesgcm, _ := cipher.NewGCM(block)
 
 	testMapping = &common.Mapping{IPv4: ip, IPv6: ipv6, PublicKey: make([]byte, 32), Cipher: aesgcm}
+	testMappingUnencrypted = &common.Mapping{IPv4: ip, IPv6: ipv6, Unencrypted: true, PublicKey: make([]byte, 32), Cipher: aesgcm}
 
 	store.InternalMapping = testMapping
+	storeUnencrypted.InternalMapping = testMappingUnencrypted
+
 	aggregator := agg.New(
 		common.NewLogger(common.NoopLogger),
 		&common.Config{
@@ -59,27 +61,47 @@ func init() {
 	aggregator.Start()
 
 	incoming = NewIncoming(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, dev, sock)
+	incomingUnencrypted = NewIncoming(&common.Config{Unencrypted: true, NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, storeUnencrypted, dev, sock)
 	outgoing = NewOutgoing(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, dev, sock)
+	outgoingUnencrypted = NewOutgoing(&common.Config{Unencrypted: true, NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, storeUnencrypted, dev, sock)
 }
 
-func benchmarkIncomingPipeline(buf []byte, queue int, b *testing.B) {
+func benchmarkEncryptedIncomingPipeline(buf []byte, queue int, b *testing.B) {
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		incoming.pipeline(buf, queue)
 	}
 }
 
-func BenchmarkIncomingPipeline(b *testing.B) {
+func BenchmarkEncryptedIncomingPipeline(b *testing.B) {
 	buf := make([]byte, common.MaxPacketLength)
 	rand.Read(buf)
 
 	payload := common.NewTunPayload(buf, common.MTU)
 	if sealed, pass := outgoing.seal(payload, testMapping); pass {
-		benchmarkIncomingPipeline(sealed.Raw, 0, b)
+		benchmarkEncryptedIncomingPipeline(sealed.Raw, 0, b)
 	} else {
 		panic("Seal failed something is wrong")
 	}
+}
 
+func benchmarkUnencryptedIncomingPipeline(buf []byte, queue int, b *testing.B) {
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		incomingUnencrypted.pipeline(buf, queue)
+	}
+}
+
+func BenchmarkUnencryptedIncomingPipeline(b *testing.B) {
+	buf := make([]byte, common.MaxPacketLength)
+	rand.Read(buf)
+
+	payload := common.NewTunPayload(buf, common.MTU)
+	if sealed, pass := outgoingUnencrypted.seal(payload, testMappingUnencrypted); pass {
+		benchmarkUnencryptedIncomingPipeline(sealed.Raw, 0, b)
+	} else {
+		panic("Seal failed something is wrong")
+	}
 }
 
 func TestIncomingPipeline(t *testing.T) {
@@ -102,7 +124,7 @@ func TestIncoming(t *testing.T) {
 	incoming.Stop()
 }
 
-func benchmarkOutgoingPipeline(buf []byte, queue int, b *testing.B) {
+func benchmarkEncryptedOutgoingPipeline(buf []byte, queue int, b *testing.B) {
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		if !outgoing.pipeline(buf, queue) {
@@ -111,11 +133,27 @@ func benchmarkOutgoingPipeline(buf []byte, queue int, b *testing.B) {
 	}
 }
 
-func BenchmarkOutgoingPipeline(b *testing.B) {
+func BenchmarkEncryptedOutgoingPipeline(b *testing.B) {
 	buf := make([]byte, common.MaxPacketLength)
 	rand.Read(buf)
 
-	benchmarkOutgoingPipeline(buf, 0, b)
+	benchmarkEncryptedOutgoingPipeline(buf, 0, b)
+}
+
+func benchmarkUnencryptedOutgoingPipeline(buf []byte, queue int, b *testing.B) {
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		if !outgoingUnencrypted.pipeline(buf, queue) {
+			panic("Somthing is wrong.")
+		}
+	}
+}
+
+func BenchmarkUnencryptedOutgoingPipeline(b *testing.B) {
+	buf := make([]byte, common.MaxPacketLength)
+	rand.Read(buf)
+
+	benchmarkUnencryptedOutgoingPipeline(buf, 0, b)
 }
 
 func TestOutgoingPipeline(t *testing.T) {

@@ -2,6 +2,7 @@
 # Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 PUSH_COVERAGE=""
+BENC_MAX_PROCS=1
 
 setup_dev: build_deps gen_certs gen_docker_network build_docker
 
@@ -49,7 +50,7 @@ race:
 
 bench:
 	@echo "Running unit tests with benchmarking enabled..."
-	@go test -bench . -benchmem './...'
+	@GOMAXPROCS=$(BENC_MAX_PROCS) go test -bench . -benchmem './...'
 
 unit:
 	@echo "Running unit tests with benchmarking disabled..."
