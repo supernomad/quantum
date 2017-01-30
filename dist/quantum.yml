@@ -6,6 +6,9 @@
 endpoints: "etcd.quantum.dev:2379"
 public-ip: "172.18.0.5"
 
+unencrypted: true
+trusted: "10.99.2.0/24"
+
 tls-ca-cert: "/etc/quantum/ssl/certs/ca.crt"
 tls-cert: "/etc/quantum/ssl/certs/quantum2.quantum.dev.crt"
 tls-key: "/etc/quantum/ssl/keys/quantum2.quantum.dev.key"

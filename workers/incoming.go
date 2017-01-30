@@ -35,8 +35,8 @@ func (incoming *Incoming) resolve(payload *common.Payload) (*common.Payload, *co
 }
 
 func (incoming *Incoming) unseal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
-	// This local node and the remote node are unencrypted so traffic between them should be considered "plain text"
-	if incoming.cfg.Unencrypted && mapping.Unencrypted {
+	// This local node and the remote node are both unencrypted, and the remote node is trusted, so traffic between them should be considered "plain text"
+	if incoming.cfg.Unencrypted && mapping.Unencrypted && isTrusted(incoming.cfg, mapping) {
 		return payload, true
 	}
 

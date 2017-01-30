@@ -46,6 +46,7 @@ services:
       - quantum1:/var/lib/quantum/
     environment:
       QUANTUM_UNENCRYPTED: "true"
+      QUANTUM_TRUSTED: "10.99.2.1/32,10.99.2.2"
       QUANTUM_ENDPOINTS: "etcd.quantum.dev:2379"
       QUANTUM_PUBLIC_IP: "172.18.0.3"
       QUANTUM_TLS_CA_CERT: "/etc/quantum/ssl/certs/ca.crt"

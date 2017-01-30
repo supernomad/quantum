@@ -38,6 +38,8 @@ func init() {
 	dev, _ = device.New(device.MOCKDevice, nil)
 	sock, _ = socket.New(socket.MOCKSocket, nil)
 
+	_, privateCidr, _ := net.ParseCIDR(privateIP + "/32")
+
 	key := make([]byte, 32)
 	rand.Read(key)
 
@@ -45,7 +47,7 @@ func init() {
 	aesgcm, _ := cipher.NewGCM(block)
 
 	testMapping = &common.Mapping{IPv4: ip, IPv6: ipv6, PublicKey: make([]byte, 32), Cipher: aesgcm}
-	testMappingUnencrypted = &common.Mapping{IPv4: ip, IPv6: ipv6, Unencrypted: true, PublicKey: make([]byte, 32), Cipher: aesgcm}
+	testMappingUnencrypted = &common.Mapping{IPv4: ip, IPv6: ipv6, Unencrypted: true, PublicKey: make([]byte, 32), Cipher: aesgcm, PrivateIP: net.ParseIP(privateIP)}
 
 	store.InternalMapping = testMapping
 	storeUnencrypted.InternalMapping = testMappingUnencrypted
@@ -61,9 +63,9 @@ func init() {
 	aggregator.Start()
 
 	incoming = NewIncoming(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, dev, sock)
-	incomingUnencrypted = NewIncoming(&common.Config{Unencrypted: true, NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, storeUnencrypted, dev, sock)
+	incomingUnencrypted = NewIncoming(&common.Config{Unencrypted: true, NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true, TrustedNetworks: []*net.IPNet{privateCidr}}, aggregator, storeUnencrypted, dev, sock)
 	outgoing = NewOutgoing(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, dev, sock)
-	outgoingUnencrypted = NewOutgoing(&common.Config{Unencrypted: true, NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, storeUnencrypted, dev, sock)
+	outgoingUnencrypted = NewOutgoing(&common.Config{Unencrypted: true, NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true, TrustedNetworks: []*net.IPNet{privateCidr}}, aggregator, storeUnencrypted, dev, sock)
 }
 
 func benchmarkEncryptedIncomingPipeline(buf []byte, queue int, b *testing.B) {

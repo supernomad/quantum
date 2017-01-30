@@ -51,7 +51,8 @@ The only exceptions to the above are the two special cli argments '-h'|'--help' 
 */
 type Config struct {
 	ConfFile        string            `skip:"false"  type:"string"    short:"c"    long:"conf-file"         default:""                      description:"The configuration file to use to configure quantum."`
-	Unencrypted     bool              `skip:"false"  type:"bool"      short:"ue"   long:"unencrypted"       default:"false"                 description:"Whether or not to authenticate the TLS certificates of the backend key/value store."`
+	Unencrypted     bool              `skip:"false"  type:"bool"      short:"ue"   long:"unencrypted"       default:"false"                 description:"Whether or not this node should be considered unencrypted by the rest of the quantum network."`
+	Trusted         []string          `skip:"false"  type:"list"      short:"t"    long:"trusted"           default:""                      description:"A comma delimited list of hosts and/or networks in the quantum network to accept clear text traffic from, if this node is considered unencrypted."`
 	DeviceName      string            `skip:"false"  type:"string"    short:"i"    long:"device-name"       default:"quantum%d"             description:"The name to give the TUN device quantum uses, append '%d' to have auto incrementing names."`
 	NumWorkers      int               `skip:"false"  type:"int"       short:"n"    long:"workers"           default:"0"                     description:"The number of quantum workers to use, set to 0 for a worker per available cpu core."`
 	PrivateIP       net.IP            `skip:"false"  type:"ip"        short:"ip"   long:"private-ip"        default:""                      description:"The private ip address to assign this quantum instance."`
@@ -76,6 +77,7 @@ type Config struct {
 	StatsRoute      string            `skip:"false"  type:"string"    short:"sr"   long:"stats-route"       default:"/stats"                description:"The api route to serve statistics data from."`
 	StatsPort       int               `skip:"false"  type:"int"       short:"sp"   long:"stats-port"        default:"1099"                  description:"The api server port."`
 	StatsAddress    string            `skip:"false"  type:"string"    short:"sa"   long:"stats-address"     default:""                      description:"The api server address."`
+	TrustedNetworks []*net.IPNet      `skip:"true"` // Used to determine whether or not a remote node is considered trusted
 	RealDeviceName  string            `skip:"true"` // Used when a rolling restart is triggered to find the correct tun interface
 	ReuseFDS        bool              `skip:"true"` // Used when a rolling restart is triggered which forces quantum to reuse the passed in socket/tun fds
 	MachineID       string            `skip:"true"` // The generated machine id for this node
@@ -362,6 +364,27 @@ func (cfg *Config) computeArgs() error {
 		cfg.ListenAddr = sa
 	} else {
 		return errors.New("an impossible situation occurred, neither ipv4 or ipv6 is available, check your networking configuration you must have public internet access to use automatic configuration")
+	}
+
+	if cfg.Trusted != nil && len(cfg.Trusted) > 0 && cfg.Trusted[0] != "" {
+		cfg.TrustedNetworks = make([]*net.IPNet, len(cfg.Trusted))
+		for i := 0; i < len(cfg.Trusted); i++ {
+			if !strings.Contains(cfg.Trusted[i], "/") {
+				cfg.Trusted[i] += "/32"
+			}
+
+			_, ipNet, err := net.ParseCIDR(cfg.Trusted[i])
+			if err != nil {
+				return errors.New("supplied trusted ip address or CIDR is invalid")
+			}
+
+			cfg.TrustedNetworks[i] = ipNet
+		}
+	}
+
+	if cfg.Unencrypted && cfg.TrustedNetworks == nil {
+		cfg.log.Warn.Println("[CONFIG]", "Local node is set to unencrypted, but there are no trusted hosts or networks defined. Falling back to encrypted only traffic. Please define trusted hosts or networks in order to utilize clear text packet transmissions.")
+		cfg.Unencrypted = false
 	}
 
 	pid := os.Getpid()
