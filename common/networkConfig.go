@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Christian Saide <Supernomad>
+// Copyright (c) 2016-2017 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 package common
@@ -13,8 +13,17 @@ import (
 // DefaultNetworkConfig to use when the NetworkConfig is not specified in the backend datastore.
 var DefaultNetworkConfig *NetworkConfig
 
+const (
+	defaultBackend     = "udp"
+	defaultNetwork     = "10.99.0.0/16"
+	defaultStaticRange = "10.99.0.0/23"
+)
+
 // NetworkConfig object to represent the current network setup.
 type NetworkConfig struct {
+	// The backend to use for communication.
+	Backend string `json:"backend"`
+
 	// The network range that represents the quantum network.
 	Network string `json:"network"`
 
@@ -80,8 +89,9 @@ func (networkCfg *NetworkConfig) String() string {
 func init() {
 	defaultLeaseTime, _ := time.ParseDuration("48h")
 	DefaultNetworkConfig = &NetworkConfig{
-		Network:     "10.99.0.0/16",
-		StaticRange: "10.99.0.0/23",
+		Backend:     defaultBackend,
+		Network:     defaultNetwork,
+		StaticRange: defaultStaticRange,
 		LeaseTime:   defaultLeaseTime,
 	}
 

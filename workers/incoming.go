@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Christian Saide <Supernomad>
+// Copyright (c) 2016-2017 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 package workers
@@ -11,6 +11,7 @@ import (
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/datastore"
 	"github.com/Supernomad/quantum/device"
+	"github.com/Supernomad/quantum/plugin"
 	"github.com/Supernomad/quantum/socket"
 )
 
@@ -18,6 +19,7 @@ import (
 type Incoming struct {
 	cfg        *common.Config
 	aggregator *agg.Agg
+	plugins    []plugin.Plugin
 	dev        device.Device
 	sock       socket.Socket
 	store      datastore.Datastore
@@ -32,20 +34,6 @@ func (incoming *Incoming) resolve(payload *common.Payload) (*common.Payload, *co
 	}
 
 	return nil, nil, false
-}
-
-func (incoming *Incoming) unseal(payload *common.Payload, mapping *common.Mapping) (*common.Payload, bool) {
-	// This local node and the remote node are both unencrypted, and the remote node is trusted, so traffic between them should be considered "plain text"
-	if incoming.cfg.Unencrypted && mapping.Unencrypted && isTrusted(incoming.cfg, mapping) {
-		return payload, true
-	}
-
-	_, err := mapping.Cipher.Open(payload.Packet[:0], payload.Nonce, payload.Packet, payload.IPAddress)
-	if err != nil {
-		return nil, false
-	}
-
-	return payload, true
 }
 
 func (incoming *Incoming) stats(dropped bool, queue int, payload *common.Payload, mapping *common.Mapping) {
@@ -67,7 +55,7 @@ func (incoming *Incoming) stats(dropped bool, queue int, payload *common.Payload
 }
 
 func (incoming *Incoming) pipeline(buf []byte, queue int) bool {
-	payload, ok := incoming.sock.Read(buf, queue)
+	payload, ok := incoming.sock.Read(queue, buf)
 	if !ok {
 		incoming.stats(true, queue, payload, nil)
 		return ok
@@ -77,12 +65,14 @@ func (incoming *Incoming) pipeline(buf []byte, queue int) bool {
 		incoming.stats(true, queue, payload, mapping)
 		return ok
 	}
-	payload, ok = incoming.unseal(payload, mapping)
-	if !ok {
-		incoming.stats(true, queue, payload, mapping)
-		return ok
+	for i := 0; i < len(incoming.plugins); i++ {
+		payload, mapping, ok = incoming.plugins[i].Apply(plugin.Incoming, payload, mapping)
+		if !ok {
+			incoming.stats(true, queue, payload, mapping)
+			return ok
+		}
 	}
-	ok = incoming.dev.Write(payload, queue)
+	ok = incoming.dev.Write(queue, payload)
 	if !ok {
 		incoming.stats(true, queue, payload, mapping)
 		return ok
@@ -110,10 +100,11 @@ func (incoming *Incoming) Stop() {
 }
 
 // NewIncoming generates a new Incoming worker which once started will handle packets coming from the remote nodes in the quantum network destined for the local node.
-func NewIncoming(cfg *common.Config, aggregator *agg.Agg, store datastore.Datastore, dev device.Device, sock socket.Socket) *Incoming {
+func NewIncoming(cfg *common.Config, aggregator *agg.Agg, store datastore.Datastore, plugins []plugin.Plugin, dev device.Device, sock socket.Socket) *Incoming {
 	return &Incoming{
 		cfg:        cfg,
 		aggregator: aggregator,
+		plugins:    plugins,
 		dev:        dev,
 		sock:       sock,
 		store:      store,

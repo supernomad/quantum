@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Christian Saide <Supernomad>
+// Copyright (c) 2016-2017 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 package main
@@ -10,6 +10,7 @@ import (
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/datastore"
 	"github.com/Supernomad/quantum/device"
+	"github.com/Supernomad/quantum/plugin"
 	"github.com/Supernomad/quantum/socket"
 	"github.com/Supernomad/quantum/workers"
 )
@@ -33,16 +34,23 @@ func main() {
 	err = store.Init()
 	handleError(log, err)
 
+	plugins := make([]plugin.Plugin, len(cfg.Plugins))
+	for i := 0; i < len(plugins); i++ {
+		plugin, err := plugin.New(cfg.Plugins[i], cfg)
+		handleError(log, err)
+		plugins[i] = plugin
+	}
+
 	dev, err := device.New(device.TUNDevice, cfg)
 	handleError(log, err)
 
-	sock, err := socket.New(socket.UDPSocket, cfg)
+	sock, err := socket.New(cfg.NetworkConfig.Backend, cfg)
 	handleError(log, err)
 
 	aggregator := agg.New(log, cfg)
 
-	outgoing := workers.NewOutgoing(cfg, aggregator, store, dev, sock)
-	incoming := workers.NewIncoming(cfg, aggregator, store, dev, sock)
+	outgoing := workers.NewOutgoing(cfg, aggregator, store, plugins, dev, sock)
+	incoming := workers.NewIncoming(cfg, aggregator, store, plugins, dev, sock)
 
 	aggregator.Start()
 	store.Start()
@@ -62,7 +70,8 @@ func main() {
 	log.Info.Printf("[MAIN] TUN private IP address:   %s", cfg.PrivateIP)
 	log.Info.Printf("[MAIN] TUN public IPv4 address:  %s", cfg.PublicIPv4)
 	log.Info.Printf("[MAIN] TUN public IPv6 address:  %s", cfg.PublicIPv6)
-	log.Info.Printf("[MAIN] Listening on UDP port:    %d", cfg.ListenPort)
+	log.Info.Printf("[MAIN] Using backend:            %s", cfg.NetworkConfig.Backend)
+	log.Info.Printf("[MAIN] Listening on port:        %d", cfg.ListenPort)
 
 	err = signaler.Wait(true)
 	handleError(log, err)

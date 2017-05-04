@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Christian Saide <Supernomad>
+// Copyright (c) 2016-2017 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 package common
@@ -22,30 +22,16 @@ var (
 )
 
 func init() {
-	testPacket = make([]byte, 18)
+	testPacket = make([]byte, 6)
 	// IP (1.1.1.1)
 	testPacket[0] = 1
 	testPacket[1] = 1
 	testPacket[2] = 1
 	testPacket[3] = 1
 
-	// Nonce
-	testPacket[4] = 2
-	testPacket[5] = 2
-	testPacket[6] = 2
-	testPacket[7] = 2
-	testPacket[8] = 2
-	testPacket[9] = 2
-	testPacket[10] = 2
-	testPacket[11] = 2
-	testPacket[12] = 2
-	testPacket[13] = 2
-	testPacket[14] = 2
-	testPacket[15] = 2
-
 	// Packet data
-	testPacket[16] = 3
-	testPacket[17] = 3
+	testPacket[4] = 3
+	testPacket[5] = 3
 }
 
 func testEq(a, b []byte) bool {
@@ -137,7 +123,7 @@ func TestNewConfig(t *testing.T) {
 	os.Setenv("QUANTUM_PID_FILE", "../quantum.pid")
 	os.Setenv("_QUANTUM_REAL_DEVICE_NAME_", "quantum0")
 
-	os.Args = append(os.Args, "-n", "100", "--prefix", "woot", "--tls-skip-verify", "-6", "fd00:dead:beef::2")
+	os.Args = append(os.Args, "-n", "100", "--datastore-prefix", "woot", "--datastore-tls-skip-verify", "-6", "fd00:dead:beef::2")
 	cfg, err := NewConfig(NewLogger(NoopLogger))
 	if err != nil {
 		t.Fatalf("NewConfig returned an error, %s", err)
@@ -151,41 +137,21 @@ func TestNewConfig(t *testing.T) {
 	if cfg.ListenPort != 1 {
 		t.Fatalf("NewConfig didn't pick up the environment variable replacement for ListenPort")
 	}
-	if cfg.Password != "Password1" {
+	if cfg.DatastorePassword != "Password1" {
 		t.Fatalf("NewConfig didn't pick up the config file replacement for Password")
 	}
-	if cfg.Prefix != "woot" {
+	if cfg.DatastorePrefix != "woot" {
 		t.Fatal("NewConfig didn't pick up the cli replacement for Prefix")
 	}
 	if cfg.NumWorkers != runtime.NumCPU() {
 		t.Fatal("NewConfig didn't pick up the cli replacement for NumWorkers")
 	}
-	if !cfg.TLSSkipVerify {
-		t.Fatal("NewConfig didn't pick up the cli replacement for TLSSkipVerify")
+	if !cfg.DatastoreTLSSkipVerify {
+		t.Fatal("NewConfig didn't pick up the cli replacement for DatastoreTLSSkipVerify")
 	}
 
 	cfg.usage(false)
 	cfg.version(false)
-}
-
-func TestEcdh(t *testing.T) {
-	pub, priv := GenerateECKeyPair()
-	if len(pub) != keyLength {
-		t.Fatalf("GenerateECKeyPair did not return the right length for the public key,\nactual: %d, expected: %d", len(pub), keyLength)
-	}
-	if len(priv) != keyLength {
-		t.Fatalf("GenerateECKeyPair did not return the right length for the private key,\nactual: %d, expected: %d", len(priv), keyLength)
-	}
-	if testEq(pub, priv) {
-		t.Fatalf("GenerateECKeyPair returned identical pub/priv keys this can't possibly happen:\npub: %v, priv: %v", pub, priv)
-	}
-	secret := GenerateSharedSecret(pub, priv)
-	if len(secret) != keyLength {
-		t.Fatalf("GenerateECKeyPair did not return the right length for the shared secret,\nactual: %d, expected: %d", len(secret), keyLength)
-	}
-	if testEq(secret, pub) || testEq(secret, priv) {
-		t.Fatalf("GenerateECKeyPair returned identical secret and pub/priv keys this can't possibly happen:\npub: %v, priv: %v, secret: %v", pub, priv, secret)
-	}
 }
 
 func TestNewMapping(t *testing.T) {
@@ -194,32 +160,32 @@ func TestNewMapping(t *testing.T) {
 		PublicIPv4: net.ParseIP("1.1.1.1"),
 		PublicIPv6: net.ParseIP("dead::beef"),
 		ListenPort: 80,
-		PublicKey:  make([]byte, 32),
 		MachineID:  "123456",
 	}
 
 	actual := NewMapping(cfg)
-	if !testEq(actual.IPv4, cfg.PublicIPv4) || !testEq(actual.IPv6, cfg.PublicIPv6) || actual.Port != cfg.ListenPort || !testEq(actual.PrivateIP, cfg.PrivateIP) || !testEq(actual.PublicKey, cfg.PublicKey) {
+	if !testEq(actual.IPv4, cfg.PublicIPv4) || !testEq(actual.IPv6, cfg.PublicIPv6) || actual.Port != cfg.ListenPort || !testEq(actual.PrivateIP, cfg.PrivateIP) {
 		t.Fatalf("NewMapping did not return the right value, got: %v", actual)
 	}
 }
 
 func TestParseMapping(t *testing.T) {
 	cfg := &Config{
-		PrivateIP:  net.ParseIP("0.0.0.0"),
-		PublicIPv4: net.ParseIP("1.1.1.1"),
-		PublicIPv6: net.ParseIP("dead::beef"),
-		ListenPort: 80,
-		PublicKey:  make([]byte, 32),
-		MachineID:  "123456",
+		PrivateIP:     net.ParseIP("0.0.0.0"),
+		PublicIPv4:    net.ParseIP("1.1.1.1"),
+		IsIPv4Enabled: true,
+		PublicIPv6:    net.ParseIP("dead::beef"),
+		IsIPv6Enabled: true,
+		ListenPort:    80,
+		MachineID:     "123456",
 	}
 
 	expected := NewMapping(cfg)
-	actual, err := ParseMapping(expected.String(), make([]byte, 32))
+	actual, err := ParseMapping(expected.String(), cfg)
 	if err != nil {
 		t.Fatalf("Error occurred during test: %s", err)
 	}
-	if !testEq(actual.IPv4, expected.IPv4) || actual.Port != expected.Port || !testEq(actual.PrivateIP, expected.PrivateIP) || !testEq(actual.PublicKey, expected.PublicKey) {
+	if !testEq(actual.IPv4, expected.IPv4) || actual.Port != expected.Port || !testEq(actual.PrivateIP, expected.PrivateIP) {
 		t.Fatalf("ParseMapping did not return the right value, got: %v, expected: %v", actual, expected)
 	}
 }
@@ -275,12 +241,6 @@ func TestNewTunPayload(t *testing.T) {
 		}
 	}
 
-	for i := 0; i < 12; i++ {
-		if payload.Nonce[i] != 2 {
-			t.Fatal("NewTunPayload returned an incorrect Nonce mapping.")
-		}
-	}
-
 	for i := 0; i < 2; i++ {
 		if payload.Packet[i] != 3 {
 			t.Fatal("NewTunPayload returned an incorrect Packet mapping.")
@@ -289,16 +249,10 @@ func TestNewTunPayload(t *testing.T) {
 }
 
 func TestNewSockPayload(t *testing.T) {
-	payload := NewSockPayload(testPacket, 18)
+	payload := NewSockPayload(testPacket, 6)
 	for i := 0; i < 4; i++ {
 		if payload.IPAddress[i] != 1 {
 			t.Fatal("NewTunPayload returned an incorrect IP address mapping.")
-		}
-	}
-
-	for i := 0; i < 12; i++ {
-		if payload.Nonce[i] != 2 {
-			t.Fatal("NewTunPayload returned an incorrect Nonce mapping.")
 		}
 	}
 
@@ -348,7 +302,6 @@ func TestGenerateLocalMapping(t *testing.T) {
 		PublicIPv4:    net.ParseIP("192.167.0.1"),
 		PublicIPv6:    net.ParseIP("fd00:dead:beef::2"),
 		ListenPort:    1099,
-		PublicKey:     make([]byte, 32),
 		NetworkConfig: DefaultNetworkConfig,
 		MachineID:     "123",
 	}

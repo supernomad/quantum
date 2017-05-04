@@ -1,11 +1,9 @@
-// Copyright (c) 2016 Christian Saide <Supernomad>
+// Copyright (c) 2016-2017 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 package workers
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
 	"crypto/rand"
 	"net"
 	"testing"
@@ -15,14 +13,15 @@ import (
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/datastore"
 	"github.com/Supernomad/quantum/device"
+	"github.com/Supernomad/quantum/plugin"
 	"github.com/Supernomad/quantum/socket"
 )
 
 var (
-	testMapping, testMappingUnencrypted *common.Mapping
-	outgoing, outgoingUnencrypted       *Outgoing
-	incoming, incomingUnencrypted       *Incoming
-	store, storeUnencrypted             *datastore.Mock
+	testMapping *common.Mapping
+	outgoing    *Outgoing
+	incoming    *Incoming
+	store       *datastore.Mock
 
 	dev       device.Device
 	sock      socket.Socket
@@ -34,23 +33,14 @@ func init() {
 	ipv6 := net.ParseIP("dead::beef")
 
 	store = &datastore.Mock{}
-	storeUnencrypted = &datastore.Mock{}
 	dev, _ = device.New(device.MOCKDevice, nil)
 	sock, _ = socket.New(socket.MOCKSocket, nil)
-
-	_, privateCidr, _ := net.ParseCIDR(privateIP + "/32")
 
 	key := make([]byte, 32)
 	rand.Read(key)
 
-	block, _ := aes.NewCipher(key)
-	aesgcm, _ := cipher.NewGCM(block)
-
-	testMapping = &common.Mapping{IPv4: ip, IPv6: ipv6, PublicKey: make([]byte, 32), Cipher: aesgcm}
-	testMappingUnencrypted = &common.Mapping{IPv4: ip, IPv6: ipv6, Unencrypted: true, PublicKey: make([]byte, 32), Cipher: aesgcm, PrivateIP: net.ParseIP(privateIP)}
-
+	testMapping = &common.Mapping{IPv4: ip, IPv6: ipv6}
 	store.InternalMapping = testMapping
-	storeUnencrypted.InternalMapping = testMappingUnencrypted
 
 	aggregator := agg.New(
 		common.NewLogger(common.NoopLogger),
@@ -62,48 +52,23 @@ func init() {
 		})
 	aggregator.Start()
 
-	incoming = NewIncoming(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, dev, sock)
-	incomingUnencrypted = NewIncoming(&common.Config{Unencrypted: true, NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true, TrustedNetworks: []*net.IPNet{privateCidr}}, aggregator, storeUnencrypted, dev, sock)
-	outgoing = NewOutgoing(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, dev, sock)
-	outgoingUnencrypted = NewOutgoing(&common.Config{Unencrypted: true, NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true, TrustedNetworks: []*net.IPNet{privateCidr}}, aggregator, storeUnencrypted, dev, sock)
+	incoming = NewIncoming(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, []plugin.Plugin{}, dev, sock)
+	outgoing = NewOutgoing(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, []plugin.Plugin{}, dev, sock)
 }
 
-func benchmarkEncryptedIncomingPipeline(buf []byte, queue int, b *testing.B) {
+func benchmarkIncomingPipeline(buf []byte, queue int, b *testing.B) {
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		incoming.pipeline(buf, queue)
 	}
 }
 
-func BenchmarkEncryptedIncomingPipeline(b *testing.B) {
+func BenchmarkIncomingPipeline(b *testing.B) {
 	buf := make([]byte, common.MaxPacketLength)
 	rand.Read(buf)
 
 	payload := common.NewTunPayload(buf, common.MTU)
-	if sealed, pass := outgoing.seal(payload, testMapping); pass {
-		benchmarkEncryptedIncomingPipeline(sealed.Raw, 0, b)
-	} else {
-		panic("Seal failed something is wrong")
-	}
-}
-
-func benchmarkUnencryptedIncomingPipeline(buf []byte, queue int, b *testing.B) {
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		incomingUnencrypted.pipeline(buf, queue)
-	}
-}
-
-func BenchmarkUnencryptedIncomingPipeline(b *testing.B) {
-	buf := make([]byte, common.MaxPacketLength)
-	rand.Read(buf)
-
-	payload := common.NewTunPayload(buf, common.MTU)
-	if sealed, pass := outgoingUnencrypted.seal(payload, testMappingUnencrypted); pass {
-		benchmarkUnencryptedIncomingPipeline(sealed.Raw, 0, b)
-	} else {
-		panic("Seal failed something is wrong")
-	}
+	benchmarkIncomingPipeline(payload.Raw, 0, b)
 }
 
 func TestIncomingPipeline(t *testing.T) {
@@ -111,12 +76,8 @@ func TestIncomingPipeline(t *testing.T) {
 	rand.Read(buf)
 
 	payload := common.NewTunPayload(buf, common.MTU)
-	if sealed, pass := outgoing.seal(payload, testMapping); pass {
-		if !incoming.pipeline(sealed.Raw, 0) {
-			panic("Somthing is wrong.")
-		}
-	} else {
-		panic("Seal failed something is wrong")
+	if !incoming.pipeline(payload.Raw, 0) {
+		panic("Pipeline failed something is wrong.")
 	}
 }
 
@@ -126,7 +87,7 @@ func TestIncoming(t *testing.T) {
 	incoming.Stop()
 }
 
-func benchmarkEncryptedOutgoingPipeline(buf []byte, queue int, b *testing.B) {
+func benchmarkOutgoingPipeline(buf []byte, queue int, b *testing.B) {
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		if !outgoing.pipeline(buf, queue) {
@@ -135,27 +96,11 @@ func benchmarkEncryptedOutgoingPipeline(buf []byte, queue int, b *testing.B) {
 	}
 }
 
-func BenchmarkEncryptedOutgoingPipeline(b *testing.B) {
+func BenchmarkOutgoingPipeline(b *testing.B) {
 	buf := make([]byte, common.MaxPacketLength)
 	rand.Read(buf)
 
-	benchmarkEncryptedOutgoingPipeline(buf, 0, b)
-}
-
-func benchmarkUnencryptedOutgoingPipeline(buf []byte, queue int, b *testing.B) {
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		if !outgoingUnencrypted.pipeline(buf, queue) {
-			panic("Somthing is wrong.")
-		}
-	}
-}
-
-func BenchmarkUnencryptedOutgoingPipeline(b *testing.B) {
-	buf := make([]byte, common.MaxPacketLength)
-	rand.Read(buf)
-
-	benchmarkUnencryptedOutgoingPipeline(buf, 0, b)
+	benchmarkOutgoingPipeline(buf, 0, b)
 }
 
 func TestOutgoingPipeline(t *testing.T) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Christian Saide <Supernomad>
+// Copyright (c) 2016-2017 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 package socket
@@ -12,14 +12,14 @@ import (
 
 // UDP socket struct for managing a multi-queue udp socket.
 type UDP struct {
-	queues []int
 	cfg    *common.Config
+	queues []int
 }
 
-// Close the UDP socket and remove associated network configuration.
-func (sock *UDP) Close() error {
-	for i := 0; i < len(sock.queues); i++ {
-		if err := syscall.Close(sock.queues[i]); err != nil {
+// Close the UDP socket and removes associated network configuration.
+func (udp *UDP) Close() error {
+	for i := 0; i < len(udp.queues); i++ {
+		if err := syscall.Close(udp.queues[i]); err != nil {
 			return errors.New("error closing the socket queues: " + err.Error())
 		}
 	}
@@ -27,13 +27,13 @@ func (sock *UDP) Close() error {
 }
 
 // Queues will return the underlying UDP socket file descriptors.
-func (sock *UDP) Queues() []int {
-	return sock.queues
+func (udp *UDP) Queues() []int {
+	return udp.queues
 }
 
 // Read a packet off the specified UDP socket queue and return a *common.Payload representation of the packet.
-func (sock *UDP) Read(buf []byte, queue int) (*common.Payload, bool) {
-	n, _, err := syscall.Recvfrom(sock.queues[queue], buf, 0)
+func (udp *UDP) Read(queue int, buf []byte) (*common.Payload, bool) {
+	n, _, err := syscall.Recvfrom(udp.queues[queue], buf, 0)
 	if err != nil {
 		return nil, false
 	}
@@ -41,55 +41,30 @@ func (sock *UDP) Read(buf []byte, queue int) (*common.Payload, bool) {
 }
 
 // Write a *common.Payload to the specified UDP socket queue.
-func (sock *UDP) Write(payload *common.Payload, queue int) bool {
-	err := syscall.Sendto(sock.queues[queue], payload.Raw[:payload.Length], 0, payload.Sockaddr)
-	if err != nil {
-		return false
-	}
-	return true
+func (udp *UDP) Write(queue int, payload *common.Payload, mapping *common.Mapping) bool {
+	err := syscall.Sendto(udp.queues[queue], payload.Raw[:payload.Length], 0, mapping.Sockaddr)
+	return err == nil
 }
 
 func newUDP(cfg *common.Config) (*UDP, error) {
-	queues := make([]int, cfg.NumWorkers)
-	sock := &UDP{queues: queues, cfg: cfg}
-	for i := 0; i < sock.cfg.NumWorkers; i++ {
+	udp := &UDP{
+		cfg:    cfg,
+		queues: make([]int, cfg.NumWorkers),
+	}
+
+	for i := 0; i < udp.cfg.NumWorkers; i++ {
 		var queue int
 		var err error
 
-		if !sock.cfg.ReuseFDS {
-			queue, err = createUDP(sock.cfg.IsIPv6Enabled)
+		if !udp.cfg.ReuseFDS {
+			queue, err = createUDPSocket(udp.cfg.IsIPv6Enabled, udp.cfg.ListenAddr)
 			if err != nil {
-				return sock, errors.New("error creating the UDP socket: " + err.Error())
-			}
-			err = initUDP(queue, sock.cfg.ListenAddr)
-			if err != nil {
-				return sock, err
+				return udp, errors.New("error creating the UDP socket: " + err.Error())
 			}
 		} else {
-			queue = 3 + sock.cfg.NumWorkers + i
+			queue = 3 + udp.cfg.NumWorkers + i
 		}
-		sock.queues[i] = queue
+		udp.queues[i] = queue
 	}
-	return sock, nil
-}
-
-func initUDP(queue int, sa syscall.Sockaddr) error {
-	err := syscall.SetsockoptInt(queue, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
-	if err != nil {
-		return errors.New("error setting the UDP socket parameters: " + err.Error())
-	}
-
-	err = syscall.Bind(queue, sa)
-	if err != nil {
-		return errors.New("error binding the UDP socket to the configured listen address: " + err.Error())
-	}
-
-	return nil
-}
-
-func createUDP(ipv6Enabled bool) (int, error) {
-	if ipv6Enabled {
-		return syscall.Socket(syscall.AF_INET6, syscall.SOCK_DGRAM, 0)
-	}
-	return syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, 0)
+	return udp, nil
 }

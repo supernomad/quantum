@@ -17,7 +17,7 @@ name_opt         = ca_default
 cert_opt         = ca_default
 default_days     = 3650
 default_crl_days = 30
-default_md       = sha512
+default_md       = sha384
 preserve         = no
 policy           = policy_etcd
 
@@ -28,11 +28,12 @@ commonName       = supplied
 [ req ]
 default_bits       = 4096
 default_keyfile    = privkey.pem
+default_md         = sha384
 distinguished_name = req_distinguished_name
 attributes         = req_attributes
 x509_extensions    = v3_ca
 string_mask        = utf8only
-req_extensions     = etcd_client
+req_extensions     = v3_client
 
 [ req_distinguished_name ]
 countryName                = Country Name (2 letter code)
@@ -50,12 +51,12 @@ basicConstraints       = CA:true
 keyUsage               = keyCertSign,cRLSign
 subjectKeyIdentifier   = hash
 
-[ etcd_client ]
+[ v3_client ]
 basicConstraints       = CA:FALSE
 extendedKeyUsage       = clientAuth
 keyUsage               = digitalSignature, keyEncipherment
 
-[ etcd_server ]
+[ v3_server ]
 basicConstraints       = CA:FALSE
 extendedKeyUsage       = clientAuth, serverAuth
 keyUsage               = digitalSignature, keyEncipherment

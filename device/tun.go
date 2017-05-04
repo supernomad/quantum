@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Christian Saide <Supernomad>
+// Copyright (c) 2016-2017 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 package device
@@ -42,7 +42,7 @@ func (tun *Tun) Queues() []int {
 }
 
 // Read a packet off the specified device queue and return a *common.Payload representation of the packet.
-func (tun *Tun) Read(buf []byte, queue int) (*common.Payload, bool) {
+func (tun *Tun) Read(queue int, buf []byte) (*common.Payload, bool) {
 	n, err := syscall.Read(tun.queues[queue], buf[common.PacketStart:])
 	if err != nil {
 		return nil, false
@@ -51,12 +51,9 @@ func (tun *Tun) Read(buf []byte, queue int) (*common.Payload, bool) {
 }
 
 // Write a *common.Payload to the specified device queue.
-func (tun *Tun) Write(payload *common.Payload, queue int) bool {
+func (tun *Tun) Write(queue int, payload *common.Payload) bool {
 	_, err := syscall.Write(tun.queues[queue], payload.Packet)
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 func newTUN(cfg *common.Config) (Device, error) {
@@ -112,23 +109,23 @@ func createTUN(name string) (string, int, error) {
 func initTun(name, src string, networkCfg *common.NetworkConfig) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
-		return errors.New("error getting the virutal network device from the kernel: " + err.Error())
+		return errors.New("error getting the virtual network device from the kernel: " + err.Error())
 	}
 	err = netlink.LinkSetUp(link)
 	if err != nil {
-		return errors.New("error upping the virutal network device: " + err.Error())
+		return errors.New("error upping the virtual network device: " + err.Error())
 	}
 	err = netlink.LinkSetMTU(link, common.MTU)
 	if err != nil {
-		return errors.New("error setting the virutal network device MTU: " + err.Error())
+		return errors.New("error setting the virtual network device MTU: " + err.Error())
 	}
 	addr, err := netlink.ParseAddr(src + "/32")
 	if err != nil {
-		return errors.New("error parsing the virutal network device address: " + err.Error())
+		return errors.New("error parsing the virtual network device address: " + err.Error())
 	}
 	err = netlink.AddrAdd(link, addr)
 	if err != nil {
-		return errors.New("error setting the virutal network device address: " + err.Error())
+		return errors.New("error setting the virtual network device address: " + err.Error())
 	}
 	route := &netlink.Route{
 		LinkIndex: link.Attrs().Index,
@@ -139,7 +136,7 @@ func initTun(name, src string, networkCfg *common.NetworkConfig) error {
 	}
 	err = netlink.RouteAdd(route)
 	if err != nil {
-		return errors.New("error setting the virutal network device network routes: " + err.Error())
+		return errors.New("error setting the virtual network device network routes: " + err.Error())
 	}
 	return nil
 }

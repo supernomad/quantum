@@ -1,14 +1,20 @@
-# Copyright (c) 2016 Christian Saide <Supernomad>
+# Copyright (c) 2016-2017 Christian Saide <Supernomad>
 # Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 PUSH_COVERAGE=""
 BENCH_MAX_PROCS=1
 
-setup_dev: build_deps gen_certs gen_docker_network build_docker
+dev: deps lint compile coverage cleanup
+
+setup_dev: build_deps vendor_deps gen_certs gen_docker_network build_docker
+
+ci: build_deps vendor_deps gen_certs deps lint compile coverage
+
+full: deps lint compile bench coverage cleanup
 
 gen_certs:
 	@echo "Generating etcd certificates..."
-	@dist/ssl/generate-tls-test-certs.sh
+	@dist/generate-tls-test-certs.sh
 
 gen_docker_network:
 	@echo "Setting up docker networks..."
@@ -28,14 +34,19 @@ compile:
 	@go install github.com/Supernomad/quantum
 
 build_deps:
-	@echo "Running go get to install build dependancies..."
+	@echo "Running go get to install build dependencies..."
 	@go get -u golang.org/x/tools/cmd/cover
 	@go get -u github.com/mattn/goveralls
 	@go get -u github.com/golang/lint/golint
+	@go get -u github.com/client9/misspell/cmd/misspell
 	@go get -u github.com/GeertJohan/fgt
 
+vendor_deps:
+	@echo "Building vendored deps..."
+	@(cd vendor/openssl && ./config && make && cd ../../)
+
 deps:
-	@echo "Running go get to install library dependancies..."
+	@echo "Running go get to install library dependencies..."
 	@go get -t -v './...'
 
 lint:
@@ -43,6 +54,7 @@ lint:
 	@fgt go fmt './...'
 	@fgt go vet './...'
 	@fgt golint './...'
+	@find . -type f -not -path "*/ssl/**/*" -and -not -path "*/vendor/**/*" | xargs fgt misspell
 
 race:
 	@echo "Running unit tests with race checking enabled..."
@@ -66,12 +78,9 @@ cleanup:
 
 release:
 	@echo "Generating release tar balls..."
+	@git checkout master
 	@go build github.com/Supernomad/quantum
 	@tar czf quantum_$(VERSION)_linux_amd64.tar.gz quantum LICENSE
 	@rm -f quantum
-
-ci: build_deps deps lint compile unit coverage
-
-dev: deps lint compile unit coverage cleanup
-
-full: deps lint compile bench coverage cleanup
+	@git tag -s $(VERSION) -m "quantum v$(VERSION)"
+	@git push origin $(VERSION)

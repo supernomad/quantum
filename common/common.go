@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Christian Saide <Supernomad>
+// Copyright (c) 2016-2017 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 package common
@@ -21,33 +21,21 @@ const (
 	// IPLength - The length of the private ip header.
 	IPLength = 4
 
-	// NonceStart - The nonce start position within a quantum packet.
-	NonceStart = 4
-
-	// NonceEnd - The nonce end position within a quantum packet.
-	NonceEnd = 16
-
-	// NonceLength - The nonce header length.
-	NonceLength = 12
-
-	// TagLength - The GCM tag header length.
-	TagLength = 16
-
 	// PacketStart - The real packet start position within a quantum packet.
-	PacketStart = 16
+	PacketStart = 4
 
 	// MaxPacketLength - The maximum packet size to send via the UDP device.
-	// StandardMTU(1500) - IPHeader(20) - UDPHeader(8) - SafetyNet(2).
-	MaxPacketLength = 1470
+	// StandardMTU(1500) - IPHeader(20) - UDPHeader(8).
+	MaxPacketLength = 1472
 
 	// HeaderSize - The size of the data perpended tp the real packet.
-	HeaderSize = IPLength + NonceLength
+	HeaderSize = IPLength
 
-	// FooterSize - The size of the data appended to the real packet.
-	FooterSize = TagLength
+	// OverflowSize - An extra buffer for overflow of the MTU for plugins and other things to use incase its necessary.
+	OverflowSize = 5
 
 	// MTU - The max size packet to receive from the TUN device.
-	MTU = MaxPacketLength - HeaderSize - FooterSize
+	MTU = MaxPacketLength - HeaderSize - OverflowSize
 )
 
 // IPtoInt takes an ipv4 net.IP and returns a uint32 that represents it.
@@ -85,4 +73,14 @@ func ArrayEquals(a, b []byte) bool {
 	}
 
 	return true
+}
+
+// StringInSlice returns true if the string 'a' is contained in the string array 'slice'.
+func StringInSlice(a string, slice []string) bool {
+	for i := 0; i < len(slice); i++ {
+		if slice[i] == a {
+			return true
+		}
+	}
+	return false
 }

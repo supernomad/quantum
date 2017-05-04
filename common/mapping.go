@@ -1,12 +1,11 @@
-// Copyright (c) 2016 Christian Saide <Supernomad>
+// Copyright (c) 2016-2017 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 package common
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
 	"encoding/json"
+	"errors"
 	"net"
 	"syscall"
 )
@@ -19,29 +18,23 @@ type Mapping struct {
 	// The private ip address within the quantum network.
 	PrivateIP net.IP `json:"privateIP"`
 
-	// The public key to be used during encryption/decryption of packets.
-	PublicKey []byte `json:"publicKey"`
-
 	// The public ipv4 address of the node represented by this mapping, which may or may not exist.
 	IPv4 net.IP `json:"ipv4,omitempty"`
 
 	// The public ipv6 address of the node represented by this mapping, which may or may not exist.
 	IPv6 net.IP `json:"ipv6,omitempty"`
 
+	// The plugins that the node represented by this mapping supports.
+	SupportedPlugins []string `json:"plugins,omitempty"`
+
 	// The port where quantum is listening for remote packets.
 	Port int `json:"port"`
 
-	// Whether or not the node requires encrypted traffic.
-	Unencrypted bool `json:"unencrypted"`
+	// The resulting endpoint to send data to the node represented by this mapping.
+	Address string `json:"-"`
 
-	// The AEAD cipher object to use for encryption/decryption of packets
-	Cipher cipher.AEAD `json:"-"`
-
-	// The ipv4 syscall.Sockaddr object for sending data to the node represented by this mapping.
-	SockaddrInet4 *syscall.SockaddrInet4 `json:"-"`
-
-	// The ipv6 syscall.Sockaddr object for sending data to the node represented by this mapping.
-	SockaddrInet6 *syscall.SockaddrInet6 `json:"-"`
+	// The resulting endpoint to send data to the node represented by this mapping.
+	Sockaddr syscall.Sockaddr `json:"-"`
 }
 
 // Bytes returns a byte slice representation of a Mapping object, if there is an error while marshalling data a nil slice is returned.
@@ -56,34 +49,25 @@ func (mapping *Mapping) String() string {
 }
 
 // ParseMapping creates a new mapping based on the output of a Mapping.Bytes call.
-func ParseMapping(str string, privkey []byte) (*Mapping, error) {
+func ParseMapping(str string, cfg *Config) (*Mapping, error) {
 	data := []byte(str)
 	var mapping Mapping
 	json.Unmarshal(data, &mapping)
 
-	secret := GenerateSharedSecret(mapping.PublicKey, privkey)
-
-	block, err := aes.NewCipher(secret)
-	if err != nil {
-		return nil, err
-	}
-
-	aesgcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, err
-	}
-
-	mapping.Cipher = aesgcm
-
-	if mapping.IPv4 != nil {
-		sa := &syscall.SockaddrInet4{Port: mapping.Port}
-		copy(sa.Addr[:], mapping.IPv4.To4())
-		mapping.SockaddrInet4 = sa
-	}
-	if mapping.IPv6 != nil {
+	if cfg.IsIPv6Enabled && mapping.IPv6 != nil {
 		sa := &syscall.SockaddrInet6{Port: mapping.Port}
 		copy(sa.Addr[:], mapping.IPv6.To16())
-		mapping.SockaddrInet6 = sa
+
+		mapping.Sockaddr = sa
+		mapping.Address = mapping.IPv6.String()
+	} else if cfg.IsIPv4Enabled && mapping.IPv4 != nil {
+		sa := &syscall.SockaddrInet4{Port: mapping.Port}
+		copy(sa.Addr[:], mapping.IPv4.To4())
+
+		mapping.Sockaddr = sa
+		mapping.Address = mapping.IPv4.String()
+	} else {
+		return nil, errors.New("mapping not compatible with this node due to networking conflicts: " + mapping.String())
 	}
 
 	return &mapping, nil
@@ -92,12 +76,11 @@ func ParseMapping(str string, privkey []byte) (*Mapping, error) {
 // NewMapping generates a new basic Mapping with no cryptographic metadata.
 func NewMapping(cfg *Config) *Mapping {
 	return &Mapping{
-		MachineID:   cfg.MachineID,
-		Unencrypted: cfg.Unencrypted,
-		IPv4:        cfg.PublicIPv4,
-		IPv6:        cfg.PublicIPv6,
-		Port:        cfg.ListenPort,
-		PrivateIP:   cfg.PrivateIP,
-		PublicKey:   cfg.PublicKey,
+		MachineID:        cfg.MachineID,
+		IPv4:             cfg.PublicIPv4,
+		IPv6:             cfg.PublicIPv6,
+		Port:             cfg.ListenPort,
+		PrivateIP:        cfg.PrivateIP,
+		SupportedPlugins: cfg.Plugins,
 	}
 }

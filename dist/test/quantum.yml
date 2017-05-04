@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2016 Christian Saide <Supernomad>
+# Copyright (c) 2016-2017 Christian Saide <Supernomad>
 # Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 conf-file: "bin/quantum-test.yml"
@@ -8,15 +8,15 @@ private-ip: "10.1.1.1"
 public-ip: "10.2.2.2"
 listen-address: "10.2.2.2"
 listen-port: 1000
-prefix: "wooting"
 data-dir: "/where/data/lives"
 log-dir: "/where/logs/live"
 stats-window: "1s"
-sync-interval: "10s"
-refresh-interval: "10s"
-tls-cert: "/where/the/tls/cert/lives.crt"
-tls-key: "/where/the/tls/cert/lives.pem"
-tls-ca-cert: "/where/the/tls/ca/cert/lives.crt"
-endpoints: "etcd.quantum.dev"
-username: "supernomad"
-password: "Password1"
+datastore-sync-interval: "10s"
+datastore-refresh-interval: "10s"
+datastore-prefix: "wooting"
+datastore-tls-cert: "/where/the/tls/cert/lives.crt"
+datastore-tls-key: "/where/the/tls/cert/lives.pem"
+datastore-tls-ca-cert: "/where/the/tls/ca/cert/lives.crt"
+datastore-endpoints: "etcd.quantum.dev"
+datastore-username: "supernomad"
+datastore-password: "Password1"

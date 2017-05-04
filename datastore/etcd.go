@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Christian Saide <Supernomad>
+// Copyright (c) 2016-2017 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 package datastore
@@ -82,12 +82,12 @@ func (etcd *Etcd) handleLocalMapping() error {
 		return errors.New("error setting the local network mapping in etcd: " + err.Error())
 	}
 	etcd.localMapping = mapping
-	etcd.stopRefreshingLease = etcd.refresh(etcd.key("nodes", etcd.cfg.PrivateIP.String()), "", etcd.cfg.NetworkConfig.LeaseTime, etcd.cfg.RefreshInterval)
+	etcd.stopRefreshingLease = etcd.refresh(etcd.key("nodes", etcd.cfg.PrivateIP.String()), "", etcd.cfg.NetworkConfig.LeaseTime, etcd.cfg.DatastoreRefreshInterval)
 	return nil
 }
 
 func (etcd *Etcd) key(str ...string) string {
-	strs := []string{etcd.cfg.Prefix}
+	strs := []string{etcd.cfg.DatastorePrefix}
 	return path.Join(append(strs, str...)...)
 }
 
@@ -167,7 +167,7 @@ func (etcd *Etcd) sync() error {
 
 	mappings := make(map[uint32]*common.Mapping)
 	for _, node := range nodes {
-		mapping, err := common.ParseMapping(node.Value, etcd.cfg.PrivateKey)
+		mapping, err := common.ParseMapping(node.Value, etcd.cfg)
 		if err != nil {
 			return errors.New("error parsing a mapping retrieved from etcd: " + err.Error())
 		}
@@ -223,7 +223,7 @@ func (etcd *Etcd) watch() {
 				switch resp.Action {
 				case "set", "update", "create":
 					for _, node := range nodes {
-						mapping, err := common.ParseMapping(node.Value, etcd.cfg.PrivateKey)
+						mapping, err := common.ParseMapping(node.Value, etcd.cfg)
 						if err != nil {
 							etcd.log.Error.Println("[ETCD]", "Error parsing mapping: "+err.Error())
 							continue
@@ -232,7 +232,7 @@ func (etcd *Etcd) watch() {
 					}
 				case "delete", "expire":
 					for _, node := range nodes {
-						mapping, err := common.ParseMapping(node.Value, etcd.cfg.PrivateKey)
+						mapping, err := common.ParseMapping(node.Value, etcd.cfg)
 						if err != nil {
 							etcd.log.Error.Println("[ETCD]", "Error parsing mapping: "+err.Error())
 							continue
@@ -252,7 +252,7 @@ func (etcd *Etcd) Mapping(ip uint32) (*common.Mapping, bool) {
 	return mapping, exists
 }
 
-// Init the Etcd datastore which will open any necesary connections, preform an initial sync of the datastore, and define the local mapping in the datastore.
+// Init the Etcd datastore which will open any necessary connections, preform an initial sync of the datastore, and define the local mapping in the datastore.
 func (etcd *Etcd) Init() error {
 	stopRefreshing, err := etcd.lock()
 	if err != nil {
@@ -284,7 +284,7 @@ func (etcd *Etcd) Init() error {
 func (etcd *Etcd) Start() {
 	etcd.watch()
 
-	ticker := time.NewTicker(etcd.cfg.SyncInterval)
+	ticker := time.NewTicker(etcd.cfg.DatastoreSyncInterval)
 	go func() {
 	loop:
 		for {
@@ -317,16 +317,16 @@ func generateConfig(cfg *common.Config) (client.Config, error) {
 	etcdCfg := client.Config{}
 
 	if cfg.AuthEnabled {
-		etcdCfg.Username = cfg.Username
-		etcdCfg.Password = cfg.Password
+		etcdCfg.Username = cfg.DatastoreUsername
+		etcdCfg.Password = cfg.DatastorePassword
 	}
 
 	if cfg.TLSEnabled {
 		tlsCfg := &tls.Config{}
 		endpointPrefix = "https://"
 
-		if cfg.TLSKey != "" && cfg.TLSCert != "" {
-			cert, err := tls.LoadX509KeyPair(cfg.TLSCert, cfg.TLSKey)
+		if cfg.DatastoreTLSKey != "" && cfg.DatastoreTLSCert != "" {
+			cert, err := tls.LoadX509KeyPair(cfg.DatastoreTLSCert, cfg.DatastoreTLSKey)
 			if err != nil {
 				return etcdCfg, errors.New("error reading the supplied tls certificate and/or key: " + err.Error())
 			}
@@ -334,10 +334,10 @@ func generateConfig(cfg *common.Config) (client.Config, error) {
 			tlsCfg.BuildNameToCertificate()
 		}
 
-		tlsCfg.InsecureSkipVerify = cfg.TLSSkipVerify
+		tlsCfg.InsecureSkipVerify = cfg.DatastoreTLSSkipVerify
 
-		if cfg.TLSCA != "" {
-			cert, err := ioutil.ReadFile(cfg.TLSCA)
+		if cfg.DatastoreTLSCA != "" {
+			cert, err := ioutil.ReadFile(cfg.DatastoreTLSCA)
 			if err != nil {
 				return etcdCfg, errors.New("error reading the supplied tls ca certificate: " + err.Error())
 			}
@@ -351,9 +351,9 @@ func generateConfig(cfg *common.Config) (client.Config, error) {
 		}
 	}
 
-	etcdCfg.Endpoints = make([]string, len(cfg.Endpoints))
-	for i := 0; i < len(cfg.Endpoints); i++ {
-		etcdCfg.Endpoints[i] = endpointPrefix + cfg.Endpoints[i]
+	etcdCfg.Endpoints = make([]string, len(cfg.DatastoreEndpoints))
+	for i := 0; i < len(cfg.DatastoreEndpoints); i++ {
+		etcdCfg.Endpoints[i] = endpointPrefix + cfg.DatastoreEndpoints[i]
 	}
 
 	return etcdCfg, nil

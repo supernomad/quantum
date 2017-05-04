@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Christian Saide <Supernomad>
+// Copyright (c) 2016-2017 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 package agg
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Supernomad/quantum/common"
+	"github.com/Supernomad/quantum/version"
 )
 
 // Agg a statistics aggregation struct.
@@ -34,11 +35,11 @@ func handleStats(stats *common.Stats, aggStat *common.Stat) {
 }
 
 func (agg *Agg) returnStats(w http.ResponseWriter, r *http.Request) {
-	agg.log.Debug.Println("[AGG]", "Recieved an api request:", r)
+	agg.log.Debug.Println("[AGG]", "Received an api request:", r)
 
 	header := w.Header()
 	header.Set("Content-Type", "application/json")
-	header.Set("Server", "quantum")
+	header.Set("Server", "quantum v"+version.Version())
 
 	_, err := w.Write(agg.statsLog.Bytes(strings.Contains(r.RequestURI, "pretty")))
 	if err != nil {
@@ -47,7 +48,7 @@ func (agg *Agg) returnStats(w http.ResponseWriter, r *http.Request) {
 }
 
 func (agg *Agg) pipeline(aggStat *common.Stat) {
-	agg.log.Debug.Println("[AGG]", "Statistics data recieved:", aggStat)
+	agg.log.Debug.Println("[AGG]", "Statistics data received:", aggStat)
 
 	var stats *common.Stats
 	switch aggStat.Direction {
@@ -104,7 +105,7 @@ func (agg *Agg) Start() {
 	}()
 }
 
-// Stop aggregating and recieving requests for statistics data.
+// Stop aggregating and receiving requests for statistics data.
 func (agg *Agg) Stop() {
 	agg.stop <- struct{}{}
 }

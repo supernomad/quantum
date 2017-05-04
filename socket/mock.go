@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Christian Saide <Supernomad>
+// Copyright (c) 2016-2017 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 package socket
@@ -12,12 +12,12 @@ type Mock struct {
 }
 
 // Read which just returns the supplied buffer in the form of a *common.Payload.
-func (mock *Mock) Read(buf []byte, queue int) (*common.Payload, bool) {
+func (mock *Mock) Read(queue int, buf []byte) (*common.Payload, bool) {
 	return common.NewSockPayload(buf, len(buf)), true
 }
 
 // Write which is a noop.
-func (mock *Mock) Write(payload *common.Payload, queue int) bool {
+func (mock *Mock) Write(queue int, payload *common.Payload, mapping *common.Mapping) bool {
 	return true
 }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Christian Saide <Supernomad>
+// Copyright (c) 2016-2017 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 /*
@@ -6,7 +6,7 @@ Package datastore contains the structs and logic to handle accessing and managin
 
 The design of the datastore module is to expose a single method that represents accessing a network mapping. This is wrapped in a simple interface to allow for extending quantum to support multiple backends in the future.
 
-The basic architechture is to have an in memory map object that is synchronized in the background. This allows the read only worker threads efficient access to the data, while still ensuring data consistency.
+The basic architecture is to have an in memory map object that is synchronized in the background. This allows the read only worker threads efficient access to the data, while still ensuring data consistency.
 
 Currently supported datastores:
 	https://github.com/coreos/etcd

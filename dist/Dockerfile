@@ -1,4 +1,4 @@
-# Copyright (c) 2016 Christian Saide <Supernomad>
+# Copyright (c) 2016-2017 Christian Saide <Supernomad>
 # Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 FROM ubuntu
@@ -10,6 +10,8 @@ RUN apt-get update \
         iperf3 \
         iproute2 \
         iputils-ping \
+        net-tools \
+        hping3 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY ./start_quantum.sh /bin/start_quantum.sh

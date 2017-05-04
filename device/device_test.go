@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Christian Saide <Supernomad>
+// Copyright (c) 2016-2017 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 package device
@@ -20,7 +20,7 @@ var tun Device
 func benchmarkWrite(payload *common.Payload, queue int, b *testing.B) {
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		if !tun.Write(payload, queue) {
+		if !tun.Write(queue, payload) {
 			b.Fatal("Failed to write")
 		}
 	}
@@ -76,7 +76,7 @@ func TestMock(t *testing.T) {
 	mock, _ := New(MOCKDevice, &common.Config{})
 	buf := make([]byte, common.MaxPacketLength)
 
-	payload, ok := mock.Read(buf, 0)
+	payload, ok := mock.Read(0, buf)
 	if payload == nil || !ok {
 		t.Fatal("Mock Read should always return a valid payload and nil error.")
 	}
@@ -85,7 +85,7 @@ func TestMock(t *testing.T) {
 		t.Fatal("Mock Name should return a non empty string.")
 	}
 
-	if !mock.Write(payload, 0) {
+	if !mock.Write(0, payload) {
 		t.Fatal("Mock Write should always return true.")
 	}
 

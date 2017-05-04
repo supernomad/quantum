@@ -29,8 +29,8 @@ To ensure the secure operation of `quantum` the following must be true:
 `quantum` can be configured in any combination of three ways, cli arguments, environment variables, and configuration file entries. All configuration options are optional and have sane defaults, however runnig without parameters will force quantum to run in insecure mode. All three variants can be used in conjunction to allow for overriding variables depending on environment, the hierarchy is as follows:
 
 - Cli parameters override all other methods
-- Environment variables override configuration file entries but can be overriden by cli parameters
-- Configuration file entries will override defaults but can be overriden by either cli parameters or environment variables
+- Environment variables override configuration file entries but can be overridden by cli parameters
+- Configuration file entries will override defaults but can be overridden by either cli parameters or environment variables
 
 Run `quantum -h|--help` for a current list of configuration options or see the [wiki on configuration](https://github.com/Supernomad/quantum/wiki/Configuration) for further information.
 
@@ -115,8 +115,8 @@ Work flow:
 There are a few rules:
 
 - All travis builds must successfully complete before a PR will be considered.
-- `make dev` script must be run successfuly before the PR is open.
+- `make dev` script must be run successfully before the PR is open.
 - Documentation is added for new user facing functionality.
 
 ---
-Copyright (c) 2016 Christian Saide <Supernomad>
+Copyright (c) 2016-2017 Christian Saide <Supernomad>

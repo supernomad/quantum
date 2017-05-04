@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Christian Saide <Supernomad>
+// Copyright (c) 2016-2017 Christian Saide <Supernomad>
 // Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 package device
@@ -9,15 +9,12 @@ import (
 	"github.com/Supernomad/quantum/common"
 )
 
-// Type defines what kind of virual network device to use.
-type Type int
-
 const (
-	// TUNDevice type creates and manages a TUN based network device.
-	TUNDevice Type = iota
+	// TUNDevice creates and manages a TUN based network device.
+	TUNDevice = "tun"
 
-	// MOCKDevice type creates and manages a mocked out network device for testing.
-	MOCKDevice
+	// MOCKDevice creates and manages a mocked out network device for testing.
+	MOCKDevice = "mock"
 )
 
 const (
@@ -38,10 +35,10 @@ type Device interface {
 	Name() string
 
 	// Read should return a formatted *common.Payload, based on the provided byte slice, off the specified device queue.
-	Read(buf []byte, queue int) (*common.Payload, bool)
+	Read(queue int, buf []byte) (*common.Payload, bool)
 
 	// Write should handle being passed a formatted *common.Payload, and write the underlying raw data to the specified device queue.
-	Write(payload *common.Payload, queue int) bool
+	Write(queue int, payload *common.Payload) bool
 
 	// Close should gracefully destroy the virtual network device.
 	Close() error
@@ -51,7 +48,7 @@ type Device interface {
 }
 
 // New will generate a new Device struct based on the supplied device deviceType and user configuration
-func New(deviceType Type, cfg *common.Config) (Device, error) {
+func New(deviceType string, cfg *common.Config) (Device, error) {
 	switch deviceType {
 	case TUNDevice:
 		return newTUN(cfg)
