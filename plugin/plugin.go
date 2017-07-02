@@ -11,7 +11,10 @@ import (
 
 const (
 	// CompressionPlugin configures and injects a compression based plugin.
-	CompressionPlugin = "comp"
+	CompressionPlugin = "compression"
+
+	// EncryptionPlugin configures and injects an encryption based plugin.
+	EncryptionPlugin = "encryption"
 
 	// MockPlugin configures and injects a mock plugin for testing.
 	MockPlugin = "mock"
@@ -30,9 +33,6 @@ const (
 
 // Plugin interface for a generic multi-queue network device.
 type Plugin interface {
-	// Should return the name of the plugin.
-	Name() string
-
 	// Apply should apply the plugin to the specified payload and mapping.
 	Apply(direction Direction, payload *common.Payload, mapping *common.Mapping) (*common.Payload, *common.Mapping, bool)
 
@@ -45,6 +45,8 @@ func New(pluginType string, cfg *common.Config) (Plugin, error) {
 	switch pluginType {
 	case CompressionPlugin:
 		return newCompression(cfg)
+	case EncryptionPlugin:
+		return newEncryption(cfg)
 	case MockPlugin:
 		return newMock(cfg)
 	}

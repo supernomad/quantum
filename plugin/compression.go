@@ -8,14 +8,9 @@ import (
 	"github.com/golang/snappy"
 )
 
-// Compression plugin struct to use for compressing outgoing packets or decompressing outgoing packets.
+// Compression plugin struct to use for compressing outgoing packets or decompressing incoming packets.
 type Compression struct {
 	cfg *common.Config
-}
-
-// Name returns 'comp'.
-func (comp *Compression) Name() string {
-	return "comp"
 }
 
 func compress(raw []byte) ([]byte, int) {
@@ -31,7 +26,7 @@ func decompress(raw []byte) ([]byte, int) {
 	return buf, len(buf)
 }
 
-// Apply returns the payload/mapping unchanged and always true.
+// Apply returns the payload/mapping compressed if the direction is Outgoing and decompressed if the direction is Incoming.
 func (comp *Compression) Apply(direction Direction, payload *common.Payload, mapping *common.Mapping) (*common.Payload, *common.Mapping, bool) {
 	if !common.StringInSlice(CompressionPlugin, mapping.SupportedPlugins) {
 		return payload, mapping, true
@@ -45,6 +40,7 @@ func (comp *Compression) Apply(direction Direction, payload *common.Payload, map
 		}
 
 		copy(payload.Raw[common.PacketStart:], decompressed)
+		payload.Packet = payload.Raw[common.PacketStart : common.PacketStart+length]
 		payload.Length = common.HeaderSize + length
 	case Outgoing:
 		compressed, length := compress(payload.Packet)

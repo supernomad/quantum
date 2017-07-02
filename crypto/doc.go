@@ -6,6 +6,7 @@ Package crypto contains the structs and logic that form the basis of quantum's c
 
 The following cryptographic functionality is fully supported:
   - ecdh 'curve25519'
-  - dtls 'ECDHE-ECDSA-AES256-GCM-SHA384'
+  - aes  'aes256-gcm'
+  - dtls 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384'
 */
 package crypto

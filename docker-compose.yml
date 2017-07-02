@@ -45,7 +45,7 @@ services:
       - "--dtls-ca-cert"
       - "/etc/quantum/ssl/certs/ec-ca.crt"
       - "--plugins"
-      - "comp"
+      - "compression,encryption"
   quantum1:
     cpuset: "0,1,2"
     container_name: quantum1
@@ -74,7 +74,7 @@ services:
       QUANTUM_DTLS_CA_CERT: "/etc/quantum/ssl/certs/ec-ca.crt"
       QUANTUM_DTLS_CERT: "/etc/quantum/ssl/certs/ec-server.crt"
       QUANTUM_DTLS_KEY: "/etc/quantum/ssl/keys/ec-server.key"
-      QUANTUM_PLUGINS: "comp"
+      QUANTUM_PLUGINS: "compression"
     networks:
       quantum_dev_net_v4:
         ipv4_address: 172.18.0.3

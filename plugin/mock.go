@@ -11,11 +11,6 @@ import (
 type Mock struct {
 }
 
-// Name returns 'mock'.
-func (mock *Mock) Name() string {
-	return "mock"
-}
-
 // Apply returns the payload/mapping unchanged and always true.
 func (mock *Mock) Apply(direction Direction, payload *common.Payload, mapping *common.Mapping) (*common.Payload, *common.Mapping, bool) {
 	return payload, mapping, true

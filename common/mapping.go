@@ -8,6 +8,8 @@ import (
 	"errors"
 	"net"
 	"syscall"
+
+	"github.com/Supernomad/quantum/crypto"
 )
 
 // Mapping represents the relationship between a public/private address along with encryption metadata for a particular node in the quantum network.
@@ -18,6 +20,9 @@ type Mapping struct {
 	// The private ip address within the quantum network.
 	PrivateIP net.IP `json:"privateIP"`
 
+	// The port where quantum is listening for remote packets.
+	Port int `json:"port"`
+
 	// The public ipv4 address of the node represented by this mapping, which may or may not exist.
 	IPv4 net.IP `json:"ipv4,omitempty"`
 
@@ -27,14 +32,20 @@ type Mapping struct {
 	// The plugins that the node represented by this mapping supports.
 	SupportedPlugins []string `json:"plugins,omitempty"`
 
-	// The port where quantum is listening for remote packets.
-	Port int `json:"port"`
+	// The public key to use with the encryption plugin.
+	PublicKey []byte `json:"publicKey,omitempty"`
+
+	// The salt to use with the encryption plugin.
+	PublicSalt []byte `json:"salt,omitempty"`
+
+	// The resulting endpoint to send data to the node represented by this mapping.
+	Sockaddr syscall.Sockaddr `json:"-"`
 
 	// The resulting endpoint to send data to the node represented by this mapping.
 	Address string `json:"-"`
 
-	// The resulting endpoint to send data to the node represented by this mapping.
-	Sockaddr syscall.Sockaddr `json:"-"`
+	// The AES object to use for encrypting packets to/from the node represented by this mapping.
+	AES *crypto.AES `json:"-"`
 }
 
 // Bytes returns a byte slice representation of a Mapping object, if there is an error while marshalling data a nil slice is returned.
@@ -70,6 +81,18 @@ func ParseMapping(str string, cfg *Config) (*Mapping, error) {
 		return nil, errors.New("mapping not compatible with this node due to networking conflicts: " + mapping.String())
 	}
 
+	if mapping.PublicKey != nil && mapping.PublicSalt != nil {
+		secret := crypto.GenerateSharedSecret(mapping.PublicKey, cfg.PrivateKey)
+		salt := crypto.GenerateSharedSecret(mapping.PublicSalt, cfg.PrivateSalt)
+
+		aes, err := crypto.NewAES(secret, salt)
+		if err != nil {
+			return nil, err
+		}
+
+		mapping.AES = aes
+	}
+
 	return &mapping, nil
 }
 
@@ -82,5 +105,7 @@ func NewMapping(cfg *Config) *Mapping {
 		Port:             cfg.ListenPort,
 		PrivateIP:        cfg.PrivateIP,
 		SupportedPlugins: cfg.Plugins,
+		PublicKey:        cfg.PublicKey,
+		PublicSalt:       cfg.PublicSalt,
 	}
 }

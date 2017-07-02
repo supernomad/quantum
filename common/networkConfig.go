@@ -43,7 +43,7 @@ type NetworkConfig struct {
 	StaticNet *net.IPNet `json:"-"`
 }
 
-// ParseNetworkConfig from the data stored in the backend datastore.
+// ParseNetworkConfig from the data stored in the datastore.
 func ParseNetworkConfig(data []byte) (*NetworkConfig, error) {
 	var networkCfg NetworkConfig
 	json.Unmarshal(data, &networkCfg)

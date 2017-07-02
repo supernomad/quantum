@@ -32,7 +32,7 @@ const (
 	HeaderSize = IPLength
 
 	// OverflowSize - An extra buffer for overflow of the MTU for plugins and other things to use incase its necessary.
-	OverflowSize = 5
+	OverflowSize = 35
 
 	// MTU - The max size packet to receive from the TUN device.
 	MTU = MaxPacketLength - HeaderSize - OverflowSize

@@ -4,6 +4,7 @@
 package crypto
 
 import (
+	"crypto/rand"
 	"net"
 	"os"
 	"sync"
@@ -17,6 +18,10 @@ const (
 	serverKeyFile  = "../dist/ssl/keys/ec-server.key"
 	clientCertFile = "../dist/ssl/certs/ec-client.crt"
 	clientKeyFile  = "../dist/ssl/keys/ec-client.key"
+	tagLen         = 16
+	nonceLen       = 12
+	bufLen         = 1500
+	dataLen        = bufLen - tagLen - nonceLen
 )
 
 func testEq(a, b []byte) bool {
@@ -39,6 +44,85 @@ func testEq(a, b []byte) bool {
 	}
 
 	return true
+}
+
+func fillSlice(buf []byte) {
+	for i := 0; i < len(buf); i++ {
+		buf[i] = 1
+	}
+}
+
+func TestAES(t *testing.T) {
+	key := []byte("AES256Key-32Characters1234567890")
+	salt := make([]byte, SaltLength)
+
+	_, err := rand.Read(salt)
+	if err != nil {
+		t.Fatalf("Unable to random salt: %s", err.Error())
+	}
+
+	aes, err := NewAES(key, salt)
+	if err != nil {
+		t.Fatalf("Unable to create the AES object: %s", err.Error())
+	}
+
+	buf := make([]byte, bufLen)
+	expected := make([]byte, dataLen)
+	fillSlice(buf[:dataLen])
+	fillSlice(expected)
+
+	minSize := aes.EncryptedSize(buf)
+	if minSize != len(buf)+tagLen+nonceLen {
+		t.Fatalf("The AES minimum size is incorrect, got: %d", minSize)
+	}
+
+	err = aes.Encrypt(buf, dataLen, nil)
+	if err != nil {
+		t.Fatalf("Errored trying to encrypt buffer: %s", err.Error())
+	}
+
+	if testEq(buf[:dataLen], expected) {
+		t.Fatal("Encrypted output matches plaintext.")
+	}
+
+	err = aes.Decrypt(buf, nil)
+	if err != nil {
+		t.Fatalf("Errored trying to decrypt buffer: %s", err.Error())
+	}
+
+	if !testEq(buf[:dataLen], expected) {
+		t.Fatal("Decrypted output does not match plaintext.")
+	}
+}
+
+func BenchmarkAES(b *testing.B) {
+	key := []byte("AES256Key-32Characters1234567890")
+	salt := make([]byte, SaltLength)
+
+	_, err := rand.Read(salt)
+	if err != nil {
+		b.Fatalf("Unable to random salt: %s", err.Error())
+	}
+
+	aes, err := NewAES(key, salt)
+	if err != nil {
+		b.Fatalf("Unable to create the AES object: %s", err.Error())
+	}
+
+	buf := make([]byte, bufLen)
+	fillSlice(buf[:dataLen])
+
+	for i := 0; i < b.N; i++ {
+		err = aes.Encrypt(buf, dataLen, nil)
+		if err != nil {
+			b.Fatalf("Errored trying to encrypt buffer: %s", err.Error())
+		}
+
+		err = aes.Decrypt(buf, nil)
+		if err != nil {
+			b.Fatalf("Errored trying to decrypt buffer: %s", err.Error())
+		}
+	}
 }
 
 func TestEcdh(t *testing.T) {

@@ -17,9 +17,6 @@ const (
 	// DTLSSocket type creates and manages a UDP based socket that is encrypted using DTLS.
 	DTLSSocket = "dtls"
 
-	// EncryptedUDPSocket type creates and manages a UDP based socket that is encrypted using ECDH AES-256-GCM.
-	EncryptedUDPSocket = "eudp"
-
 	// MOCKSocket type creates and manages a mocked out socket for testing.
 	MOCKSocket = "mock"
 )
@@ -46,8 +43,6 @@ func New(socketType string, cfg *common.Config) (Socket, error) {
 		return newUDP(cfg)
 	case DTLSSocket:
 		return newDTLS(cfg)
-	case EncryptedUDPSocket:
-		//return newEUDP(cfg)
 	case MOCKSocket:
 		return newMock(cfg)
 	}

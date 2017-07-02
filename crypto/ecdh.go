@@ -9,10 +9,6 @@ import (
 	"golang.org/x/crypto/curve25519"
 )
 
-const (
-	keyLength = 32 // 256bit key length
-)
-
 // GenerateECKeyPair - Generates a new eliptical curve key-pair using curve25519 as the underlying cryptographic function.
 func GenerateECKeyPair() ([]byte, []byte) {
 	var pub, priv [keyLength]byte

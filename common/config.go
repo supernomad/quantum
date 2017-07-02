@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Supernomad/quantum/crypto"
 	"github.com/Supernomad/quantum/version"
 	"github.com/vishvananda/netlink"
 	"gopkg.in/yaml.v2"
@@ -50,47 +51,52 @@ The user supplied configuration is processed via a structured hierarchy:
 The only exceptions to the above are the two special cli argments '-h'|'--help' or '-v'|'--version' which will output usage information or version information respectively and then exit the application.
 */
 type Config struct {
-	ConfFile                 string            `skip:"false"  type:"string"    short:"c"    long:"conf-file"                   default:""                      description:"The configuration file to use to configure quantum."`
-	DeviceName               string            `skip:"false"  type:"string"    short:"i"    long:"device-name"                 default:"quantum%d"             description:"The name to give the TUN device quantum uses, append '%d' to have auto incrementing names."`
-	NumWorkers               int               `skip:"false"  type:"int"       short:"n"    long:"workers"                     default:"0"                     description:"The number of quantum workers to use, set to 0 for a worker per available cpu core."`
-	PrivateIP                net.IP            `skip:"false"  type:"ip"        short:"ip"   long:"private-ip"                  default:""                      description:"The private ip address to assign this quantum instance."`
-	ListenIP                 net.IP            `skip:"false"  type:"ip"        short:"lip"  long:"listen-ip"                   default:""                      description:"The local server ip to listen on, leave blank of automatic association."`
-	ListenPort               int               `skip:"false"  type:"int"       short:"p"    long:"listen-port"                 default:"1099"                  description:"The local server port to listen on."`
-	PublicIPv4               net.IP            `skip:"false"  type:"ip"        short:"4"    long:"public-v4"                   default:""                      description:"The public ipv4 address to associate with this quantum instance, leave blank for automatic association."`
-	DisableIPv4              bool              `skip:"false"  type:"bool"      short:"d4"   long:"disable-v4"                  default:"false"                 description:"Whether or not to disable public ipv4 auto addressing. Use this if you know the server doesn't have public ipv4 addressing."`
-	PublicIPv6               net.IP            `skip:"false"  type:"ip"        short:"6"    long:"public-v6"                   default:""                      description:"The public ipv6 address to associate with this quantum instance, leave blank for automatic association."`
-	DisableIPv6              bool              `skip:"false"  type:"bool"      short:"d6"   long:"disable-v6"                  default:"false"                 description:"Whether or not to disable public ipv6 auto addressing. Use this if you know the server doesn't have public ipv6 addressing."`
-	DataDir                  string            `skip:"false"  type:"string"    short:"d"    long:"data-dir"                    default:"/var/lib/quantum"      description:"The directory to store local quantum state to."`
-	PidFile                  string            `skip:"false"  type:"string"    short:"pf"   long:"pid-file"                    default:"/var/run/quantum.pid"  description:"The pid file to use for tracking rolling restarts."`
-	DatastoreSyncInterval    time.Duration     `skip:"false"  type:"duration"  short:"si"   long:"datastore-sync-interval"     default:"60s"                   description:"The interval of full datastore syncs."`
-	DatastoreRefreshInterval time.Duration     `skip:"false"  type:"duration"  short:"ri"   long:"datastore-refresh-interval"  default:"120s"                  description:"The interval of dhcp lease refreshes with the datastore."`
-	DatastorePrefix          string            `skip:"false"  type:"string"    short:"pr"   long:"datastore-prefix"            default:"quantum"               description:"The prefix to store quantum configuration data under in the key/value datastore."`
-	DatastoreEndpoints       []string          `skip:"false"  type:"list"      short:"e"    long:"datastore-endpoints"         default:"127.0.0.1:2379"        description:"A comma delimited list of key/value datastore endpoints, in 'IPADDR:PORT' syntax."`
-	DatastoreUsername        string            `skip:"false"  type:"string"    short:"u"    long:"datastore-username"          default:""                      description:"The username to use for authentication with the datastore."`
-	DatastorePassword        string            `skip:"false"  type:"string"    short:"pw"   long:"datastore-password"          default:""                      description:"The password to use for authentication with the datastore."`
-	DatastoreTLSSkipVerify   bool              `skip:"false"  type:"bool"      short:"tsv"  long:"datastore-tls-skip-verify"   default:"false"                 description:"Whether or not to authenticate the TLS certificates of the key/value datastore."`
-	DatastoreTLSCA           string            `skip:"false"  type:"string"    short:"tca"  long:"datastore-tls-ca-cert"       default:""                      description:"The TLS CA certificate to authenticate the TLS certificates of the key/value datastore certificates."`
-	DatastoreTLSCert         string            `skip:"false"  type:"string"    short:"tc"   long:"datastore-tls-cert"          default:""                      description:"The TLS client certificate to use to authenticate with the key/value datastore."`
-	DatastoreTLSKey          string            `skip:"false"  type:"string"    short:"tk"   long:"datastore-tls-key"           default:""                      description:"The TLS client key to use to authenticate with the key/value datastore."`
-	DTLSSkipVerify           bool              `skip:"false"  type:"bool"      short:"tsv"  long:"dtls-skip-verify"            default:"false"                 description:"Whether or not to authenticate the DTLS certificates when using the DTLS backend."`
-	DTLSCA                   string            `skip:"false"  type:"string"    short:"tca"  long:"dtls-ca-cert"                default:""                      description:"The DTLS CA certificate to authenticate the DTLS certificates when using the DTLS backend."`
-	DTLSCert                 string            `skip:"false"  type:"string"    short:"tc"   long:"dtls-cert"                   default:""                      description:"The DTLS client certificate to use to authenticate when using the DTLS backend."`
-	DTLSKey                  string            `skip:"false"  type:"string"    short:"tk"   long:"dtls-key"                    default:""                      description:"The DTLS client key to use to authenticate when using the DTLS backend."`
-	StatsRoute               string            `skip:"false"  type:"string"    short:"sr"   long:"stats-route"                 default:"/stats"                description:"The api route to serve statistics data from."`
-	StatsPort                int               `skip:"false"  type:"int"       short:"sp"   long:"stats-port"                  default:"1099"                  description:"The api server port."`
-	StatsAddress             string            `skip:"false"  type:"string"    short:"sa"   long:"stats-address"               default:""                      description:"The api server address."`
-	Plugins                  []string          `skip:"false"  type:"list"      short:"x"    long:"plugins"                     default:""                      description:"The plugins supported by this node."`
-	RealDeviceName           string            `skip:"true"` // Used when a rolling restart is triggered to find the correct tun interface
-	ReuseFDS                 bool              `skip:"true"` // Used when a rolling restart is triggered which forces quantum to reuse the passed in socket/tun fds
-	MachineID                string            `skip:"true"` // The generated machine id for this node
-	AuthEnabled              bool              `skip:"true"` // Whether or not datastore authentication is enabled (toggled by setting username/password)
-	TLSEnabled               bool              `skip:"true"` // Whether or not tls with the datastore is enabled (toggled by setting the tls parameters at run time)
-	IsIPv4Enabled            bool              `skip:"true"` // Whether or not quantum has determined that this node is ipv4 capable
-	IsIPv6Enabled            bool              `skip:"true"` // Whether or not quantum has determined that this node is ipv6 capable
-	ListenAddr               syscall.Sockaddr  `skip:"true"` // The commputed Sockaddr object to bind the underlying udp sockets to
-	NetworkConfig            *NetworkConfig    `skip:"true"` // The network config detemined by existence of the object in etcd
-	Log                      *Logger           `skip:"true"` // The internal Logger to use
-	fileData                 map[string]string `skip:"true"` // An internal map of data representing a passed in configuration file
+	ConfFile                 string            `internal:"false"  type:"string"    short:"c"    long:"conf-file"                   default:""                      description:"The configuration file to use to configure quantum."`
+	DeviceName               string            `internal:"false"  type:"string"    short:"i"    long:"device-name"                 default:"quantum%d"             description:"The name to give the TUN device quantum uses, append '%d' to have auto incrementing names."`
+	NumWorkers               int               `internal:"false"  type:"int"       short:"n"    long:"workers"                     default:"0"                     description:"The number of quantum workers to use, set to 0 for a worker per available cpu core."`
+	PrivateIP                net.IP            `internal:"false"  type:"ip"        short:"ip"   long:"private-ip"                  default:""                      description:"The private ip address to assign this quantum instance."`
+	ListenIP                 net.IP            `internal:"false"  type:"ip"        short:"lip"  long:"listen-ip"                   default:""                      description:"The local server ip to listen on, leave blank of automatic association."`
+	ListenPort               int               `internal:"false"  type:"int"       short:"p"    long:"listen-port"                 default:"1099"                  description:"The local server port to listen on."`
+	PublicIPv4               net.IP            `internal:"false"  type:"ip"        short:"4"    long:"public-v4"                   default:""                      description:"The public ipv4 address to associate with this quantum instance, leave blank for automatic association."`
+	DisableIPv4              bool              `internal:"false"  type:"bool"      short:"d4"   long:"disable-v4"                  default:"false"                 description:"Whether or not to disable public ipv4 auto addressing. Use this if you know the server doesn't have public ipv4 addressing."`
+	PublicIPv6               net.IP            `internal:"false"  type:"ip"        short:"6"    long:"public-v6"                   default:""                      description:"The public ipv6 address to associate with this quantum instance, leave blank for automatic association."`
+	DisableIPv6              bool              `internal:"false"  type:"bool"      short:"d6"   long:"disable-v6"                  default:"false"                 description:"Whether or not to disable public ipv6 auto addressing. Use this if you know the server doesn't have public ipv6 addressing."`
+	DataDir                  string            `internal:"false"  type:"string"    short:"d"    long:"data-dir"                    default:"/var/lib/quantum"      description:"The directory to store local quantum state to."`
+	PidFile                  string            `internal:"false"  type:"string"    short:"pf"   long:"pid-file"                    default:"/var/run/quantum.pid"  description:"The pid file to use for tracking rolling restarts."`
+	DatastoreSyncInterval    time.Duration     `internal:"false"  type:"duration"  short:"si"   long:"datastore-sync-interval"     default:"60s"                   description:"The interval of full datastore syncs."`
+	DatastoreRefreshInterval time.Duration     `internal:"false"  type:"duration"  short:"ri"   long:"datastore-refresh-interval"  default:"120s"                  description:"The interval of dhcp lease refreshes with the datastore."`
+	DatastorePrefix          string            `internal:"false"  type:"string"    short:"pr"   long:"datastore-prefix"            default:"quantum"               description:"The prefix to store quantum configuration data under in the key/value datastore."`
+	DatastoreEndpoints       []string          `internal:"false"  type:"list"      short:"e"    long:"datastore-endpoints"         default:"127.0.0.1:2379"        description:"A comma delimited list of key/value datastore endpoints, in 'IPADDR:PORT' syntax."`
+	DatastoreUsername        string            `internal:"false"  type:"string"    short:"u"    long:"datastore-username"          default:""                      description:"The username to use for authentication with the datastore."`
+	DatastorePassword        string            `internal:"false"  type:"string"    short:"pw"   long:"datastore-password"          default:""                      description:"The password to use for authentication with the datastore."`
+	DatastoreTLSSkipVerify   bool              `internal:"false"  type:"bool"      short:"tsv"  long:"datastore-tls-skip-verify"   default:"false"                 description:"Whether or not to authenticate the TLS certificates of the key/value datastore."`
+	DatastoreTLSCA           string            `internal:"false"  type:"string"    short:"tca"  long:"datastore-tls-ca-cert"       default:""                      description:"The TLS CA certificate to authenticate the TLS certificates of the key/value datastore certificates."`
+	DatastoreTLSCert         string            `internal:"false"  type:"string"    short:"tc"   long:"datastore-tls-cert"          default:""                      description:"The TLS client certificate to use to authenticate with the key/value datastore."`
+	DatastoreTLSKey          string            `internal:"false"  type:"string"    short:"tk"   long:"datastore-tls-key"           default:""                      description:"The TLS client key to use to authenticate with the key/value datastore."`
+	DTLSSkipVerify           bool              `internal:"false"  type:"bool"      short:"tsv"  long:"dtls-skip-verify"            default:"false"                 description:"Whether or not to authenticate the DTLS certificates when using the DTLS backend."`
+	DTLSCA                   string            `internal:"false"  type:"string"    short:"tca"  long:"dtls-ca-cert"                default:""                      description:"The DTLS CA certificate to authenticate the DTLS certificates when using the DTLS backend."`
+	DTLSCert                 string            `internal:"false"  type:"string"    short:"tc"   long:"dtls-cert"                   default:""                      description:"The DTLS client certificate to use to authenticate when using the DTLS backend."`
+	DTLSKey                  string            `internal:"false"  type:"string"    short:"tk"   long:"dtls-key"                    default:""                      description:"The DTLS client key to use to authenticate when using the DTLS backend."`
+	StatsRoute               string            `internal:"false"  type:"string"    short:"sr"   long:"stats-route"                 default:"/stats"                description:"The api route to serve statistics data from."`
+	StatsPort                int               `internal:"false"  type:"int"       short:"sp"   long:"stats-port"                  default:"1099"                  description:"The api server port."`
+	StatsAddress             string            `internal:"false"  type:"string"    short:"sa"   long:"stats-address"               default:""                      description:"The api server address."`
+	Plugins                  []string          `internal:"false"  type:"list"      short:"x"    long:"plugins"                     default:""                      description:"The plugins supported by this node."`
+	PublicKey                []byte            `internal:"true"` // The public key to use with the encryption plugin.
+	PrivateKey               []byte            `internal:"true"` // The private key to use with the encryption plugin.
+	PublicSalt               []byte            `internal:"true"` // The public salt to use with the encryption plugin.
+	PrivateSalt              []byte            `internal:"true"` // The private salt to use with the encryption plugin.
+	Salt                     []byte            `internal:"true"` // The salt to use with the encryption plugin.
+	RealDeviceName           string            `internal:"true"` // Used when a rolling restart is triggered to find the correct tun interface
+	ReuseFDS                 bool              `internal:"true"` // Used when a rolling restart is triggered which forces quantum to reuse the passed in socket/tun fds
+	MachineID                string            `internal:"true"` // The generated machine id for this node
+	AuthEnabled              bool              `internal:"true"` // Whether or not datastore authentication is enabled (toggled by setting username/password)
+	TLSEnabled               bool              `internal:"true"` // Whether or not tls with the datastore is enabled (toggled by setting the tls parameters at run time)
+	IsIPv4Enabled            bool              `internal:"true"` // Whether or not quantum has determined that this node is ipv4 capable
+	IsIPv6Enabled            bool              `internal:"true"` // Whether or not quantum has determined that this node is ipv6 capable
+	ListenAddr               syscall.Sockaddr  `internal:"true"` // The commputed Sockaddr object to bind the underlying udp sockets to
+	NetworkConfig            *NetworkConfig    `internal:"true"` // The network config detemined by existence of the object in etcd
+	Log                      *Logger           `internal:"true"` // The internal Logger to use
+	fileData                 map[string]string `internal:"true"` // An internal map of data representing a passed in configuration file
 }
 
 func (cfg *Config) cliArg(short, long string, isFlag bool) (string, bool) {
@@ -132,8 +138,8 @@ func (cfg *Config) usage(exit bool) {
 	numFields := st.NumField()
 	for i := 0; i < numFields; i++ {
 		field := st.Field(i)
-		skip, fieldType, short, long, def, description := cfg.parseField(field.Tag)
-		if skip == "true" {
+		internal, fieldType, short, long, def, description := cfg.parseField(field.Tag)
+		if internal == "true" {
 			continue
 		}
 
@@ -181,8 +187,8 @@ func (cfg *Config) parseFile() error {
 	return nil
 }
 
-func (cfg *Config) parseField(tag reflect.StructTag) (skip, fieldType, short, long, def, description string) {
-	skip = tag.Get("skip")
+func (cfg *Config) parseField(tag reflect.StructTag) (internal, fieldType, short, long, def, description string) {
+	internal = tag.Get("internal")
 	fieldType = tag.Get("type")
 	short = tag.Get("short")
 	long = tag.Get("long")
@@ -210,9 +216,9 @@ func (cfg *Config) parseArgs() error {
 	for i := 0; i < numFields; i++ {
 		field := st.Field(i)
 		fieldValue := sv.Field(i)
-		skip, fieldType, short, long, def, _ := cfg.parseField(field.Tag)
+		internal, fieldType, short, long, def, _ := cfg.parseField(field.Tag)
 
-		if skip == "true" || !fieldValue.CanSet() {
+		if internal == "true" || !fieldValue.CanSet() {
 			continue
 		}
 
@@ -303,6 +309,16 @@ func (cfg *Config) computeArgs() error {
 	cfg.RealDeviceName = os.Getenv(RealDeviceNameEnv)
 	if cfg.RealDeviceName != "" {
 		cfg.ReuseFDS = true
+	}
+
+	if StringInSlice("encryption", cfg.Plugins) {
+		pub, priv := crypto.GenerateECKeyPair()
+		pubSalt, privSalt := crypto.GenerateECKeyPair()
+
+		cfg.PublicKey = pub
+		cfg.PrivateKey = priv
+		cfg.PublicSalt = pubSalt
+		cfg.PrivateSalt = privSalt
 	}
 
 	if cfg.PublicIPv4 == nil && !cfg.DisableIPv4 {
