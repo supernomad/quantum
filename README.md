@@ -1,29 +1,18 @@
 # `quantum`
 [![Build Status](https://travis-ci.org/Supernomad/quantum.svg?branch=develop)](https://travis-ci.org/Supernomad/quantum) [![Coverage Status](https://coveralls.io/repos/github/Supernomad/quantum/badge.svg?branch=develop)](https://coveralls.io/github/Supernomad/quantum?branch=develop) [![Go Report Card](https://goreportcard.com/badge/github.com/Supernomad/quantum)](https://goreportcard.com/report/github.com/Supernomad/quantum) [![GoDoc](https://godoc.org/github.com/Supernomad/quantum?status.png)](https://godoc.org/github.com/Supernomad/quantum)
 
-`quantum` is a software defined network device written in go with global networking, security, and auto-configuration at its heart. It leverages the latest distributed data stores and state of the art encryption to offer fully secured end to end global networking over a single cohesive network. `quantum` is fully opensource, and is licensed under the MPL-2.0, for details see [here](https://github.com/Supernomad/quantum/blob/master/LICENSE)
+`quantum` is a software defined network device written in go with global networking, security, and auto-configuration at its heart. It leverages the latest distributed data stores and state of the art encryption to offer fully secured end to end global networking over a single cohesive network. `quantum` is fully opensource, and is licensed under the MPL-2.0, for details see [the license.](https://github.com/Supernomad/quantum/blob/master/LICENSE)
 
 > For detailed information on the operation and configuration of `quantum` take a look at the [wiki](https://github.com/Supernomad/quantum/wiki).
 
 ### Operation
-`quantum` is designed to be essentially plug and play, however the default configuration will run `quantum` in an insecure mode and assumes each node running quantum is also running its own instance of the data store. In reality `quantum` **must** be run with TLS fully setup and configured with the backened datastore, in order to guarantee safe operation.
+`quantum` is designed to be essentially plug and play, however the default configuration will run `quantum` in an insecure mode and assumes each node running quantum is also running its own instance of the data store. In reality for `quantum` to guarantee safe operation it **must** be run with either the `encryption` plugin enabled or using the DTLS backend. As well as having TLS fully setup and configured with the datastore.
 
-| Supported Backend Datastores | Supported OS's | Supported Providers |
-|:------------------:|:----:|:---------:|
+| Supported Datastores | Supported OS's | Supported Providers |
+|:----------------------------:|:--------------:|:-------------------:|
 |[etcd](https://github.com/coreos/etcd)  | linux | AWS, GCE, Azure |
 | | | Packet, Digital Ocean, Rackspace |
 | | | Private datacenters, Private co-locations, and many more |
-
-#### TLS/Security
-[Etcd security configuration](https://coreos.com/etcd/docs/latest/security.html) is very well documented and implemented. It is highly recommended to fully read and understand the security setup for etcd before considering quantum for production use. The security provided by `quantum` is intrinsicly linked to the security used by etcd, as the public certificates used for secret key generation are stored within etcd.
-
-To ensure the secure operation of `quantum` the following must be true:
-- Require TLS communication to etcd in all cases
-- Etcd is fully secured from unathorized access
-- Each server running `quantum` has its own unique TLS client certificate
-- For added security each server should also have a unique username/password to access etcd
-
-> For a minimalistic openssl configuration that can be used to generate test certificates see the included `dist/ssl/generate-tls-test-certs.sh` bash script
 
 #### Configuration
 `quantum` can be configured in any combination of three ways, cli arguments, environment variables, and configuration file entries. All configuration options are optional and have sane defaults, however runnig without parameters will force quantum to run in insecure mode. All three variants can be used in conjunction to allow for overriding variables depending on environment, the hierarchy is as follows:
@@ -34,8 +23,30 @@ To ensure the secure operation of `quantum` the following must be true:
 
 Run `quantum -h|--help` for a current list of configuration options or see the [wiki on configuration](https://github.com/Supernomad/quantum/wiki/Configuration) for further information.
 
+#### Security
+The security that `quantum` can guarantee is based on a few pieces of configuration. Review the following sections for a high level overview of the configuration needed to make `quantum` secure, and for a detailed overview of the different options see the [wiki on security.](https://github.com/Supernomad/quantum/wiki/Security).
+
+##### Datastore
+[Etcd security configuration](https://coreos.com/etcd/docs/latest/security.html) is very well documented and implemented. It is highly recommended to fully read and understand the security setup for etcd before considering quantum for production use. The security provided by `quantum` is intrinsicly linked to the security used by etcd, as the information stored in etcd is highly sensitive and should be kept out of sight of prying eyes.
+
+To ensure the secure operation of `quantum` the following must be true:
+- Require TLS communication to etcd in all cases.
+- Each server running `quantum` has its own unique TLS client certificate/key pair.
+- Etcd client certificate authentication should be enabled.
+- For added security each server should also have a unique username/password to access etcd.
+
+> For a minimalistic openssl configuration that can be used to generate test certificates see the included `dist/ssl/generate-tls-test-certs.sh` bash script
+
+##### DTLS
+The `DTLS` backend network is the most secure way to use `quantum`, this backend configures and uses DTLS v1.2 based on OpenSSL v1.1.0f. While this backend is the most secure, it also requires the most configuration to properly use. Specifically a fully configured and secured CA is needed, and each server should be given its own signed client certificate/key pair that is set to use the unique public host IP as the common name for verification purposes. The other caveat of using the `DTLS` backend network, is that all servers in the `quantum` network will use `DTLS` for communication, whether or not encryption is needed.
+
+> Again for a minimalistic openssl configuration that can be used to generate test certificates see the included `dist/ssl/generate-tls-test-certs.sh` bash script
+
+##### Encryption Plugin
+The `Encryption Plugin` allows for secure communication using randomly generated ECDH key pairs for each server using [curve25519](https://cr.yp.to/ecdh.html). While this plugin is easier to utilize than the `DTLS` backend network it is not as secure. Due to the fact that there is no authentication of the communicating peers. However the messages that are received are authenticated using GCM guaranteeing that there is no tampering with messages between servers in transit. The `Encryption Plugin` utilizes a combination of the randomly generated ECDH key pairs, a unique random salt, pbkdf2, and AES-256-GCM. Unlike the `DTLS` backend network, only servers with this plugin enabled will communicate with encryption, which allows for granular configuraion of which servers require the security provided.
+
 ### Development
-Currently `quantum` development is entirely in go and utilizes a few BASH scripts to facilitate builds and setup. Development has been mostly done on ubuntu server 14.04, however any recent linux distribution with the following dependencies should be sufficient to develop `quantum`.
+Currently `quantum` development is entirely in go and utilizes a few BASH scripts to facilitate builds and setup. Development has been mostly done on ubuntu server 14.04+, however any recent linux distribution with the following dependencies should be sufficient to develop `quantum`.
 
 #### Development Dependencies
 - bash
@@ -45,7 +56,8 @@ Currently `quantum` development is entirely in go and utilizes a few BASH script
 - docker
 - docker-compose
 - openssl
-- go 1.7.x
+- go 1.8.x
+- a recent c/c++ compiler
 
 #### Getting started
 To get started developing `quantum`, run the following shell commands to get your environment configured and running.
