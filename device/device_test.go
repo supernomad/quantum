@@ -9,6 +9,7 @@ import (
 	"sync"
 	"syscall"
 	"testing"
+	"time"
 
 	"github.com/Supernomad/quantum/common"
 	"golang.org/x/net/ipv4"
@@ -29,12 +30,27 @@ func benchmarkWrite(payload *common.Payload, queue int, b *testing.B) {
 func BenchmarkWrite(b *testing.B) {
 	mutex.Lock()
 
+	defaultLeaseTime, _ := time.ParseDuration("48h")
+	DefaultNetworkConfig := &common.NetworkConfig{
+		Backend:     "udp",
+		Network:     "10.99.0.0/16",
+		StaticRange: "10.99.0.0/23",
+		LeaseTime:   defaultLeaseTime,
+	}
+
+	baseIP, ipnet, _ := net.ParseCIDR(DefaultNetworkConfig.Network)
+	DefaultNetworkConfig.BaseIP = baseIP
+	DefaultNetworkConfig.IPNet = ipnet
+
+	_, staticNet, _ := net.ParseCIDR(DefaultNetworkConfig.StaticRange)
+	DefaultNetworkConfig.StaticNet = staticNet
+
 	if tun == nil {
 		cfg := &common.Config{
 			NumWorkers:    1,
 			DeviceName:    "quantum%d",
 			PrivateIP:     net.ParseIP("10.99.0.1"),
-			NetworkConfig: common.DefaultNetworkConfig,
+			NetworkConfig: DefaultNetworkConfig,
 			ReuseFDS:      false,
 		}
 		var err error

@@ -26,8 +26,12 @@ import (
 )
 
 const (
-	envDatastorePrefix = "QUANTUM_"
-	linkLocal          = "fe80::/10"
+	envDatastorePrefix               = "QUANTUM_"
+	linkLocal                        = "fe80::/10"
+	defaultBackend                   = "udp"
+	defaultNetwork                   = "10.99.0.0/16"
+	defaultStaticRange               = "10.99.0.0/23"
+	defaultLeaseTime   time.Duration = 48 * time.Hour
 )
 
 var (
@@ -81,6 +85,10 @@ type Config struct {
 	StatsPort                int               `internal:"false"  type:"int"       short:"sp"   long:"stats-port"                  default:"1099"                  description:"The api server port."`
 	StatsAddress             string            `internal:"false"  type:"string"    short:"sa"   long:"stats-address"               default:""                      description:"The api server address."`
 	Plugins                  []string          `internal:"false"  type:"list"      short:"x"    long:"plugins"                     default:""                      description:"The plugins supported by this node."`
+	Network                  string            `internal:"false"  type:"string"    short:"nw"   long:"network"                     default:"10.99.0.0/16"          description:"The network, in CIDR notation, to use for the entire quantum cluster."`
+	NetworkStaticRange       string            `internal:"false"  type:"string"    short:"nr"   long:"network-static-range"        default:"10.99.0.0/23"          description:"The reserved subnet, in CIDR notatio, within the network to use for static ip address assignments."`
+	NetworkBackend           string            `internal:"false"  type:"string"    short:"nb"   long:"network-backend"             default:"udp"                   description:"The network backend to set in the datastore, if nothing already exists in the network configuration."`
+	NetworkLeaseTime         time.Duration     `internal:"false"  type:"duration"  short:"nl"   long:"network-lease-time"          default:"48h"                   description:"The lease time for DHCP assigned addresses within the quantum cluster."`
 	PublicKey                []byte            `internal:"true"` // The public key to use with the encryption plugin.
 	PrivateKey               []byte            `internal:"true"` // The private key to use with the encryption plugin.
 	PublicSalt               []byte            `internal:"true"` // The public salt to use with the encryption plugin.
@@ -320,6 +328,51 @@ func (cfg *Config) computeArgs() error {
 		cfg.PublicSalt = pubSalt
 		cfg.PrivateSalt = privSalt
 	}
+
+	DefaultNetworkConfig := &NetworkConfig{
+		Backend:     cfg.NetworkBackend,
+		Network:     cfg.Network,
+		StaticRange: cfg.NetworkStaticRange,
+		LeaseTime:   cfg.NetworkLeaseTime,
+	}
+
+	if DefaultNetworkConfig.Backend == "" {
+		cfg.Log.Warn.Println("[CONFIG]", "Using default network backend:", defaultBackend)
+		DefaultNetworkConfig.Backend = defaultBackend
+	}
+
+	if DefaultNetworkConfig.Network == "" {
+		cfg.Log.Warn.Println("[CONFIG]", "Using default network:", defaultNetwork)
+		cfg.Log.Warn.Println("[CONFIG]", "Using default network static range:", defaultStaticRange)
+		DefaultNetworkConfig.Network = defaultNetwork
+		DefaultNetworkConfig.StaticRange = defaultStaticRange
+	}
+
+	if DefaultNetworkConfig.LeaseTime == 0 {
+		cfg.Log.Warn.Println("[CONFIG]", "Using default network lease time:", defaultLeaseTime.String())
+		DefaultNetworkConfig.LeaseTime = defaultLeaseTime
+	}
+
+	baseIP, ipnet, err := net.ParseCIDR(DefaultNetworkConfig.Network)
+	if err != nil {
+		return err
+	}
+
+	DefaultNetworkConfig.BaseIP = baseIP
+	DefaultNetworkConfig.IPNet = ipnet
+
+	if DefaultNetworkConfig.StaticRange != "" {
+		staticBase, staticNet, err := net.ParseCIDR(DefaultNetworkConfig.StaticRange)
+		if err != nil {
+			return err
+		} else if !ipnet.Contains(staticBase) {
+			return errors.New("network configuration has staticRange defined but the range does not exist in the configured network")
+		}
+
+		DefaultNetworkConfig.StaticNet = staticNet
+	}
+
+	cfg.NetworkConfig = DefaultNetworkConfig
 
 	if cfg.PublicIPv4 == nil && !cfg.DisableIPv4 {
 		routes, err := netlink.RouteGet(googleV4)

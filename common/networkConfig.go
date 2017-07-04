@@ -10,15 +10,6 @@ import (
 	"time"
 )
 
-// DefaultNetworkConfig to use when the NetworkConfig is not specified in the backend datastore.
-var DefaultNetworkConfig *NetworkConfig
-
-const (
-	defaultBackend     = "udp"
-	defaultNetwork     = "10.99.0.0/16"
-	defaultStaticRange = "10.99.0.0/23"
-)
-
 // NetworkConfig object to represent the current network setup.
 type NetworkConfig struct {
 	// The backend to use for communication.
@@ -84,21 +75,4 @@ func (networkCfg *NetworkConfig) Bytes() []byte {
 // Bytes returns a string representation of a NetworkConfig object, if there is an error while marshalling data an empty string is returned.
 func (networkCfg *NetworkConfig) String() string {
 	return string(networkCfg.Bytes())
-}
-
-func init() {
-	defaultLeaseTime, _ := time.ParseDuration("48h")
-	DefaultNetworkConfig = &NetworkConfig{
-		Backend:     defaultBackend,
-		Network:     defaultNetwork,
-		StaticRange: defaultStaticRange,
-		LeaseTime:   defaultLeaseTime,
-	}
-
-	baseIP, ipnet, _ := net.ParseCIDR(DefaultNetworkConfig.Network)
-	DefaultNetworkConfig.BaseIP = baseIP
-	DefaultNetworkConfig.IPNet = ipnet
-
-	_, staticNet, _ := net.ParseCIDR(DefaultNetworkConfig.StaticRange)
-	DefaultNetworkConfig.StaticNet = staticNet
 }

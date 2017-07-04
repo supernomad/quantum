@@ -49,13 +49,12 @@ func (etcd *Etcd) handleNetworkConfig() error {
 			return errors.New("error retrieving the network configuration from etcd: " + err.Error())
 		}
 
-		etcd.log.Warn.Println("[ETCD]", "Using default network configuration.")
-		_, err := etcd.kapi.Set(context.Background(), etcd.key("config"), common.DefaultNetworkConfig.String(), &client.SetOptions{})
+		etcd.log.Info.Println("[ETCD]", "Using default network configuration.")
+		_, err := etcd.kapi.Set(context.Background(), etcd.key("config"), etcd.cfg.NetworkConfig.String(), &client.SetOptions{})
 		if err != nil {
 			return errors.New("error setting the default network configuration in etcd: " + err.Error())
 		}
 
-		etcd.cfg.NetworkConfig = common.DefaultNetworkConfig
 		return nil
 	}
 

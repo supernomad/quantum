@@ -191,6 +191,21 @@ func TestParseMapping(t *testing.T) {
 }
 
 func TestParseNetworkConfig(t *testing.T) {
+	defaultLeaseTime, _ := time.ParseDuration("48h")
+	DefaultNetworkConfig := &NetworkConfig{
+		Backend:     "udp",
+		Network:     "10.99.0.0/16",
+		StaticRange: "10.99.0.0/23",
+		LeaseTime:   defaultLeaseTime,
+	}
+
+	baseIP, ipnet, _ := net.ParseCIDR(DefaultNetworkConfig.Network)
+	DefaultNetworkConfig.BaseIP = baseIP
+	DefaultNetworkConfig.IPNet = ipnet
+
+	_, staticNet, _ := net.ParseCIDR(DefaultNetworkConfig.StaticRange)
+	DefaultNetworkConfig.StaticNet = staticNet
+
 	actual, err := ParseNetworkConfig(DefaultNetworkConfig.Bytes())
 	if err != nil {
 		t.Fatal("ParseNetworkConfig returned an error:", err)
@@ -297,6 +312,21 @@ func TestNewLogger(t *testing.T) {
 }
 
 func TestGenerateLocalMapping(t *testing.T) {
+	defaultLeaseTime, _ := time.ParseDuration("48h")
+	DefaultNetworkConfig := &NetworkConfig{
+		Backend:     "udp",
+		Network:     "10.99.0.0/16",
+		StaticRange: "10.99.0.0/23",
+		LeaseTime:   defaultLeaseTime,
+	}
+
+	baseIP, ipnet, _ := net.ParseCIDR(DefaultNetworkConfig.Network)
+	DefaultNetworkConfig.BaseIP = baseIP
+	DefaultNetworkConfig.IPNet = ipnet
+
+	_, staticNet, _ := net.ParseCIDR(DefaultNetworkConfig.StaticRange)
+	DefaultNetworkConfig.StaticNet = staticNet
+
 	cfg := &Config{
 		PrivateIP:     net.ParseIP("10.99.0.1"),
 		PublicIPv4:    net.ParseIP("192.167.0.1"),
