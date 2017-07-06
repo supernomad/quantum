@@ -6,7 +6,6 @@ package crypto
 import (
 	"crypto/rand"
 	"net"
-	"os"
 	"sync"
 	"syscall"
 	"testing"
@@ -146,7 +145,7 @@ func TestEcdh(t *testing.T) {
 }
 
 func testBadCaCert(t *testing.T) {
-	_, err := NewServerDTLSContext(-1, "::", 1099, true, true, "path/to/non/existent/CA/certificate/file.crt", serverCertFile, serverKeyFile)
+	_, err := NewServerDTLSContext(-1, "::", 9999, true, true, "path/to/non/existent/CA/certificate/file.crt", serverCertFile, serverKeyFile)
 	if err == nil {
 		t.Fatal("NewServerDTLSContext failed to pick up a non-existent ca certificate file")
 	}
@@ -158,7 +157,7 @@ func testBadCaCert(t *testing.T) {
 }
 
 func testBadCert(t *testing.T) {
-	_, err := NewServerDTLSContext(-1, "::", 1099, true, true, caFile, "path/to/non/existent/certificate/file.crt", serverKeyFile)
+	_, err := NewServerDTLSContext(-1, "::", 9999, true, true, caFile, "path/to/non/existent/certificate/file.crt", serverKeyFile)
 	if err == nil {
 		t.Fatal("NewServerDTLSContext failed to pick up a non-existent certificate file")
 	}
@@ -170,7 +169,7 @@ func testBadCert(t *testing.T) {
 }
 
 func testBadKey(t *testing.T) {
-	_, err := NewServerDTLSContext(-1, "::", 1099, true, true, caFile, serverCertFile, "path/to/non/existent/key/file.pem")
+	_, err := NewServerDTLSContext(-1, "::", 9999, true, true, caFile, serverCertFile, "path/to/non/existent/key/file.pem")
 	if err == nil {
 		t.Fatal("NewServerDTLSContext failed to pick up a non-existent key file")
 	}
@@ -182,7 +181,7 @@ func testBadKey(t *testing.T) {
 }
 
 func testMismatchedCertKey(t *testing.T) {
-	_, err := NewServerDTLSContext(-1, "::", 1099, true, true, caFile, serverCertFile, clientKeyFile)
+	_, err := NewServerDTLSContext(-1, "::", 9999, true, true, caFile, serverCertFile, clientKeyFile)
 	if err == nil {
 		t.Fatal("NewServerDTLSContext failed to pick up a mismatched certificate/key pair")
 	}
@@ -207,7 +206,7 @@ func testEndToEndV4(t *testing.T) {
 		t.Fatal("error setting the DTLS socket parameters: " + err.Error())
 	}
 
-	sa := &syscall.SockaddrInet4{Port: 1099}
+	sa := &syscall.SockaddrInet4{Port: 9999}
 	copy(sa.Addr[:], net.ParseIP("0.0.0.0").To4()[:])
 
 	err = syscall.Bind(fd, sa)
@@ -215,7 +214,7 @@ func testEndToEndV4(t *testing.T) {
 		t.Fatal("error binding the DTLS socket to the configured listen address: " + err.Error())
 	}
 
-	dtls, err := NewServerDTLSContext(fd, "0.0.0.0", 1099, false, true, caFile, serverCertFile, serverKeyFile)
+	dtls, err := NewServerDTLSContext(fd, "0.0.0.0", 9999, false, true, caFile, serverCertFile, serverKeyFile)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -268,7 +267,7 @@ func testEndToEndV4(t *testing.T) {
 	}()
 
 	go func() {
-		session, err := cdtls.Connect("127.0.0.1", 1099)
+		session, err := cdtls.Connect("127.0.0.1", 9999)
 		if err != nil {
 			errorstr = err.Error()
 			done <- true
@@ -321,7 +320,7 @@ func testEndToEndV6(t *testing.T) {
 		t.Fatal("error setting the DTLS socket parameters: " + err.Error())
 	}
 
-	sa := &syscall.SockaddrInet6{Port: 1099}
+	sa := &syscall.SockaddrInet6{Port: 9999}
 	copy(sa.Addr[:], net.ParseIP("::").To16()[:])
 
 	err = syscall.Bind(fd, sa)
@@ -329,7 +328,7 @@ func testEndToEndV6(t *testing.T) {
 		t.Fatal("error binding the DTLS socket to the configured listen address: " + err.Error())
 	}
 
-	dtls, err := NewServerDTLSContext(fd, "::", 1099, true, true, caFile, serverCertFile, serverKeyFile)
+	dtls, err := NewServerDTLSContext(fd, "::", 9999, true, true, caFile, serverCertFile, serverKeyFile)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -382,7 +381,7 @@ func testEndToEndV6(t *testing.T) {
 	}()
 
 	go func() {
-		session, err := cdtls.Connect("::1", 1099)
+		session, err := cdtls.Connect("::1", 9999)
 		if err != nil {
 			errorstr = err.Error()
 			done <- true
@@ -422,10 +421,6 @@ func testEndToEndV6(t *testing.T) {
 }
 
 func TestDTLS(t *testing.T) {
-	if os.Getenv("IS_TRAVIS") == "true" {
-		t.Skip("skipping end-to-end tests, these tests don't work in travis-ci")
-	}
-
 	InitDTLS()
 
 	t.Run("certificates", func(t *testing.T) {

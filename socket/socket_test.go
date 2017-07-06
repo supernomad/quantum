@@ -5,7 +5,6 @@ package socket
 
 import (
 	"net"
-	"os"
 	"syscall"
 	"testing"
 
@@ -21,11 +20,7 @@ const (
 )
 
 func TestDTLS(t *testing.T) {
-	if os.Getenv("IS_TRAVIS") == "true" {
-		t.Skip("skipping end-to-end tests, these tests don't work in travis-ci")
-	}
-
-	listenIP := net.ParseIP("::")
+	listenIP := net.ParseIP("::1")
 	localAddr := &syscall.SockaddrInet6{Port: 9999}
 	copy(localAddr.Addr[:], listenIP.To16()[:])
 
@@ -101,10 +96,6 @@ func TestDTLS(t *testing.T) {
 }
 
 func TestMock(t *testing.T) {
-	if os.Getenv("IS_TRAVIS") == "true" {
-		t.Skip("skipping end-to-end tests, these tests don't work in travis-ci")
-	}
-
 	mock, _ := New(MOCKSocket, &common.Config{})
 	buf := make([]byte, common.MaxPacketLength)
 
@@ -127,11 +118,7 @@ func TestMock(t *testing.T) {
 }
 
 func TestUDP(t *testing.T) {
-	if os.Getenv("IS_TRAVIS") == "true" {
-		t.Skip("skipping end-to-end tests, these tests don't work in travis-ci")
-	}
-
-	listenIP := net.ParseIP("::")
+	listenIP := net.ParseIP("::1")
 	localAddr := &syscall.SockaddrInet6{Port: 9999}
 	copy(localAddr.Addr[:], listenIP.To16()[:])
 

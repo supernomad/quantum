@@ -4,9 +4,6 @@
 
 language: go
 
-env:
-  - IS_TRAVIS=true
-
 go:
   - 1.8.x
 

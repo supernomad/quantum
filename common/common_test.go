@@ -145,12 +145,10 @@ func testYamlConfig(t *testing.T, args []string) {
 	os.Setenv("QUANTUM_LISTEN_PORT", "1")
 	os.Setenv("QUANTUM_CONF_FILE", ymlConfFile)
 	os.Setenv("QUANTUM_PID_FILE", "../quantum.pid")
-	os.Setenv("QUANTUM_NETWORK", "")
-	os.Setenv("QUANTUM_NETWORK_BACKEND", "")
-	os.Setenv("QUANTUM_NETWORK_LEASE_TIME", "")
+	os.Setenv("QUANTUM_PLUGINS", "encryption,compression")
 	os.Setenv("_QUANTUM_REAL_DEVICE_NAME_", "quantum0")
 
-	os.Args = append(args, "-n", "100", "--datastore-prefix", "woot", "--datastore-tls-skip-verify", "-6", "fd00:dead:beef::2")
+	os.Args = append(args, "-n", "100", "--datastore-prefix", "woot", "--datastore-tls-skip-verify", "-6", "fd00:dead:beef::2", "--network", "", "--network-backend", "", "--network-lease-time", "0")
 	cfg, err := NewConfig(NewLogger(NoopLogger))
 	if err != nil {
 		t.Fatalf("NewConfig returned an error, %s", err)
@@ -176,9 +174,6 @@ func testYamlConfig(t *testing.T, args []string) {
 	if !cfg.DatastoreTLSSkipVerify {
 		t.Fatal("NewConfig didn't pick up the cli replacement for DatastoreTLSSkipVerify")
 	}
-
-	cfg.usage(false)
-	cfg.version(false)
 
 	// Reset os.Args
 	os.Args = args
@@ -189,12 +184,9 @@ func testJSONConfig(t *testing.T, args []string) {
 	os.Setenv("QUANTUM_LISTEN_PORT", "1")
 	os.Setenv("QUANTUM_CONF_FILE", jsonConfFile)
 	os.Setenv("QUANTUM_PID_FILE", "../quantum.pid")
-	os.Setenv("QUANTUM_NETWORK", "")
-	os.Setenv("QUANTUM_NETWORK_BACKEND", "")
-	os.Setenv("QUANTUM_NETWORK_LEASE_TIME", "")
 	os.Setenv("_QUANTUM_REAL_DEVICE_NAME_", "quantum0")
 
-	os.Args = append(args, "-n", "100", "--datastore-prefix", "woot", "--datastore-tls-skip-verify", "-6", "fd00:dead:beef::2")
+	os.Args = append(args, "-n", "100", "--datastore-prefix", "woot", "--datastore-tls-skip-verify", "-6", "fd00:dead:beef::2", "--network", "", "--network-backend", "", "--network-lease-time", "0")
 	cfg, err := NewConfig(NewLogger(NoopLogger))
 	if err != nil {
 		t.Fatalf("NewConfig returned an error, %s", err)
@@ -220,9 +212,6 @@ func testJSONConfig(t *testing.T, args []string) {
 	if !cfg.DatastoreTLSSkipVerify {
 		t.Fatal("NewConfig didn't pick up the cli replacement for DatastoreTLSSkipVerify")
 	}
-
-	cfg.usage(false)
-	cfg.version(false)
 
 	// Reset os.Args
 	os.Args = args
@@ -244,7 +233,103 @@ func testNonexistentFileConfig(t *testing.T, args []string) {
 	}
 }
 
+func testInvalidIntConfig(t *testing.T, args []string) {
+	os.Setenv("QUANTUM_WORKERS", "1.23")
+	_, err := NewConfig(NewLogger(NoopLogger))
+	if err == nil {
+		t.Fatal("NewConfig shuld have returned an error for a float passed into an int field.")
+	}
+	os.Setenv("QUANTUM_WORKERS", "")
+}
+
+func testInvalidDurationConfig(t *testing.T, args []string) {
+	os.Setenv("QUANTUM_NETWORK_LEASE_TIME", "hello")
+	_, err := NewConfig(NewLogger(NoopLogger))
+	if err == nil {
+		t.Fatal("NewConfig shuld have returned an error for a string passed into a duration field.")
+	}
+	os.Setenv("QUANTUM_NETWORK_LEASE_TIME", "")
+}
+
+func testInvalidIPConfig(t *testing.T, args []string) {
+	os.Setenv("QUANTUM_PRIVATE_IP", "w.o.o.t")
+	_, err := NewConfig(NewLogger(NoopLogger))
+	if err == nil {
+		t.Fatal("NewConfig shuld have returned an error for a incorrectly formatted ip address.")
+	}
+	os.Setenv("QUANTUM_PRIVATE_IP", "")
+}
+
+func testInvalidBoolConfig(t *testing.T, args []string) {
+	os.Setenv("QUANTUM_DTLS_SKIP_VERIFY", "yes")
+	_, err := NewConfig(NewLogger(NoopLogger))
+	if err == nil {
+		t.Fatal("NewConfig shuld have returned an error for a string pasing into a bool field.")
+	}
+	os.Setenv("QUANTUM_DTLS_SKIP_VERIFY", "")
+}
+
+func testUsageConfig(t *testing.T, args []string) {
+	os.Setenv("QUANTUM_PID_FILE", "../quantum.pid")
+
+	cfg, err := NewConfig(NewLogger(NoopLogger))
+	if err != nil {
+		t.Fatalf("NewConfig returned an error, %s", err)
+	}
+	if cfg == nil {
+		t.Fatal("NewConfig returned a blank config")
+	}
+
+	os.Args = append(args, "-h")
+	cfg.parseSpecial(false)
+
+	// Reset os.Args
+	os.Args = args
+}
+
+func testVersionConfig(t *testing.T, args []string) {
+	os.Setenv("QUANTUM_PID_FILE", "../quantum.pid")
+
+	cfg, err := NewConfig(NewLogger(NoopLogger))
+	if err != nil {
+		t.Fatalf("NewConfig returned an error, %s", err)
+	}
+	if cfg == nil {
+		t.Fatal("NewConfig returned a blank config")
+	}
+
+	os.Args = append(args, "-v")
+	cfg.parseSpecial(false)
+
+	// Reset os.Args
+	os.Args = args
+}
+
 func TestNewConfig(t *testing.T) {
+	t.Run("invalid", func(t *testing.T) {
+		t.Run("int", func(t *testing.T) {
+			testInvalidIntConfig(t, os.Args)
+		})
+		t.Run("duration", func(t *testing.T) {
+			testInvalidDurationConfig(t, os.Args)
+		})
+		t.Run("ip", func(t *testing.T) {
+			testInvalidIPConfig(t, os.Args)
+		})
+		t.Run("bool", func(t *testing.T) {
+			testInvalidBoolConfig(t, os.Args)
+		})
+	})
+
+	t.Run("special", func(t *testing.T) {
+		t.Run("usage", func(t *testing.T) {
+			testUsageConfig(t, os.Args)
+		})
+		t.Run("version", func(t *testing.T) {
+			testVersionConfig(t, os.Args)
+		})
+	})
+
 	t.Run("files", func(t *testing.T) {
 		t.Run("json", func(t *testing.T) {
 			testJSONConfig(t, os.Args)

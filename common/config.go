@@ -183,7 +183,7 @@ func (cfg *Config) parseFile() error {
 		case ".yaml" == ext || ".yml" == ext:
 			err = yaml.Unmarshal(buf, &data)
 		default:
-			return errors.New("the supplied configuration file is not in a supported format, quantum only supports 'json', or 'yaml' configuration files")
+			err = errors.New("the supplied configuration file is not in a supported format, quantum only supports 'json', or 'yaml' configuration files")
 		}
 
 		if err != nil {
