@@ -14,7 +14,10 @@ import (
 )
 
 const (
-	confFile = "../dist/test/quantum.yml"
+	ymlConfFile         = "../dist/test/quantum.yml"
+	jsonConfFile        = "../dist/test/quantum.json"
+	txtConfFile         = "../dist/test/quantum.txt"
+	nonExistentConfFile = "../dist/test/doesnt_exist.yml"
 )
 
 var (
@@ -82,6 +85,27 @@ func ExampleArrayEquals() {
 	// Output: true true false false
 }
 
+func ExampleStringInSlice() {
+	slice := []string{"encryption", "compression"}
+
+	fmt.Println(StringInSlice("encryption", slice), StringInSlice("compression", slice), StringInSlice("nonexistent", slice))
+	// Output: true true false
+}
+
+func TestStringInSlice(t *testing.T) {
+	slice := []string{"encryption", "compression"}
+
+	if !StringInSlice("encryption", slice) {
+		t.Fatal("StringInSlice returned false checking if string exists in the supplied slice, when the string does indeed exist.")
+	}
+	if !StringInSlice("compression", slice) {
+		t.Fatal("StringInSlice returned false checking if string exists in the supplied slice, when the string does indeed exist.")
+	}
+	if StringInSlice("nonexistent", slice) {
+		t.Fatal("StringInSlice returned true checking if string exists in the supplied slice, when the string does not exist.")
+	}
+}
+
 func TestArrayEquals(t *testing.T) {
 	if !ArrayEquals(nil, nil) {
 		t.Fatal("ArrayEquals returned false comparing nil/nil")
@@ -116,14 +140,17 @@ func TestIncrementIP(t *testing.T) {
 	}
 }
 
-func TestNewConfig(t *testing.T) {
+func testYamlConfig(t *testing.T, args []string) {
 	os.Setenv("QUANTUM_DEVICE_NAME", "different")
 	os.Setenv("QUANTUM_LISTEN_PORT", "1")
-	os.Setenv("QUANTUM_CONF_FILE", confFile)
+	os.Setenv("QUANTUM_CONF_FILE", ymlConfFile)
 	os.Setenv("QUANTUM_PID_FILE", "../quantum.pid")
+	os.Setenv("QUANTUM_NETWORK", "")
+	os.Setenv("QUANTUM_NETWORK_BACKEND", "")
+	os.Setenv("QUANTUM_NETWORK_LEASE_TIME", "")
 	os.Setenv("_QUANTUM_REAL_DEVICE_NAME_", "quantum0")
 
-	os.Args = append(os.Args, "-n", "100", "--datastore-prefix", "woot", "--datastore-tls-skip-verify", "-6", "fd00:dead:beef::2")
+	os.Args = append(args, "-n", "100", "--datastore-prefix", "woot", "--datastore-tls-skip-verify", "-6", "fd00:dead:beef::2")
 	cfg, err := NewConfig(NewLogger(NoopLogger))
 	if err != nil {
 		t.Fatalf("NewConfig returned an error, %s", err)
@@ -152,6 +179,86 @@ func TestNewConfig(t *testing.T) {
 
 	cfg.usage(false)
 	cfg.version(false)
+
+	// Reset os.Args
+	os.Args = args
+}
+
+func testJSONConfig(t *testing.T, args []string) {
+	os.Setenv("QUANTUM_DEVICE_NAME", "different")
+	os.Setenv("QUANTUM_LISTEN_PORT", "1")
+	os.Setenv("QUANTUM_CONF_FILE", jsonConfFile)
+	os.Setenv("QUANTUM_PID_FILE", "../quantum.pid")
+	os.Setenv("QUANTUM_NETWORK", "")
+	os.Setenv("QUANTUM_NETWORK_BACKEND", "")
+	os.Setenv("QUANTUM_NETWORK_LEASE_TIME", "")
+	os.Setenv("_QUANTUM_REAL_DEVICE_NAME_", "quantum0")
+
+	os.Args = append(args, "-n", "100", "--datastore-prefix", "woot", "--datastore-tls-skip-verify", "-6", "fd00:dead:beef::2")
+	cfg, err := NewConfig(NewLogger(NoopLogger))
+	if err != nil {
+		t.Fatalf("NewConfig returned an error, %s", err)
+	}
+	if cfg == nil {
+		t.Fatal("NewConfig returned a blank config")
+	}
+	if cfg.DeviceName != "different" {
+		t.Fatalf("NewConfig didn't pick up the environment variable replacement for DeviceName")
+	}
+	if cfg.ListenPort != 1 {
+		t.Fatalf("NewConfig didn't pick up the environment variable replacement for ListenPort")
+	}
+	if cfg.DatastorePassword != "Password1" {
+		t.Fatalf("NewConfig didn't pick up the config file replacement for Password")
+	}
+	if cfg.DatastorePrefix != "woot" {
+		t.Fatal("NewConfig didn't pick up the cli replacement for Prefix")
+	}
+	if cfg.NumWorkers != runtime.NumCPU() {
+		t.Fatal("NewConfig didn't pick up the cli replacement for NumWorkers")
+	}
+	if !cfg.DatastoreTLSSkipVerify {
+		t.Fatal("NewConfig didn't pick up the cli replacement for DatastoreTLSSkipVerify")
+	}
+
+	cfg.usage(false)
+	cfg.version(false)
+
+	// Reset os.Args
+	os.Args = args
+}
+
+func testInvalidFileConfig(t *testing.T, args []string) {
+	os.Setenv("QUANTUM_CONF_FILE", txtConfFile)
+	_, err := NewConfig(NewLogger(NoopLogger))
+	if err == nil {
+		t.Fatal("NewConfig shuld have returned an error for a txt file.")
+	}
+}
+
+func testNonexistentFileConfig(t *testing.T, args []string) {
+	os.Setenv("QUANTUM_CONF_FILE", nonExistentConfFile)
+	_, err := NewConfig(NewLogger(NoopLogger))
+	if err == nil {
+		t.Fatal("NewConfig shuld have returned an error for a nonexistent file.")
+	}
+}
+
+func TestNewConfig(t *testing.T) {
+	t.Run("files", func(t *testing.T) {
+		t.Run("json", func(t *testing.T) {
+			testJSONConfig(t, os.Args)
+		})
+		t.Run("invalid", func(t *testing.T) {
+			testInvalidFileConfig(t, os.Args)
+		})
+		t.Run("nonexistent", func(t *testing.T) {
+			testNonexistentFileConfig(t, os.Args)
+		})
+		t.Run("yaml", func(t *testing.T) {
+			testYamlConfig(t, os.Args)
+		})
+	})
 }
 
 func TestNewMapping(t *testing.T) {
@@ -178,6 +285,8 @@ func TestParseMapping(t *testing.T) {
 		IsIPv6Enabled: true,
 		ListenPort:    80,
 		MachineID:     "123456",
+		PublicKey:     []byte("AES256Key-32Characters1234567890"),
+		PublicSalt:    []byte("AES256Salt32Characters1234567890"),
 	}
 
 	expected := NewMapping(cfg)
@@ -187,6 +296,23 @@ func TestParseMapping(t *testing.T) {
 	}
 	if !testEq(actual.IPv4, expected.IPv4) || actual.Port != expected.Port || !testEq(actual.PrivateIP, expected.PrivateIP) {
 		t.Fatalf("ParseMapping did not return the right value, got: %v, expected: %v", actual, expected)
+	}
+
+	cfg.IsIPv6Enabled = false
+	expected = NewMapping(cfg)
+	actual, err = ParseMapping(expected.String(), cfg)
+	if err != nil {
+		t.Fatalf("Error occurred during test: %s", err)
+	}
+	if !testEq(actual.IPv4, expected.IPv4) || actual.Port != expected.Port || !testEq(actual.PrivateIP, expected.PrivateIP) {
+		t.Fatalf("ParseMapping did not return the right value, got: %v, expected: %v", actual, expected)
+	}
+
+	cfg.IsIPv4Enabled = false
+	expected = NewMapping(cfg)
+	actual, err = ParseMapping(expected.String(), cfg)
+	if err == nil {
+		t.Fatalf("Error occurred during test of ParseMapping it should have returned an error and didn't.")
 	}
 }
 
@@ -206,7 +332,7 @@ func TestParseNetworkConfig(t *testing.T) {
 	_, staticNet, _ := net.ParseCIDR(DefaultNetworkConfig.StaticRange)
 	DefaultNetworkConfig.StaticNet = staticNet
 
-	actual, err := ParseNetworkConfig(DefaultNetworkConfig.Bytes())
+	actual, err := ParseNetworkConfig([]byte(DefaultNetworkConfig.String()))
 	if err != nil {
 		t.Fatal("ParseNetworkConfig returned an error:", err)
 	}

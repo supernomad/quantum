@@ -1,0 +1,20 @@
+{
+    "conf-file": "bin/quantum-test.yml",
+    "device-name": "woot",
+    "private-ip": "10.1.1.1",
+    "public-ip": "10.2.2.2",
+    "listen-address": "10.2.2.2",
+    "listen-port": "1000",
+    "data-dir": "/where/data/lives",
+    "log-dir": "/where/logs/live",
+    "stats-window": "1s",
+    "datastore-sync-interval": "10s",
+    "datastore-refresh-interval": "10s",
+    "datastore-prefix": "wooting",
+    "datastore-tls-cert": "/where/the/tls/cert/lives.crt",
+    "datastore-tls-key": "/where/the/tls/cert/lives.pem",
+    "datastore-tls-ca-cert": "/where/the/tls/ca/cert/lives.crt",
+    "datastore-endpoints": "etcd.quantum.dev",
+    "datastore-username": "supernomad",
+    "datastore-password": "Password1"
+}

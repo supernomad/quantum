@@ -280,7 +280,9 @@ func (cfg *Config) parseArgs() error {
 		}
 
 		if field.Name == "ConfFile" {
-			cfg.parseFile()
+			if err := cfg.parseFile(); err != nil {
+				return err
+			}
 		}
 	}
 

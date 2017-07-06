@@ -77,10 +77,11 @@ cleanup:
 	@rm -f quantum.pid
 
 release:
-	@echo "Generating release tar balls..."
+	@echo "Generating release tar ball, zip file, and tag..."
 	@git checkout master
 	@go build github.com/Supernomad/quantum
 	@tar czf quantum_$(VERSION)_linux_amd64.tar.gz quantum LICENSE
+	@zip quantum_$(VERSION)_linux_amd64.zip quantum LICENSE
 	@rm -f quantum
 	@git tag -s $(VERSION) -m "quantum v$(VERSION)"
 	@git push origin $(VERSION)
