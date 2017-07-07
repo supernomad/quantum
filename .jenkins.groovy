@@ -45,6 +45,10 @@ node {
                 sh "cd ${go_dir}; make ci_bench"
             }
 
+            stage("Coverage") {
+                sh "cd ${go_dir}; make ci_coverage"
+            }
+
             stage('Results') {
                 junit allowEmptyResults: true, testResults: 'tests.xml'
                 step([$class: 'PlotBuilder', csvFileName: 'plot-56564010.csv', exclZero: false, group: 'benchmarks', keepRecords: false, logarithmic: false, numBuilds: '', style: 'line', title: 'Benchmarks', useDescr: false, xmlSeries: [[file: 'benchmarks.xml', nodeType: 'NODESET', url: '', xpath: '/Benchmarks/AllocsPerOp/*']], yaxis: 'Allocs', yaxisMaximum: '', yaxisMinimum: ''])
