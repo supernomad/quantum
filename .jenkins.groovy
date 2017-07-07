@@ -22,12 +22,8 @@ node {
                 sh "cd ${go_dir}; make setup_ci"
             }
 
-            stage("Lint") {
-                sh "cd ${go_dir}; make lint"
-            }
-
             stage("Compile") {
-                sh "cd ${go_dir}; make compile"
+                sh "cd ${go_dir}; make lint compile"
             }
 
             stage("Test") {
