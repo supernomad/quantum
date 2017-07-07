@@ -66,8 +66,8 @@ To get started developing `quantum`, run the following shell commands to get you
 $ cd $GOPATH/src/github.com/Supernomad/quantum
 # Setup the dev environment
 $ make setup_dev
-# Run a full dev build including linting and unit tests
-$ make dev
+# Run a full development build including linting and unit tests
+$ make test
 # Start up the docker test bench
 $ docker-compose up -d
 # Wait a few seconds for initialization to complete
@@ -84,7 +84,7 @@ To run basic unit testing and builds execute:
 
 ``` shell
 $ cd $GOPATH/src/github.com/Supernomad/quantum
-$ make dev
+$ make test
 ```
 
 To run code level benchmarks execute:

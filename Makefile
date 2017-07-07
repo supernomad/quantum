@@ -3,13 +3,13 @@
 
 BENCH_MAX_PROCS=1
 
-dev: deps lint compile coverage cleanup
+test: deps lint unit bench coverage cleanup
 
 setup_dev: build_deps vendor_deps gen_certs gen_docker_network build_docker
 
-ci: build_deps vendor_deps gen_certs deps lint compile coverage
+test_ci: deps ci_unit ci_bench ci_coverage cleanup
 
-full: deps lint compile bench coverage cleanup
+setup_ci: ci_deps build_deps vendor_deps gen_certs
 
 gen_certs:
 	@echo "Generating etcd certificates..."
@@ -61,10 +61,6 @@ lint:
 	@fgt go vet './...'
 	@fgt golint './...'
 	@find . -type f -not -path "*/ssl/**/*" -and -not -path "*/vendor/**/*" | xargs fgt misspell
-
-race:
-	@echo "Running unit tests with race checking enabled..."
-	@go test -race './...'
 
 bench:
 	@echo "Running unit tests with benchmarking enabled..."

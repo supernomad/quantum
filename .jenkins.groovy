@@ -21,12 +21,8 @@ node {
                 """
             }
 
-            stage("Build Deps") {
-                sh "cd ${go_dir}; make ci_deps build_deps gen_certs"
-            }
-
-            stage("Vendor Deps") {
-                sh "cd ${go_dir}; make vendor_deps deps"
+            stage("Dependencies") {
+                sh "cd ${go_dir}; make setup_ci"
             }
 
             stage("Lint") {
@@ -37,16 +33,8 @@ node {
                 sh "cd ${go_dir}; make compile"
             }
 
-            stage("Unit") {
-                sh "cd ${go_dir}; make ci_unit"
-            }
-
-            stage("Bench") {
-                sh "cd ${go_dir}; make ci_bench"
-            }
-
-            stage("Coverage") {
-                sh "cd ${go_dir}; make ci_coverage"
+            stage("Test") {
+                sh "cd ${go_dir}; make test_ci"
             }
 
             stage('Results') {
