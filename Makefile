@@ -1,7 +1,6 @@
 # Copyright (c) 2016-2017 Christian Saide <Supernomad>
 # Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
-PUSH_COVERAGE=""
 BENCH_MAX_PROCS=1
 
 dev: deps lint compile coverage cleanup
@@ -33,6 +32,13 @@ compile:
 	@echo "Compiling quantum..."
 	@go install github.com/Supernomad/quantum
 
+ci_deps:
+	@echo "Running go get to install ci specific build dependencies..."
+	@go get -u github.com/tebeka/go2xunit
+	@go get -u github.com/ryancox/gobench2plot
+	@go get -u github.com/axw/gocov/...
+	@go get -u github.com/AlekSi/gocov-xml
+
 build_deps:
 	@echo "Running go get to install build dependencies..."
 	@go get -u golang.org/x/tools/cmd/cover
@@ -62,15 +68,27 @@ race:
 
 bench:
 	@echo "Running unit tests with benchmarking enabled..."
-	@GOMAXPROCS=$(BENCH_MAX_PROCS) go test -bench . -benchmem './...'
+	@GOMAXPROCS=$(BENCH_MAX_PROCS) go test -bench=Bench* -benchmem './...'
+
+ci_bench:
+	@echo "Running unit tests with benchmarking enabled..."
+	@GOMAXPROCS=$(BENCH_MAX_PROCS) go test -bench=Bench* -benchmem './...' | gobench2plot > benchmarks.xml
 
 unit:
 	@echo "Running unit tests with benchmarking disabled..."
 	@go test './...'
 
+ci_unit:
+	@echo "Running ci unit tests with benchmarking disabled..."
+	@go test './...' -v | go2xunit -output tests.xml
+
 coverage:
 	@echo "Running go cover..."
-	@dist/coverage.sh $(PUSH_COVERAGE)
+	@dist/coverage.sh
+
+ci_coverage:
+	@echo "Running ci coverage..."
+	@dist/ci_coverage.sh
 
 cleanup:
 	@echo "Cleaning up..."

@@ -22,7 +22,7 @@ node {
             }
 
             stage("Build Deps") {
-                sh "cd ${go_dir}; make build_deps gen_certs"
+                sh "cd ${go_dir}; make ci_deps build_deps gen_certs"
             }
 
             stage("Vendor Deps") {
@@ -38,7 +38,17 @@ node {
             }
 
             stage("Unit") {
-                sh "cd ${go_dir}; make coverage"
+                sh "cd ${go_dir}; make ci_unit"
+            }
+
+            stage("Bench") {
+                sh "cd ${go_dir}; make ci_bench"
+            }
+
+            stage('Results') {
+                junit allowEmptyResults: true, testResults: 'tests.xml'
+                step([$class: 'PlotBuilder', csvFileName: 'plot-56564010.csv', exclZero: false, group: 'benchmarks', keepRecords: false, logarithmic: false, numBuilds: '', style: 'line', title: 'Benchmarks', useDescr: false, xmlSeries: [[file: 'benchmarks.xml', nodeType: 'NODESET', url: '', xpath: '/Benchmarks/AllocsPerOp/*']], yaxis: 'Allocs', yaxisMaximum: '', yaxisMinimum: ''])
+                step([$class: 'CoberturaPublisher', autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: 'coverage.xml', failUnhealthy: false, failUnstable: false, maxNumberOfBuilds: 0, onlyStable: false, sourceEncoding: 'ASCII', zoomCoverageChart: false])
             }
         }
     }
