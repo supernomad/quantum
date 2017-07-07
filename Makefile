@@ -71,7 +71,7 @@ bench:
 	@GOMAXPROCS=$(BENCH_MAX_PROCS) go test -bench=Bench* -benchmem './...'
 
 ci_bench:
-	@echo "Running unit tests with benchmarking enabled..."
+	@echo "Running ci unit tests with benchmarking enabled..."
 	@GOMAXPROCS=$(BENCH_MAX_PROCS) go test -bench=Bench* -benchmem './...' | gobench2plot > benchmarks.xml
 
 unit:
