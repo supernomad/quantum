@@ -7,9 +7,9 @@ test: deps lint unit bench coverage cleanup
 
 setup_dev: build_deps vendor_deps gen_certs gen_docker_network build_docker
 
-test_ci: deps ci_unit ci_bench ci_coverage cleanup
+test_ci: ci_unit ci_bench ci_coverage cleanup
 
-setup_ci: ci_deps build_deps vendor_deps gen_certs
+setup_ci: ci_deps build_deps vendor_deps deps gen_certs
 
 gen_certs:
 	@echo "Generating etcd certificates..."
@@ -30,6 +30,10 @@ build_docker:
 
 compile:
 	@echo "Compiling quantum..."
+	@go build github.com/Supernomad/quantum
+
+install:
+	@echo "Installing quantum..."
 	@go install github.com/Supernomad/quantum
 
 ci_deps:
