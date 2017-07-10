@@ -9,6 +9,7 @@ import (
 	"sync"
 	"syscall"
 	"testing"
+	"time"
 )
 
 const (
@@ -89,7 +90,7 @@ func TestAES(t *testing.T) {
 		t.Fatalf("Errored trying to decrypt buffer: %s", err.Error())
 	}
 
-	if !testEq(buf[:dataLen], expected) {
+	if !testEq(buf[:dataLen], expected) || dataLen != aes.DecryptedSize(buf) {
 		t.Fatal("Decrypted output does not match plaintext.")
 	}
 }
@@ -266,6 +267,8 @@ func testEndToEndV4(t *testing.T) {
 		done <- false
 	}()
 
+	time.Sleep(2 * time.Second)
+
 	go func() {
 		session, err := cdtls.Connect("127.0.0.1", 9999)
 		if err != nil {
@@ -304,6 +307,9 @@ func testEndToEndV4(t *testing.T) {
 			}
 		}
 	}
+
+	dtls.Close()
+	cdtls.Close()
 }
 
 func testEndToEndV6(t *testing.T) {
@@ -380,6 +386,8 @@ func testEndToEndV6(t *testing.T) {
 		done <- false
 	}()
 
+	time.Sleep(2 * time.Second)
+
 	go func() {
 		session, err := cdtls.Connect("::1", 9999)
 		if err != nil {
@@ -418,6 +426,9 @@ func testEndToEndV6(t *testing.T) {
 			}
 		}
 	}
+
+	dtls.Close()
+	cdtls.Close()
 }
 
 func TestDTLS(t *testing.T) {
@@ -515,6 +526,8 @@ func BenchmarkDTLS(b *testing.B) {
 			return
 		}
 	}()
+
+	time.Sleep(2 * time.Second)
 
 	go func() {
 		defer wg.Done()
