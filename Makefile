@@ -72,7 +72,8 @@ bench:
 
 ci_bench:
 	@echo "Running ci unit tests with benchmarking enabled..."
-	@GOMAXPROCS=$(BENCH_MAX_PROCS) go test -bench=Bench* -benchmem './...' | gobench2plot > benchmarks.xml
+	@GOMAXPROCS=$(BENCH_MAX_PROCS) go test -bench=Bench* -benchmem './...' | tee bench_output.txt
+	@cat bench_output.txt | gobench2plot > benchmarks.xml
 
 unit:
 	@echo "Running unit tests with benchmarking disabled..."
@@ -80,7 +81,8 @@ unit:
 
 ci_unit:
 	@echo "Running ci unit tests with benchmarking disabled..."
-	@go test './...' -v | go2xunit -output tests.xml
+	@go test './...' -v | tee unit_output.txt
+	@cat unit_output.txt | go2xunit -output tests.xml
 
 coverage:
 	@echo "Running go cover..."
