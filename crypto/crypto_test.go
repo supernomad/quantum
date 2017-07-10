@@ -383,6 +383,7 @@ func testEndToEndV6(t *testing.T) {
 			return
 		}
 
+		session.Close()
 		done <- false
 	}()
 
@@ -415,6 +416,7 @@ func testEndToEndV6(t *testing.T) {
 			return
 		}
 
+		session.Close()
 		done <- false
 	}()
 
