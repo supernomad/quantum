@@ -16,5 +16,7 @@ done
 
 gocov convert full-coverage.out | gocov-xml > coverage.xml
 
+sed -i -e "s:/opt/go/src/github.com/Supernomad/quantum/::g" coverage.xml
+
 rm -f coverage.out
 rm -f full-coverage.out
