@@ -24,9 +24,13 @@ _testmain.go
 *.test
 *.prof
 *.tar.gz
+quantum
 
 # Temp certs for etcd
 dist/ssl/data/
 dist/ssl/certs/
 dist/ssl/keys/
 dist/ssl/csrs/
+
+# Temp ci xml files
+build_output/

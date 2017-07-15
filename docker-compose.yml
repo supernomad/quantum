@@ -8,7 +8,7 @@ services:
     cpuset: "2,3"
     container_name: quantum0
     build:
-      context: "./dist"
+      context: "./dist/docker"
     restart: unless-stopped
     extra_hosts:
       - "etcd.quantum.dev:172.18.0.4"
@@ -50,7 +50,7 @@ services:
     cpuset: "0,1,2"
     container_name: quantum1
     build:
-      context: "./dist"
+      context: "./dist/docker"
     restart: unless-stopped
     extra_hosts:
       - "etcd.quantum.dev:172.18.0.4"
@@ -85,7 +85,7 @@ services:
     cpuset: "1"
     container_name: quantum2
     build:
-      context: "./dist"
+      context: "./dist/docker"
     restart: unless-stopped
     extra_hosts:
       - "etcd.quantum.dev:172.18.0.4"

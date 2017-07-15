@@ -1,19 +1,24 @@
 # Copyright (c) 2016-2017 Christian Saide <Supernomad>
 # Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
+.PHONY: all setup_dev setup_ci gen_certs gen_docker_network rm_docker_network build_docker ci_deps build_deps vendor_deps lib_deps compile install lint check clean release
+
 BENCH_MAX_PROCS=1
 
-test: deps lint unit bench coverage cleanup
+CI=
+ifdef CI
+CI_ARGS=--ci
+endif
 
-setup_dev: build_deps vendor_deps gen_certs gen_docker_network build_docker
+all: lib_deps compile
 
-test_ci: ci_unit ci_bench ci_coverage cleanup
+setup_ci: ci_deps build_deps vendor_deps gen_certs
 
-setup_ci: ci_deps build_deps vendor_deps deps gen_certs
+setup_dev: build_deps vendor_deps gen_certs rm_docker_network gen_docker_network build_docker
 
 gen_certs:
 	@echo "Generating etcd certificates..."
-	@dist/generate-tls-test-certs.sh
+	@dist/bin/generate-tls-test-certs.sh
 
 gen_docker_network:
 	@echo "Setting up docker networks..."
@@ -27,14 +32,6 @@ rm_docker_network:
 build_docker:
 	@echo "Building test docker container..."
 	@docker-compose build
-
-compile:
-	@echo "Compiling quantum..."
-	@go build github.com/Supernomad/quantum
-
-install:
-	@echo "Installing quantum..."
-	@go install github.com/Supernomad/quantum
 
 ci_deps:
 	@echo "Running go get to install ci specific build dependencies..."
@@ -55,45 +52,35 @@ vendor_deps:
 	@echo "Building vendored deps..."
 	@(cd vendor/openssl && ./config && make && cd ../../)
 
-deps:
+lib_deps:
 	@echo "Running go get to install library dependencies..."
 	@go get -t -v './...'
 
+compile:
+	@echo "Compiling quantum..."
+	@go build github.com/Supernomad/quantum
+
+install:
+	@echo "Installing quantum..."
+	@go install github.com/Supernomad/quantum
+
 lint:
-	@echo "Running fmt/vet/lint..."
+	@echo "Running linters..."
 	@fgt go fmt './...'
 	@fgt go vet './...'
 	@fgt golint './...'
 	@find . -type f -not -path "*/ssl/**/*" -and -not -path "*/vendor/**/*" | xargs fgt misspell
 
-bench:
-	@echo "Running unit tests with benchmarking enabled..."
-	@GOMAXPROCS=$(BENCH_MAX_PROCS) go test -bench=Bench* -benchmem './...'
+check: lint
+	@echo "Running tests..."
+	@dist/bin/coverage.sh --bench $(CI_ARGS)
+	@rm -f quantum.pid
 
-ci_bench:
-	@echo "Running ci unit tests with benchmarking enabled..."
-	@GOMAXPROCS=$(BENCH_MAX_PROCS) go test -bench=Bench* -benchmem './...' | tee bench_output.txt
-	@cat bench_output.txt | gobench2plot > benchmarks.xml
-
-unit:
-	@echo "Running unit tests with benchmarking disabled..."
-	@go test './...'
-
-ci_unit:
-	@echo "Running ci unit tests with benchmarking disabled..."
-	@go test './...' -v | tee unit_output.txt
-	@cat unit_output.txt | go2xunit -output tests.xml
-
-coverage:
-	@echo "Running go cover..."
-	@dist/coverage.sh
-
-ci_coverage:
-	@echo "Running ci coverage..."
-	@dist/ci_coverage.sh
-
-cleanup:
+clean:
 	@echo "Cleaning up..."
+	@rm -rf build_output/
+	@rm -f quantum
+	@rm -f *_linux_amd64.tar.gz
 	@rm -f quantum.pid
 
 release:
