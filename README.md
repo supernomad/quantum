@@ -35,12 +35,12 @@ To ensure the secure operation of `quantum` the following must be true:
 - Etcd client certificate authentication should be enabled.
 - For added security each server should also have a unique username/password to access etcd.
 
-> For a minimalistic openssl configuration that can be used to generate test certificates see the included `dist/ssl/generate-tls-test-certs.sh` bash script
+> For a minimalistic openssl configuration that can be used to generate test certificates see the included `dist/bin/generate-tls-test-certs.sh` bash script
 
 ##### DTLS
 The `DTLS` backend network is the most secure way to use `quantum`, this backend configures and uses DTLS v1.2 based on OpenSSL v1.1.0f. While this backend is the most secure, it also requires the most configuration to properly use. Specifically a fully configured and secured CA is needed, and each server should be given its own signed client certificate/key pair that is set to use the unique public host IP as the common name for verification purposes. The other caveat of using the `DTLS` backend network, is that all servers in the `quantum` network will use `DTLS` for communication, whether or not encryption is needed.
 
-> Again for a minimalistic openssl configuration that can be used to generate test certificates see the included `dist/ssl/generate-tls-test-certs.sh` bash script
+> Again for a minimalistic openssl configuration that can be used to generate test certificates see the included `dist/bin/generate-tls-test-certs.sh` bash script
 
 ##### Encryption Plugin
 The `Encryption Plugin` allows for secure communication using randomly generated ECDH key pairs for each server using [curve25519](https://cr.yp.to/ecdh.html). While this plugin is easier to utilize than the `DTLS` backend network it is not as secure. Due to the fact that there is no authentication of the communicating peers. However the messages that are received are authenticated using GCM guaranteeing that there is no tampering with messages between servers in transit. The `Encryption Plugin` utilizes a combination of the randomly generated ECDH key pairs, a unique random salt, pbkdf2, and AES-256-GCM. Unlike the `DTLS` backend network, only servers with this plugin enabled will communicate with encryption, which allows for granular configuraion of which servers require the security provided.
@@ -67,7 +67,8 @@ $ cd $GOPATH/src/github.com/Supernomad/quantum
 # Setup the dev environment
 $ make setup_dev
 # Run a full development build including linting and unit tests
-$ make test
+$ make
+$ make check
 # Start up the docker test bench
 $ docker-compose up -d
 # Wait a few seconds for initialization to complete
@@ -84,14 +85,14 @@ To run basic unit testing and builds execute:
 
 ``` shell
 $ cd $GOPATH/src/github.com/Supernomad/quantum
-$ make test
+$ make check
 ```
 
 To run code level benchmarks execute:
 
 ``` shell
 # This must be executed as root due to the need to create a tun interface see device/device_test.go for details
-$ sudo -i bash -c "cd $GOPATH/src/github.com/Supernomad/quantum; PATH='$PATH' GOPATH='$GOPATH' make bench"
+$ sudo -i bash -c "cd $GOPATH/src/github.com/Supernomad/quantum; PATH='$PATH' GOPATH='$GOPATH' make check"
 ```
 
 To do basic bandwidth based testing the `quantum` containers all have iperf3 installed. For example to test how much throughput `quantum0` can handle from both `quantum1`/`quantum2`:
@@ -127,7 +128,7 @@ Work flow:
 There are a few rules:
 
 - All travis builds must successfully complete before a PR will be considered.
-- `make dev` script must be run successfully before the PR is open.
+- `make all check` must be run successfully before the PR is open.
 - Documentation is added for new user facing functionality.
 
 ---
