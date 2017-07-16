@@ -53,8 +53,9 @@ subjectKeyIdentifier   = hash
 
 [ v3_client ]
 basicConstraints       = CA:FALSE
-extendedKeyUsage       = clientAuth
+extendedKeyUsage       = clientAuth, serverAuth
 keyUsage               = digitalSignature, keyEncipherment
+subjectAltName         = ${ENV::SAN}
 
 [ v3_server ]
 basicConstraints       = CA:FALSE

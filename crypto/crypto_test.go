@@ -9,7 +9,6 @@ import (
 	"sync"
 	"syscall"
 	"testing"
-	"time"
 )
 
 const (
@@ -267,8 +266,6 @@ func testEndToEndV4(t *testing.T) {
 		done <- false
 	}()
 
-	time.Sleep(2 * time.Second)
-
 	go func() {
 		session, err := cdtls.Connect("127.0.0.1", 9999)
 		if err != nil {
@@ -386,8 +383,6 @@ func testEndToEndV6(t *testing.T) {
 		session.Close()
 		done <- false
 	}()
-
-	time.Sleep(2 * time.Second)
 
 	go func() {
 		session, err := cdtls.Connect("::1", 9999)
@@ -528,8 +523,6 @@ func BenchmarkDTLS(b *testing.B) {
 			return
 		}
 	}()
-
-	time.Sleep(2 * time.Second)
 
 	go func() {
 		defer wg.Done()

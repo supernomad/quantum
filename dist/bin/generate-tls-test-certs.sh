@@ -20,7 +20,7 @@ pushd $GOPATH/src/github.com/Supernomad/quantum/dist/ssl 2>&1 > /dev/null
 touch data/index.txt
 echo '01' > data/serial
 
-export SAN="IP:127.0.0.1, IP:172.18.0.4, IP:::1, IP:fd00:dead:beef::4"
+export SAN="IP:127.0.0.1, IP:172.18.0.2, IP:172.18.0.3, IP:172.18.0.4, IP:172.18.0.5, IP:::1, IP:fd00:dead:beef::2, IP:fd00:dead:beef::3, IP:fd00:dead:beef::4, IP:fd00:dead:beef::5"
 
 # Create etcd CA cert
 yes | openssl req -config etcd-openssl.cnf -passout pass:quantum -new -x509 -extensions v3_ca -keyout keys/ca.key -out certs/ca.crt -subj "/C=US/ST=New York/L=New York City/O=quantum/OU=development/CN=ca.quantum.dev"
