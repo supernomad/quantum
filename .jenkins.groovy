@@ -31,7 +31,7 @@ node {
             }
 
             stage('Results') {
-                junit allowEmptyResults: true, testResults: 'build_output/tests.xml'
+                junit allowEmptyResults: true, healthScaleFactor: 100.0, testResults: 'build_output/tests.xml'
                 step([$class: 'PlotBuilder', csvFileName: 'plot-54309763.csv', exclZero: false, group: 'benchmarks', keepRecords: false, logarithmic: false, numBuilds: '', style: 'line', title: 'Allocations Per Call', useDescr: false, xmlSeries: [[file: 'build_output/benchmarks.xml', nodeType: 'NODESET', url: '', xpath: '/Benchmarks/AllocsPerOp/*']], yaxis: 'Allocs (count)', yaxisMaximum: '', yaxisMinimum: ''])
                 step([$class: 'PlotBuilder', csvFileName: 'plot-56564010.csv', exclZero: false, group: 'benchmarks', keepRecords: false, logarithmic: false, numBuilds: '', style: 'line', title: 'Allocated Bytes Per Call', useDescr: false, xmlSeries: [[file: 'build_output/benchmarks.xml', nodeType: 'NODESET', url: '', xpath: '/Benchmarks/AllocsBytesPerOp/*']], yaxis: 'Allocs (B)', yaxisMaximum: '', yaxisMinimum: ''])
                 step([$class: 'PlotBuilder', csvFileName: 'plot-21467362.csv', exclZero: false, group: 'benchmarks', keepRecords: false, logarithmic: false, numBuilds: '', style: 'line', title: 'Time Per Call', useDescr: false, xmlSeries: [[file: 'build_output/benchmarks.xml', nodeType: 'NODESET', url: '', xpath: '/Benchmarks/NsPerOp/*']], yaxis: 'Time (ns)', yaxisMaximum: '', yaxisMinimum: ''])

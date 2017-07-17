@@ -1,9 +1,7 @@
 # Copyright (c) 2016-2017 Christian Saide <Supernomad>
 # Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
-.PHONY: all setup_dev setup_ci gen_certs gen_docker_network rm_docker_network build_docker ci_deps build_deps vendor_deps lib_deps compile install lint check clean release
-
-BENCH_MAX_PROCS=1
+.PHONY: all setup_ci setup_dev gen_certs gen_docker_network rm_docker_network build_docker ci_deps build_deps vendor_deps lib_deps compile install lint check clean release
 
 CI=
 ifdef CI
