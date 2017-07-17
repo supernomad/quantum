@@ -62,6 +62,8 @@ Currently `quantum` development is entirely in go and utilizes a few BASH script
 #### Getting started
 To get started developing `quantum`, run the following shell commands to get your environment configured and running.
 
+> Note that testing quantum requires `sudo` access to create and configure TUN/TAP devices, see the included `dist/bin/coverage.sh` script and `device/device_test.go` tests for details.
+
 ``` shell
 $ cd $GOPATH/src/github.com/Supernomad/quantum
 # Setup the dev environment
@@ -86,13 +88,6 @@ To run basic unit testing and builds execute:
 ``` shell
 $ cd $GOPATH/src/github.com/Supernomad/quantum
 $ make check
-```
-
-To run code level benchmarks execute:
-
-``` shell
-# This must be executed as root due to the need to create a tun interface see device/device_test.go for details
-$ sudo -i bash -c "cd $GOPATH/src/github.com/Supernomad/quantum; PATH='$PATH' GOPATH='$GOPATH' make check"
 ```
 
 To do basic bandwidth based testing the `quantum` containers all have iperf3 installed. For example to test how much throughput `quantum0` can handle from both `quantum1`/`quantum2`:

@@ -4,7 +4,9 @@
 package device
 
 import (
+	"net"
 	"testing"
+	"time"
 
 	"github.com/Supernomad/quantum/common"
 )
@@ -32,5 +34,37 @@ func TestMock(t *testing.T) {
 
 	if mock.Close() != nil {
 		t.Fatal("Mock Close should always return nil.")
+	}
+}
+
+func TestTUN(t *testing.T) {
+	defaultLeaseTime, _ := time.ParseDuration("48h")
+	DefaultNetworkConfig := &common.NetworkConfig{
+		Backend:     "udp",
+		Network:     "10.99.0.0/16",
+		StaticRange: "10.99.0.0/23",
+		LeaseTime:   defaultLeaseTime,
+	}
+
+	baseIP, ipnet, _ := net.ParseCIDR(DefaultNetworkConfig.Network)
+	DefaultNetworkConfig.BaseIP = baseIP
+	DefaultNetworkConfig.IPNet = ipnet
+
+	_, staticNet, _ := net.ParseCIDR(DefaultNetworkConfig.StaticRange)
+	DefaultNetworkConfig.StaticNet = staticNet
+
+	tun, err := New(TUNDevice, &common.Config{
+		NumWorkers:    1,
+		DeviceName:    "quantum%d",
+		PrivateIP:     net.ParseIP("10.99.0.1"),
+		NetworkConfig: DefaultNetworkConfig,
+		ReuseFDS:      false,
+	})
+
+	if err != nil {
+		t.Fatalf("Failed to create TUN device: %s", err.Error())
+	}
+	if tun == nil {
+		t.Fatal("Failed to create TUN device: unhandled error")
 	}
 }

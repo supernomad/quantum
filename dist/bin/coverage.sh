@@ -4,6 +4,7 @@
 # Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
 MODE="mode: count"
+SUDO="false"
 CI="false"
 CI_OUTPUT_DIR="build_output"
 BENCH_ARGS=""
@@ -24,6 +25,7 @@ $(basename $BASH_SOURCE) [flags]
 This script runs coverage analysis on the various unit and benchmark tests within quantum and its modules.
 
 Flags:
+    -s|--sudo     Whether or not to run with sudo, which is needed for unpriviledged users to create and configure TUN/TAP devices. (default: ${SUDO})
     -c|--ci       Whether this run should include ci analysis of the resulting coverage output. (default: ${CI})
     -d|--ci-dir   The directory to place CI related output in. (default: '${CI_OUTPUT_DIR}/')
     -b|--bench    Whether or not to run benchmark tests during this run. (default: false)
@@ -36,6 +38,12 @@ EOF
 function setup() {
     echo $MODE > full-coverage.out
     touch testing_output.out
+
+    if [[ ! -d /dev/net ]] || [[ ! -c /dev/net/tun ]]; then
+        mkdir -p /dev/net
+        mknod /dev/net/tun c 10 200
+        chmod 0666 /dev/net/tun
+    fi
 }
 
 function cleanup() {
@@ -44,12 +52,27 @@ function cleanup() {
     rm -f testing_output.out
 }
 
+function test_no_sudo() {
+    go test ${CI_ARGS} -covermode=count -coverprofile=tmp-coverage.out ${BENCH_ARGS} ${1} 2>&1 \
+        | tee -a testing_output.out
+}
+
+function test_with_sudo() {
+    sudo -i bash -c \
+        "cd $GOPATH/src/github.com/Supernomad/quantum; PATH='$PATH' GOPATH='$GOPATH' \
+        go test ${CI_ARGS} -covermode=count -coverprofile=tmp-coverage.out ${BENCH_ARGS} ${1} 2>&1 \
+        | tee -a testing_output.out"
+}
+
 function main() {
     for module in ${MODULES}; do
         rm -f tmp-coverage.out
 
-        go test ${CI_ARGS} -covermode=count -coverprofile=tmp-coverage.out ${BENCH_ARGS} ${module} 2>&1 \
-            | tee -a testing_output.out
+        if [[ $SUDO == "true" ]]; then
+            test_with_sudo ${module}
+        else
+            test_no_sudo ${module}
+        fi
 
         if [[ -f tmp-coverage.out ]]; then
             grep -v "$MODE" tmp-coverage.out >> full-coverage.out
@@ -71,6 +94,7 @@ function handle_ci() {
 
 while [[ $1 ]]; do
     case "$1" in
+        -s|--sudo)    SUDO="true" ;;
         -c|--ci)      CI="true"; CI_ARGS="-v" ;;
         -b|--bench)   BENCH_ARGS="-bench . -benchmem" ;;
         -x|--debug)   set -x ;;

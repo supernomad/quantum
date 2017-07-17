@@ -17,7 +17,3 @@ RUN apt-get update \
     && wget https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz \
     && tar -C /usr/local/ -xzvf go1.8.3.linux-amd64.tar.gz \
     && mkdir -p /opt/go/src/ /opt/go/pkg/ /opt/go/bin/
-
-RUN mkdir -p /dev/net \
-    && mknod /dev/net/tun c 10 200 \
-    && chmod 0666 /dev/net/tun

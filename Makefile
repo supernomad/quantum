@@ -7,7 +7,9 @@ BENCH_MAX_PROCS=1
 
 CI=
 ifdef CI
-CI_ARGS=--ci
+COVERAGE_ARGS=--ci
+else
+COVERAGE_ARGS=--sudo
 endif
 
 all: lib_deps compile
@@ -73,7 +75,7 @@ lint:
 
 check: lint
 	@echo "Running tests..."
-	@dist/bin/coverage.sh --bench $(CI_ARGS)
+	@dist/bin/coverage.sh --bench $(COVERAGE_ARGS)
 	@rm -f quantum.pid
 
 clean:
