@@ -9,7 +9,8 @@ import (
 
 // Encryption plugin struct to use for encrypting outgoing packets or decrypting incoming packets.
 type Encryption struct {
-	cfg *common.Config
+	cfg   *common.Config
+	order int
 }
 
 // Apply returns the payload/mapping encrypted if the direction is Outgoing and decrypted if the direction is Incoming.
@@ -40,8 +41,19 @@ func (enc *Encryption) Close() error {
 	return nil
 }
 
+// Name returns 'encryption'.
+func (enc *Encryption) Name() string {
+	return "encryption"
+}
+
+// Order returns the EncryptionPluginOrder value.
+func (enc *Encryption) Order() int {
+	return enc.order
+}
+
 func newEncryption(cfg *common.Config) (Plugin, error) {
 	return &Encryption{
-		cfg: cfg,
+		cfg:   cfg,
+		order: EncryptionPluginOrder,
 	}, nil
 }

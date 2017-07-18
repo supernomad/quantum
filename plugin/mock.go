@@ -9,6 +9,7 @@ import (
 
 // Mock plugin struct to use for testing.
 type Mock struct {
+	order int
 }
 
 // Apply returns the payload/mapping unchanged and always true.
@@ -21,6 +22,16 @@ func (mock *Mock) Close() error {
 	return nil
 }
 
+// Name returns 'mock'.
+func (mock *Mock) Name() string {
+	return "mock"
+}
+
+// Order returns the MockPluginOrder value.
+func (mock *Mock) Order() int {
+	return mock.order
+}
+
 func newMock(cfg *common.Config) (Plugin, error) {
-	return &Mock{}, nil
+	return &Mock{order: MockPluginOrder}, nil
 }

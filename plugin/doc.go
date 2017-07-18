@@ -6,5 +6,6 @@ Package plugin contains the structs and logic to handle arbitrary transforms or 
 
 Currently supported plugin types:
     - Compression
+    - Encryption
 */
 package plugin

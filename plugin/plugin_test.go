@@ -5,6 +5,7 @@ package plugin
 
 import (
 	"math/rand"
+	"sort"
 	"testing"
 
 	"github.com/Supernomad/quantum/common"
@@ -52,6 +53,37 @@ func testEq(a, b []byte) bool {
 func fillSlice(buf []byte) error {
 	_, err := rand.Read(buf)
 	return err
+}
+
+func TestSorter(t *testing.T) {
+	encryption, err := New(EncryptionPlugin, &common.Config{})
+	if err != nil {
+		t.Fatal("Failed to create new encryption plugin.")
+	}
+
+	compression, err := New(CompressionPlugin, &common.Config{})
+	if err != nil {
+		t.Fatal("Failed to create new compression plugin.")
+	}
+
+	mock, err := New(MockPlugin, &common.Config{})
+	if err != nil {
+		t.Fatal("Failed to create new mock plugin.")
+	}
+
+	plugins := []Plugin{mock, encryption, compression}
+
+	sort.Sort(Sorter{Plugins: plugins})
+
+	if plugins[0].Name() != "compression" || plugins[1].Name() != "encryption" || plugins[2].Name() != "mock" {
+		t.Fatal("Failed to properly sort the plugins")
+	}
+
+	sort.Sort(sort.Reverse(Sorter{Plugins: plugins}))
+
+	if plugins[0].Name() != "mock" || plugins[1].Name() != "encryption" || plugins[2].Name() != "compression" {
+		t.Fatal("Failed to properly reverse the plugins")
+	}
 }
 
 func TestEncryption(t *testing.T) {
@@ -123,5 +155,9 @@ func TestMock(t *testing.T) {
 
 	if mock.Close() != nil {
 		t.Fatal("Mock Close should always return nil.")
+	}
+
+	if mock.Order() != MockPluginOrder {
+		t.Fatal("Mock Order should always return MockPluginOrder.")
 	}
 }

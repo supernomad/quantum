@@ -10,7 +10,8 @@ import (
 
 // Compression plugin struct to use for compressing outgoing packets or decompressing incoming packets.
 type Compression struct {
-	cfg *common.Config
+	cfg   *common.Config
+	order int
 }
 
 func compress(raw []byte) ([]byte, int) {
@@ -59,8 +60,19 @@ func (comp *Compression) Close() error {
 	return nil
 }
 
+// Name returns 'compression'.
+func (comp *Compression) Name() string {
+	return "compression"
+}
+
+// Order returns the CompressionPluginOrder value.
+func (comp *Compression) Order() int {
+	return comp.order
+}
+
 func newCompression(cfg *common.Config) (Plugin, error) {
 	return &Compression{
-		cfg: cfg,
+		cfg:   cfg,
+		order: CompressionPluginOrder,
 	}, nil
 }

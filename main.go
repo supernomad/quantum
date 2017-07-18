@@ -5,6 +5,7 @@ package main
 
 import (
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/Supernomad/quantum/agg"
@@ -35,12 +36,17 @@ func main() {
 	err = store.Init()
 	handleError(log, err)
 
-	plugins := make([]plugin.Plugin, len(cfg.Plugins))
-	for i := 0; i < len(plugins); i++ {
+	incomingPlugins := make([]plugin.Plugin, len(cfg.Plugins))
+	outgoingPlugins := make([]plugin.Plugin, len(cfg.Plugins))
+	for i := 0; i < len(cfg.Plugins); i++ {
 		plugin, err := plugin.New(cfg.Plugins[i], cfg)
 		handleError(log, err)
-		plugins[i] = plugin
+		outgoingPlugins[i] = plugin
+		incomingPlugins[i] = plugin
 	}
+
+	sort.Sort(plugin.Sorter{Plugins: incomingPlugins})
+	sort.Sort(sort.Reverse(plugin.Sorter{Plugins: outgoingPlugins}))
 
 	dev, err := device.New(device.TUNDevice, cfg)
 	handleError(log, err)
@@ -50,8 +56,8 @@ func main() {
 
 	aggregator := agg.New(log, cfg)
 
-	outgoing := workers.NewOutgoing(cfg, aggregator, store, plugins, dev, sock)
-	incoming := workers.NewIncoming(cfg, aggregator, store, plugins, dev, sock)
+	outgoing := workers.NewOutgoing(cfg, aggregator, store, outgoingPlugins, dev, sock)
+	incoming := workers.NewIncoming(cfg, aggregator, store, incomingPlugins, dev, sock)
 
 	aggregator.Start()
 	store.Start()
