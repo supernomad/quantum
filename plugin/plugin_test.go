@@ -75,13 +75,13 @@ func TestSorter(t *testing.T) {
 
 	sort.Sort(Sorter{Plugins: plugins})
 
-	if plugins[0].Name() != "compression" || plugins[1].Name() != "encryption" || plugins[2].Name() != "mock" {
+	if plugins[0].Name() != CompressionPlugin || plugins[1].Name() != EncryptionPlugin || plugins[2].Name() != MockPlugin {
 		t.Fatal("Failed to properly sort the plugins")
 	}
 
 	sort.Sort(sort.Reverse(Sorter{Plugins: plugins}))
 
-	if plugins[0].Name() != "mock" || plugins[1].Name() != "encryption" || plugins[2].Name() != "compression" {
+	if plugins[0].Name() != MockPlugin || plugins[1].Name() != EncryptionPlugin || plugins[2].Name() != CompressionPlugin {
 		t.Fatal("Failed to properly reverse the plugins")
 	}
 }
