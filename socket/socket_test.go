@@ -7,6 +7,7 @@ import (
 	"net"
 	"syscall"
 	"testing"
+	"time"
 
 	"github.com/Supernomad/quantum/common"
 )
@@ -119,6 +120,8 @@ func testUDPEndToEndV4(t *testing.T) {
 
 		done <- false
 	}()
+
+	time.Sleep(5 * time.Second)
 
 	go func() {
 		payload := &common.Payload{
@@ -240,6 +243,8 @@ func testUDPEndToEndV6(t *testing.T) {
 
 		done <- false
 	}()
+
+	time.Sleep(5 * time.Second)
 
 	go func() {
 		payload := &common.Payload{
@@ -387,6 +392,8 @@ func testDTLSEndToEndV4(t *testing.T) {
 		done <- false
 	}()
 
+	time.Sleep(5 * time.Second)
+
 	go func() {
 		payload := &common.Payload{
 			Raw:    sendbuf,
@@ -525,6 +532,8 @@ func testDTLSEndToEndV6(t *testing.T) {
 
 		done <- false
 	}()
+
+	time.Sleep(5 * time.Second)
 
 	go func() {
 		payload := &common.Payload{
