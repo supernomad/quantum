@@ -15,6 +15,7 @@ import (
 // DTLS socket struct for managing a multi-queue openssl based DTLS socket.
 type DTLS struct {
 	cfg     *common.Config
+	stop    bool
 	queues  []int
 	pollFds []int
 	events  [][]syscall.EpollEvent
@@ -27,6 +28,8 @@ type DTLS struct {
 
 // Close the DTLS socket and removes associated network configuration.
 func (dtls *DTLS) Close() error {
+	dtls.stop = true
+
 	// Close the DTLS servers.
 	if dtls.servers != nil {
 		for i := 0; i < dtls.cfg.NumWorkers; i++ {
@@ -154,7 +157,7 @@ func (dtls *DTLS) getWriter(queue int, mapping *common.Mapping) (*crypto.DTLSSes
 }
 
 func (dtls *DTLS) accept(queue int) {
-	for {
+	for !dtls.stop {
 		session, err := dtls.servers[queue].Accept()
 		if err != nil {
 			continue
@@ -169,6 +172,7 @@ func newDTLS(cfg *common.Config) (*DTLS, error) {
 
 	dtls := &DTLS{
 		cfg:     cfg,
+		stop:    false,
 		queues:  make([]int, cfg.NumWorkers),
 		pollFds: make([]int, cfg.NumWorkers),
 		events:  make([][]syscall.EpollEvent, cfg.NumWorkers),
