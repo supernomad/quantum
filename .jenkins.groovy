@@ -1,3 +1,6 @@
+// Copyright (c) 2016-2017 Christian Saide <Supernomad>
+// Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+
 node {
     try {
         go_dir = "/opt/go/src/github.com/Supernomad/quantum"
