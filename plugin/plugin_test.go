@@ -93,7 +93,14 @@ func TestEncryption(t *testing.T) {
 	}
 
 	buf := make([]byte, common.MaxPacketLength)
+	expected := make([]byte, common.MaxPacketLength)
+
 	err = fillSlice(buf)
+	if err != nil {
+		t.Fatal("Failed to fill buffer for encryption.")
+	}
+
+	copy(expected, buf)
 
 	out := common.NewTunPayload(buf, common.MTU)
 
@@ -109,7 +116,7 @@ func TestEncryption(t *testing.T) {
 		t.Fatal("Failed to decrypt the incoming payload.")
 	}
 
-	if !testEq(out.Packet, in.Packet) {
+	if !testEq(expected[:common.MTU], buf[:common.MTU]) {
 		t.Fatal("The outgoing and incoming payloads don't match after encryption/decryption.")
 	}
 
@@ -123,7 +130,14 @@ func TestCompression(t *testing.T) {
 	}
 
 	buf := make([]byte, common.MaxPacketLength)
+	expected := make([]byte, common.MaxPacketLength)
+
 	err = fillSlice(buf)
+	if err != nil {
+		t.Fatal("Failed to fill buffer for encryption.")
+	}
+
+	copy(expected, buf)
 
 	out := common.NewTunPayload(buf, common.MTU)
 
@@ -139,11 +153,66 @@ func TestCompression(t *testing.T) {
 		t.Fatal("Failed to decompress the incoming payload.")
 	}
 
-	if !testEq(out.Packet, in.Packet) {
+	if !testEq(expected[:common.MTU], buf[:common.MTU]) {
 		t.Fatal("The outgoing and incoming payloads don't match after compression/decompression.")
 	}
 
 	compression.Close()
+}
+
+func TestMulti(t *testing.T) {
+	encryption, err := New(EncryptionPlugin, &common.Config{})
+	if err != nil {
+		t.Fatal("Failed to create new encryption plugin.")
+	}
+
+	compression, err := New(CompressionPlugin, &common.Config{})
+	if err != nil {
+		t.Fatal("Failed to create new compression plugin.")
+	}
+
+	plugins := []Plugin{encryption, compression}
+
+	sort.Sort(Sorter{Plugins: plugins})
+
+	buf := make([]byte, common.MaxPacketLength)
+	expected := make([]byte, common.MaxPacketLength)
+
+	err = fillSlice(buf)
+	if err != nil {
+		t.Fatal("Failed to fill buffer for encryption.")
+	}
+
+	copy(expected, buf)
+
+	payload := common.NewTunPayload(buf, common.MTU)
+
+	var ok bool
+	for i := 0; i < len(plugins); i++ {
+		payload, mapping, ok = plugins[i].Apply(Outgoing, payload, mapping)
+		if !ok {
+			t.Fatalf("Failed to apply outgoing plugin: %s", plugins[i].Name())
+		}
+	}
+
+	sort.Sort(sort.Reverse(Sorter{Plugins: plugins}))
+
+	payload = common.NewSockPayload(payload.Raw, payload.Length)
+
+	for i := 0; i < len(plugins); i++ {
+		payload, mapping, ok = plugins[i].Apply(Incoming, payload, mapping)
+		if !ok {
+			t.Fatalf("Failed to apply incoming plugin: %s", plugins[i].Name())
+		}
+	}
+
+	if payload.Length-common.HeaderSize != common.MTU {
+		t.Fatal("The outgoing and incoming payloads have different lengths after applying all plugins.")
+	}
+
+	if !testEq(expected[:common.MTU], payload.Raw[:payload.Length-common.HeaderSize]) {
+		t.Fatal("The outgoing and incoming payloads don't match after applying all plugins.")
+	}
 }
 
 func TestMock(t *testing.T) {

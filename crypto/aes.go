@@ -38,27 +38,27 @@ func (crypt *AES) DecryptedSize(data []byte) int {
 // Encrypt takes the data buffer and encrypts up to length bytes in place, while injecting the nonce and gcm tag at the end and signing the additional data.
 //
 // additional may be nil.
-func (crypt *AES) Encrypt(data []byte, length int, additional []byte) error {
+func (crypt *AES) Encrypt(data []byte, length int, additional []byte) (int, error) {
 	nonce := make([]byte, crypt.aead.NonceSize())
 
 	n, err := rand.Read(nonce)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	crypt.aead.Seal(data[:0], nonce[:n], data[:length], additional)
 	copy(data[length+crypt.aead.Overhead():], nonce[:n])
-	return nil
+	return crypt.EncryptedSize(data[:length]), nil
 }
 
 // Decrypt takes the data buffer and decrypts it and verifies the additional data.
 //
 // additional and data must be the same buffers passed to Encrypt.
-func (crypt *AES) Decrypt(data []byte, additional []byte) error {
+func (crypt *AES) Decrypt(data []byte, additional []byte) (int, error) {
 	length := len(data) - crypt.aead.NonceSize()
 	nonce := data[length:]
 	_, err := crypt.aead.Open(data[:0], nonce, data[:length], additional)
-	return err
+	return crypt.DecryptedSize(data), err
 }
 
 // NewAES returns a new AEAD based cipher object based on the passed in secret and salt.

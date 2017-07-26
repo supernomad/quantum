@@ -75,18 +75,24 @@ func TestAES(t *testing.T) {
 		t.Fatalf("The AES minimum size is incorrect, got: %d", minSize)
 	}
 
-	err = aes.Encrypt(buf, dataLen, nil)
+	length, err := aes.Encrypt(buf, dataLen, nil)
 	if err != nil {
 		t.Fatalf("Errored trying to encrypt buffer: %s", err.Error())
+	}
+	if length != aes.EncryptedSize(buf[:dataLen]) {
+		t.Fatalf("Errored determining the size of the encrypted buffer.")
 	}
 
 	if testEq(buf[:dataLen], expected) {
 		t.Fatal("Encrypted output matches plaintext.")
 	}
 
-	err = aes.Decrypt(buf, nil)
+	length, err = aes.Decrypt(buf, nil)
 	if err != nil {
 		t.Fatalf("Errored trying to decrypt buffer: %s", err.Error())
+	}
+	if length != dataLen {
+		t.Fatalf("Errored determining the size of the decrypted buffer.")
 	}
 
 	if !testEq(buf[:dataLen], expected) || dataLen != aes.DecryptedSize(buf) {
@@ -112,12 +118,12 @@ func BenchmarkAES(b *testing.B) {
 	fillSlice(buf[:dataLen])
 
 	for i := 0; i < b.N; i++ {
-		err = aes.Encrypt(buf, dataLen, nil)
+		_, err = aes.Encrypt(buf, dataLen, nil)
 		if err != nil {
 			b.Fatalf("Errored trying to encrypt buffer: %s", err.Error())
 		}
 
-		err = aes.Decrypt(buf, nil)
+		_, err = aes.Decrypt(buf, nil)
 		if err != nil {
 			b.Fatalf("Errored trying to decrypt buffer: %s", err.Error())
 		}

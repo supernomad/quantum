@@ -95,7 +95,7 @@ services:
       - NET_RAW
     volumes:
       - $GOPATH/bin/quantum:/bin/quantum
-      - $GOPATH/src/github.com/Supernomad/quantum/dist/quantum.yml:/etc/quantum/quantum.yml:ro
+      - $GOPATH/src/github.com/Supernomad/quantum/dist/docker/quantum.yml:/etc/quantum/quantum.yml:ro
       - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/certs/:/etc/quantum/ssl/certs/:ro
       - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/keys/:/etc/quantum/ssl/keys/:ro
       - quantum2:/var/lib/quantum/

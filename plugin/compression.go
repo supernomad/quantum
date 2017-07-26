@@ -49,6 +49,7 @@ func (comp *Compression) Apply(direction Direction, payload *common.Payload, map
 		}
 
 		copy(payload.Raw[common.PacketStart:], compressed)
+		payload.Packet = payload.Raw[common.PacketStart : common.PacketStart+length]
 		payload.Length = common.HeaderSize + length
 	}
 	return payload, mapping, true

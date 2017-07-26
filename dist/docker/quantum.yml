@@ -14,4 +14,4 @@ dtls-ca-cert: "/etc/quantum/ssl/certs/ec-ca.crt"
 dtls-cert: "/etc/quantum/ssl/certs/ec-server.crt"
 dtls-key: "/etc/quantum/ssl/keys/ec-server.key"
 
-plugins: "encryption"
+plugins: "encryption,compression"

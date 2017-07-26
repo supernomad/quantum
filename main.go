@@ -45,8 +45,8 @@ func main() {
 		incomingPlugins[i] = plugin
 	}
 
-	sort.Sort(plugin.Sorter{Plugins: incomingPlugins})
-	sort.Sort(sort.Reverse(plugin.Sorter{Plugins: outgoingPlugins}))
+	sort.Sort(plugin.Sorter{Plugins: outgoingPlugins})
+	sort.Sort(sort.Reverse(plugin.Sorter{Plugins: incomingPlugins}))
 
 	dev, err := device.New(device.TUNDevice, cfg)
 	handleError(log, err)

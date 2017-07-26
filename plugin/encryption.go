@@ -20,17 +20,21 @@ func (enc *Encryption) Apply(direction Direction, payload *common.Payload, mappi
 
 	switch direction {
 	case Incoming:
-		err := mapping.AES.Decrypt(payload.Packet, payload.IPAddress)
+		length, err := mapping.AES.Decrypt(payload.Packet, payload.IPAddress)
 		if err != nil {
 			return payload, mapping, false
 		}
-		payload.Packet = payload.Packet[:mapping.AES.DecryptedSize(payload.Packet)]
+
+		payload.Packet = payload.Raw[common.PacketStart : common.PacketStart+length]
+		payload.Length = common.HeaderSize + length
 	case Outgoing:
-		payload.Length = mapping.AES.EncryptedSize(payload.Packet) + common.HeaderSize
-		err := mapping.AES.Encrypt(payload.Raw[common.PacketStart:], len(payload.Packet), payload.IPAddress)
+		length, err := mapping.AES.Encrypt(payload.Raw[common.PacketStart:], len(payload.Packet), payload.IPAddress)
 		if err != nil {
 			return payload, mapping, false
 		}
+
+		payload.Packet = payload.Raw[common.PacketStart : common.PacketStart+length]
+		payload.Length = common.HeaderSize + length
 	}
 	return payload, mapping, true
 }
