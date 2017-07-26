@@ -10,7 +10,7 @@ import (
 
 const (
 	major = 0
-	minor = 13
+	minor = 14
 	patch = 0
 )
 
