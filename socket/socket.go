@@ -14,8 +14,11 @@ const (
 	// UDPSocket type creates and manages a UDP based socket.
 	UDPSocket = "udp"
 
-	// DTLSSocket type creates and manages a UDP based socket that is encrypted using DTLS.
+	// DTLSSocket type creates and manages a UDP based socket that is encrypted using the DTLS protocol.
 	DTLSSocket = "dtls"
+
+	// QuicSocket type creates and manages a UDP based socket that is encrypted using the Quic protocol.
+	QuicSocket = "quic"
 
 	// MOCKSocket type creates and manages a mocked out socket for testing.
 	MOCKSocket = "mock"
@@ -43,6 +46,8 @@ func New(socketType string, cfg *common.Config) (Socket, error) {
 		return newUDP(cfg)
 	case DTLSSocket:
 		return newDTLS(cfg)
+	case QuicSocket:
+		return newQuic(cfg)
 	case MOCKSocket:
 		return newMock(cfg)
 	}

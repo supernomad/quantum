@@ -7,5 +7,6 @@ Package socket contains the structs and logic to create, configure, and maintain
 Currently supported sockets:
 	- UDP socket
 	- DTLS socket
+	- Quic socket
 */
 package socket
