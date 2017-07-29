@@ -14,7 +14,7 @@ import (
 	"github.com/Supernomad/quantum/device"
 	"github.com/Supernomad/quantum/plugin"
 	"github.com/Supernomad/quantum/socket"
-	"github.com/Supernomad/quantum/workers"
+	"github.com/Supernomad/quantum/worker"
 )
 
 func handleError(log *common.Logger, err error) {
@@ -56,8 +56,8 @@ func main() {
 
 	aggregator := agg.New(log, cfg)
 
-	outgoing := workers.NewOutgoing(cfg, aggregator, store, outgoingPlugins, dev, sock)
-	incoming := workers.NewIncoming(cfg, aggregator, store, incomingPlugins, dev, sock)
+	outgoing := worker.NewOutgoing(cfg, aggregator, store, outgoingPlugins, dev, sock)
+	incoming := worker.NewIncoming(cfg, aggregator, store, incomingPlugins, dev, sock)
 
 	aggregator.Start()
 	store.Start()
