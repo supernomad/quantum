@@ -53,14 +53,14 @@ function cleanup() {
 }
 
 function test_no_sudo() {
-    GOMAXPROCS=1 go test ${CI_ARGS} -covermode=count -coverprofile=tmp-coverage.out ${BENCH_ARGS} ${1} 2>&1 \
+    go test ${CI_ARGS} -timeout 120s -covermode=count -coverprofile=tmp-coverage.out ${BENCH_ARGS} ${1} 2>&1 \
         | tee -a testing_output.out
 }
 
 function test_with_sudo() {
     sudo -i bash -c \
-        "cd $GOPATH/src/github.com/Supernomad/quantum; PATH='$PATH' GOPATH='$GOPATH' GOMAXPROCS=1 \
-        go test ${CI_ARGS} -covermode=count -coverprofile=tmp-coverage.out ${BENCH_ARGS} ${1} 2>&1 \
+        "cd $GOPATH/src/github.com/Supernomad/quantum; PATH='$PATH' GOPATH='$GOPATH' \
+        go test ${CI_ARGS} -timeout 120s -covermode=count -coverprofile=tmp-coverage.out ${BENCH_ARGS} ${1} 2>&1 \
         | tee -a testing_output.out"
 }
 

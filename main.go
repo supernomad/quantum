@@ -8,11 +8,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Supernomad/quantum/agg"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/datastore"
 	"github.com/Supernomad/quantum/device"
+	"github.com/Supernomad/quantum/metric"
 	"github.com/Supernomad/quantum/plugin"
+	"github.com/Supernomad/quantum/rest"
 	"github.com/Supernomad/quantum/socket"
 	"github.com/Supernomad/quantum/worker"
 )
@@ -54,13 +55,17 @@ func main() {
 	sock, err := socket.New(cfg.NetworkConfig.Backend, cfg)
 	handleError(log, err)
 
-	aggregator := agg.New(log, cfg)
+	aggregator := metric.New(cfg)
+
+	api := rest.New(cfg, aggregator)
 
 	outgoing := worker.NewOutgoing(cfg, aggregator, store, outgoingPlugins, dev, sock)
 	incoming := worker.NewIncoming(cfg, aggregator, store, incomingPlugins, dev, sock)
 
+	api.Start()
 	aggregator.Start()
 	store.Start()
+
 	for i := 0; i < cfg.NumWorkers; i++ {
 		incoming.Start(i)
 		outgoing.Start(i)
@@ -84,6 +89,7 @@ func main() {
 	err = signaler.Wait(true)
 	handleError(log, err)
 
+	api.Stop()
 	aggregator.Stop()
 	store.Stop()
 

@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Supernomad/quantum/agg"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/datastore"
 	"github.com/Supernomad/quantum/device"
+	"github.com/Supernomad/quantum/metric"
 	"github.com/Supernomad/quantum/plugin"
 	"github.com/Supernomad/quantum/socket"
 )
@@ -42,13 +42,10 @@ func init() {
 	testMapping = &common.Mapping{IPv4: ip, IPv6: ipv6}
 	store.InternalMapping = testMapping
 
-	aggregator := agg.New(
-		common.NewLogger(common.NoopLogger),
+	aggregator := metric.New(
 		&common.Config{
-			StatsRoute:   "/stats",
-			StatsPort:    1099,
-			StatsAddress: "127.0.0.1",
-			NumWorkers:   1,
+			Log:        common.NewLogger(common.NoopLogger),
+			NumWorkers: 1,
 		})
 	aggregator.Start()
 

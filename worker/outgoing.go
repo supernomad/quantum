@@ -7,10 +7,10 @@ import (
 	"encoding/binary"
 	"runtime"
 
-	"github.com/Supernomad/quantum/agg"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/datastore"
 	"github.com/Supernomad/quantum/device"
+	"github.com/Supernomad/quantum/metric"
 	"github.com/Supernomad/quantum/plugin"
 	"github.com/Supernomad/quantum/socket"
 )
@@ -18,7 +18,7 @@ import (
 // Outgoing packet struct for handleing packets coming in off of a Device which are destined for a Socket.
 type Outgoing struct {
 	cfg        *common.Config
-	aggregator *agg.Agg
+	aggregator *metric.Aggregator
 	plugins    []plugin.Plugin
 	dev        device.Device
 	sock       socket.Socket
@@ -38,21 +38,21 @@ func (outgoing *Outgoing) resolve(payload *common.Payload) (*common.Payload, *co
 }
 
 func (outgoing *Outgoing) stats(dropped bool, queue int, payload *common.Payload, mapping *common.Mapping) {
-	aggStat := &common.Stat{
-		Queue:     queue,
-		Direction: common.OutgoingStat,
-		Dropped:   dropped,
+	metric := &metric.Metric{
+		Queue:   queue,
+		Type:    metric.Tx,
+		Dropped: dropped,
 	}
 
 	if payload != nil {
-		aggStat.Bytes += uint64(payload.Length)
+		metric.Bytes += uint64(payload.Length)
 	}
 
 	if mapping != nil {
-		aggStat.PrivateIP = mapping.PrivateIP.String()
+		metric.PrivateIP = mapping.PrivateIP.String()
 	}
 
-	outgoing.aggregator.Aggs <- aggStat
+	outgoing.aggregator.Metrics <- metric
 }
 
 func (outgoing *Outgoing) pipeline(buf []byte, queue int) bool {
@@ -101,7 +101,7 @@ func (outgoing *Outgoing) Stop() {
 }
 
 // NewOutgoing generates an Outgoing worker which once started will handle packets coming from the local node destined for remote nodes in the quantum network.
-func NewOutgoing(cfg *common.Config, aggregator *agg.Agg, store datastore.Datastore, plugins []plugin.Plugin, dev device.Device, sock socket.Socket) *Outgoing {
+func NewOutgoing(cfg *common.Config, aggregator *metric.Aggregator, store datastore.Datastore, plugins []plugin.Plugin, dev device.Device, sock socket.Socket) *Outgoing {
 	return &Outgoing{
 		cfg:        cfg,
 		aggregator: aggregator,

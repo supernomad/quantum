@@ -489,23 +489,6 @@ func TestNewSockPayload(t *testing.T) {
 	}
 }
 
-func TestNewStats(t *testing.T) {
-	stats := NewStats(1)
-	if stats.Packets != 0 {
-		t.Fatalf("NewStats did not return the correct default for Packets, got: %d, expected: %d", stats.Packets, 0)
-	}
-	if stats.Bytes != 0 {
-		t.Fatalf("NewStats did not return the correct default for Bytes, got: %d, expected: %d", stats.Bytes, 0)
-	}
-	if stats.Links == nil {
-		t.Fatalf("NewStats did not return the correct default for Links, got: %v, expected: %v", stats.Links, make(map[string]*Stats))
-	}
-	str := stats.String()
-	if str == "" {
-		t.Fatalf("String didn't return the correct value.")
-	}
-}
-
 func TestNewLogger(t *testing.T) {
 	log := NewLogger(NoopLogger)
 	if log.Error == nil {
@@ -583,22 +566,6 @@ func TestGenerateLocalMapping(t *testing.T) {
 	_, err = GenerateLocalMapping(cfg, make(map[uint32]*Mapping))
 	if err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestStatsLogBytes(t *testing.T) {
-	statsl := &StatsLog{
-		TxStats: &Stats{},
-		RxStats: &Stats{},
-	}
-
-	slice := statsl.Bytes(false)
-	if slice == nil {
-		t.Fatal("StatsLog Bytes returned nil slice")
-	}
-	str := statsl.String(true)
-	if str == "" {
-		t.Fatal("StatsLog String returned empty string")
 	}
 }
 

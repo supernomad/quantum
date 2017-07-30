@@ -7,10 +7,10 @@ import (
 	"encoding/binary"
 	"runtime"
 
-	"github.com/Supernomad/quantum/agg"
 	"github.com/Supernomad/quantum/common"
 	"github.com/Supernomad/quantum/datastore"
 	"github.com/Supernomad/quantum/device"
+	"github.com/Supernomad/quantum/metric"
 	"github.com/Supernomad/quantum/plugin"
 	"github.com/Supernomad/quantum/socket"
 )
@@ -18,7 +18,7 @@ import (
 // Incoming packet struct for handleing packets coming in off of a Socket struct which are destined for a Device struct.
 type Incoming struct {
 	cfg        *common.Config
-	aggregator *agg.Agg
+	aggregator *metric.Aggregator
 	plugins    []plugin.Plugin
 	dev        device.Device
 	sock       socket.Socket
@@ -37,21 +37,21 @@ func (incoming *Incoming) resolve(payload *common.Payload) (*common.Payload, *co
 }
 
 func (incoming *Incoming) stats(dropped bool, queue int, payload *common.Payload, mapping *common.Mapping) {
-	aggStat := &common.Stat{
-		Queue:     queue,
-		Direction: common.IncomingStat,
-		Dropped:   dropped,
+	metric := &metric.Metric{
+		Queue:   queue,
+		Type:    metric.Rx,
+		Dropped: dropped,
 	}
 
 	if payload != nil {
-		aggStat.Bytes += uint64(payload.Length)
+		metric.Bytes += uint64(payload.Length)
 	}
 
 	if mapping != nil {
-		aggStat.PrivateIP = mapping.PrivateIP.String()
+		metric.PrivateIP = mapping.PrivateIP.String()
 	}
 
-	incoming.aggregator.Aggs <- aggStat
+	incoming.aggregator.Metrics <- metric
 }
 
 func (incoming *Incoming) pipeline(buf []byte, queue int) bool {
@@ -100,7 +100,7 @@ func (incoming *Incoming) Stop() {
 }
 
 // NewIncoming generates a new Incoming worker which once started will handle packets coming from the remote nodes in the quantum network destined for the local node.
-func NewIncoming(cfg *common.Config, aggregator *agg.Agg, store datastore.Datastore, plugins []plugin.Plugin, dev device.Device, sock socket.Socket) *Incoming {
+func NewIncoming(cfg *common.Config, aggregator *metric.Aggregator, store datastore.Datastore, plugins []plugin.Plugin, dev device.Device, sock socket.Socket) *Incoming {
 	return &Incoming{
 		cfg:        cfg,
 		aggregator: aggregator,
