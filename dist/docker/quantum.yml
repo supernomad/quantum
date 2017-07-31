@@ -5,7 +5,8 @@
 # Etcd endpoints
 public-ip: "172.18.0.5"
 
-datastore-endpoints: "etcd.quantum.dev:2379"
+datastore-endpoints:
+  - "etcd.quantum.dev:2379"
 datastore-tls-ca-cert: "/etc/quantum/ssl/certs/ca.crt"
 datastore-tls-cert: "/etc/quantum/ssl/certs/quantum2.quantum.dev.crt"
 datastore-tls-key: "/etc/quantum/ssl/keys/quantum2.quantum.dev.key"
@@ -14,4 +15,6 @@ dtls-ca-cert: "/etc/quantum/ssl/certs/ec-ca.crt"
 dtls-cert: "/etc/quantum/ssl/certs/ec-server.crt"
 dtls-key: "/etc/quantum/ssl/keys/ec-server.key"
 
-plugins: "encryption,compression"
+plugins:
+  - encryption
+  - compression

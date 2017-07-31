@@ -145,7 +145,6 @@ func testYamlConfig(t *testing.T, args []string) {
 	os.Setenv("QUANTUM_LISTEN_PORT", "1")
 	os.Setenv("QUANTUM_CONF_FILE", ymlConfFile)
 	os.Setenv("QUANTUM_PID_FILE", "../quantum.pid")
-	os.Setenv("QUANTUM_PLUGINS", "encryption,compression")
 	os.Setenv("_QUANTUM_REAL_DEVICE_NAME_", "quantum0")
 
 	os.Args = append(args, "-n", "100", "--datastore-prefix", "woot", "--datastore-tls-skip-verify", "-6", "fd00:dead:beef::2", "--network", "", "--network-backend", "", "--network-lease-time", "0")
@@ -173,6 +172,9 @@ func testYamlConfig(t *testing.T, args []string) {
 	}
 	if !cfg.DatastoreTLSSkipVerify {
 		t.Fatal("NewConfig didn't pick up the cli replacement for DatastoreTLSSkipVerify")
+	}
+	if len(cfg.Plugins) != 2 {
+		t.Fatal("NewConfig didn't pick up file replacement for Plugins")
 	}
 
 	// Reset os.Args
@@ -211,6 +213,9 @@ func testJSONConfig(t *testing.T, args []string) {
 	}
 	if !cfg.DatastoreTLSSkipVerify {
 		t.Fatal("NewConfig didn't pick up the cli replacement for DatastoreTLSSkipVerify")
+	}
+	if len(cfg.Plugins) != 1 || cfg.Plugins[0] != "compression" {
+		t.Fatal("NewConfig didn't pick up file replacement for Plugins")
 	}
 
 	// Reset os.Args
@@ -575,9 +580,7 @@ func TestSignaler(t *testing.T) {
 	signaler := NewSignaler(log, cfg, []int{1}, map[string]string{"QUANTUM_TESTING": "woot"})
 
 	go func() {
-		time.Sleep(1 * time.Second)
 		signaler.signals <- syscall.SIGHUP
-		time.Sleep(1 * time.Second)
 		signaler.signals <- syscall.SIGINT
 	}()
 

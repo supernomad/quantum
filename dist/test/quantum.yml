@@ -20,3 +20,6 @@ datastore-tls-ca-cert: "/where/the/tls/ca/cert/lives.crt"
 datastore-endpoints: "etcd.quantum.dev"
 datastore-username: "supernomad"
 datastore-password: "Password1"
+plugins:
+  - compression
+  - encryption
