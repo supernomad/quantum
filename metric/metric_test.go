@@ -44,7 +44,7 @@ func TestAggregator(t *testing.T) {
 		Bytes:     20,
 	}
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(1 * time.Millisecond)
 
 	buf := aggregator.Bytes(true)
 	if buf == nil {

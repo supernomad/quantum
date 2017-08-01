@@ -80,7 +80,7 @@ func TestIncomingPipeline(t *testing.T) {
 
 func TestIncoming(t *testing.T) {
 	incoming.Start(0)
-	time.Sleep(2 * time.Second)
+	time.Sleep(5 * time.Millisecond)
 	incoming.Stop()
 }
 
@@ -110,6 +110,6 @@ func TestOutgoingPipeline(t *testing.T) {
 
 func TestOutgoing(t *testing.T) {
 	outgoing.Start(0)
-	time.Sleep(2 * time.Second)
+	time.Sleep(5 * time.Millisecond)
 	outgoing.Stop()
 }

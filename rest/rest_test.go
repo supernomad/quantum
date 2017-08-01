@@ -51,7 +51,7 @@ func TestRest(t *testing.T) {
 		Bytes:     20,
 	}
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(1 * time.Millisecond)
 
 	_, err := http.Get("http://127.0.0.1:1099/metrics")
 	if err != nil {
