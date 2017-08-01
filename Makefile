@@ -50,7 +50,7 @@ build_deps:
 
 vendor_deps:
 	@echo "Building vendored deps..."
-	@(cd vendor/openssl && ./config && make && cd ../../)
+	@dist/bin/build_ssl.sh
 
 lib_deps:
 	@echo "Running go get to install library dependencies..."
