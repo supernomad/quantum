@@ -50,7 +50,7 @@ build_deps:
 
 vendor_deps:
 	@echo "Building vendored deps..."
-	@dist/bin/build_ssl.sh
+	@dist/bin/build_ssl.sh $(shell cat /proc/cpuinfo | grep processor | wc -l)
 
 lib_deps:
 	@echo "Running go get to install library dependencies..."
