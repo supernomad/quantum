@@ -39,12 +39,12 @@ type Datastore interface {
 }
 
 // New generates a datastore object based on the passed in Type and user configuration.
-func New(datastoreType Type, log *common.Logger, cfg *common.Config) (Datastore, error) {
+func New(datastoreType Type, cfg *common.Config) (Datastore, error) {
 	switch datastoreType {
 	case ETCDDatastore:
-		return newEtcd(log, cfg)
+		return newEtcd(cfg)
 	case MOCKDatastore:
-		return newMock(log, cfg)
+		return newMock(cfg)
 	default:
 		return nil, errors.New("specified backend doesn't exist")
 	}

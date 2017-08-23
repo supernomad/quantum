@@ -19,42 +19,50 @@ import (
 
 // Etcd datastore struct for interacting with the coreos etcd key/value datastore.
 type Etcd struct {
-	log                 *common.Logger
 	cfg                 *common.Config
-	localMapping        *common.Mapping
 	mappings            map[uint32]*common.Mapping
+	ctx                 context.Context
 	cli                 client.Client
 	kapi                client.KeysAPI
 	watchIndex          uint64
 	stopSyncing         chan struct{}
+	stopRefreshingLock  chan struct{}
 	stopRefreshingLease chan struct{}
 	stopWatchingNodes   chan struct{}
 }
 
-func isError(err error, code int) bool {
+func isError(err error, codes ...int) bool {
 	if err == nil {
 		return false
 	}
 
-	if cErr, ok := err.(client.Error); ok {
-		return cErr.Code == code
+	if etcdError, ok := err.(client.Error); ok {
+		for i := 0; i < len(codes); i++ {
+			if etcdError.Code == codes[i] {
+				return true
+			}
+		}
 	}
+
 	return false
 }
 
-func (etcd *Etcd) handleNetworkConfig() error {
-	resp, err := etcd.kapi.Get(context.Background(), etcd.key("config"), &client.GetOptions{})
-	if err != nil {
-		if !isError(err, client.ErrorCodeKeyNotFound) {
-			return errors.New("error retrieving the network configuration from etcd: " + err.Error())
-		}
+func (etcd *Etcd) key(strs ...string) string {
+	strs = append([]string{etcd.cfg.DatastorePrefix}, strs...)
+	return path.Join(strs...)
+}
 
-		etcd.log.Info.Println("[ETCD]", "Using default network configuration.")
-		_, err := etcd.kapi.Set(context.Background(), etcd.key("config"), etcd.cfg.NetworkConfig.String(), &client.SetOptions{})
+func (etcd *Etcd) handleNetworkConfig() error {
+	key := etcd.key("config")
+	resp, err := etcd.kapi.Get(etcd.ctx, key, &client.GetOptions{})
+
+	if err != nil && !isError(err, client.ErrorCodeKeyNotFound) {
+		return errors.New("error retrieving the network configuration from etcd: " + err.Error())
+	} else if isError(err, client.ErrorCodeKeyNotFound) {
+		_, err := etcd.kapi.Set(etcd.ctx, key, etcd.cfg.NetworkConfig.String(), &client.SetOptions{})
 		if err != nil {
 			return errors.New("error setting the default network configuration in etcd: " + err.Error())
 		}
-
 		return nil
 	}
 
@@ -73,34 +81,96 @@ func (etcd *Etcd) handleLocalMapping() error {
 		return errors.New("error generating the local network mapping: " + err.Error())
 	}
 
+	key := etcd.key("nodes", etcd.cfg.PrivateIP.String())
 	opts := &client.SetOptions{
 		TTL: etcd.cfg.NetworkConfig.LeaseTime,
 	}
-	_, err = etcd.kapi.Set(context.Background(), etcd.key("nodes", etcd.cfg.PrivateIP.String()), mapping.String(), opts)
+
+	_, err = etcd.kapi.Set(etcd.ctx, key, mapping.String(), opts)
 	if err != nil {
 		return errors.New("error setting the local network mapping in etcd: " + err.Error())
 	}
-	etcd.localMapping = mapping
-	etcd.stopRefreshingLease = etcd.refresh(etcd.key("nodes", etcd.cfg.PrivateIP.String()), "", etcd.cfg.NetworkConfig.LeaseTime, etcd.cfg.DatastoreRefreshInterval)
+
+	go etcd.refresh(key, "", etcd.cfg.NetworkConfig.LeaseTime, etcd.cfg.DatastoreRefreshInterval, etcd.stopRefreshingLease)
+
 	return nil
 }
 
-func (etcd *Etcd) key(str ...string) string {
-	strs := []string{etcd.cfg.DatastorePrefix}
-	return path.Join(append(strs, str...)...)
+func (etcd *Etcd) lockFloatingIP(key, value string) {
+	opts := &client.SetOptions{
+		PrevExist: client.PrevNoExist,
+		TTL:       etcd.cfg.DatastoreFloatingIPTTL,
+	}
+
+	stop := make(chan struct{})
+	for {
+		_, err := etcd.kapi.Set(etcd.ctx, key, value, opts)
+
+		if err != nil && !isError(err, client.ErrorCodeNodeExist) {
+			etcd.cfg.Log.Error.Println("[ETCD]", "Error attempting to set floating mapping in etcd: "+err.Error())
+			time.Sleep(etcd.cfg.DatastoreFloatingIPTTL)
+			continue
+		} else if isError(err, client.ErrorCodeNodeExist) {
+			time.Sleep(etcd.cfg.DatastoreFloatingIPTTL)
+			continue
+		}
+
+		etcd.refresh(key, value, etcd.cfg.DatastoreFloatingIPTTL, etcd.cfg.DatastoreFloatingIPTTL/2, stop)
+	}
 }
 
-func (etcd *Etcd) lock() (chan struct{}, error) {
+func (etcd *Etcd) handleFloatingMappings() error {
+	mappings := make([]*common.Mapping, len(etcd.cfg.FloatingIPs))
+
+	for i := 0; i < len(mappings); i++ {
+		mappings[i] = common.NewFloatingMapping(etcd.cfg, i)
+		go etcd.lockFloatingIP(etcd.key("nodes", mappings[i].PrivateIP.String()), mappings[i].String())
+	}
+
+	return nil
+}
+
+func (etcd *Etcd) refresh(key, value string, ttl, refreshInterval time.Duration, stop chan struct{}) {
+	ticker := time.NewTicker(refreshInterval)
+
+	opts := &client.SetOptions{
+		PrevValue: value,
+		PrevExist: client.PrevExist,
+		TTL:       ttl,
+		Refresh:   true,
+	}
+
+	stopRefreshing := false
+	for !stopRefreshing {
+		select {
+		case <-stop:
+			stopRefreshing = true
+		case <-ticker.C:
+			_, err := etcd.kapi.Set(etcd.ctx, key, "", opts)
+			if err != nil {
+				etcd.cfg.Log.Error.Println("[ETCD]", "Error refreshing key in etcd: "+err.Error())
+				if isError(err, client.ErrorCodeKeyNotFound, client.ErrorCodePrevValueRequired, client.ErrorCodeTestFailed) {
+					stopRefreshing = true
+				}
+			}
+		}
+	}
+
+	ticker.Stop()
+}
+
+func (etcd *Etcd) lock() error {
+	key := etcd.key("lock")
 	opts := &client.SetOptions{
 		PrevExist: client.PrevNoExist,
 		TTL:       lockTTL,
 	}
 
 	for {
-		_, err := etcd.kapi.Set(context.Background(), etcd.key("lock"), etcd.cfg.MachineID, opts)
+		_, err := etcd.kapi.Set(etcd.ctx, key, etcd.cfg.MachineID, opts)
 
 		if err != nil && !isError(err, client.ErrorCodeNodeExist) {
-			return nil, errors.New("error retrieving the lock on etcd: " + err.Error())
+			return errors.New("error retrieving the lock on etcd: " + err.Error())
 		} else if isError(err, client.ErrorCodeNodeExist) {
 			time.Sleep(lockTTL)
 			continue
@@ -109,51 +179,30 @@ func (etcd *Etcd) lock() (chan struct{}, error) {
 		break
 	}
 
-	stopRefreshing := etcd.refresh(etcd.key("lock"), etcd.cfg.MachineID, lockTTL, 5*time.Second)
-	return stopRefreshing, nil
+	go etcd.refresh(key, etcd.cfg.MachineID, lockTTL, lockTTL/2, etcd.stopRefreshingLock)
+	return nil
 }
 
-func (etcd *Etcd) refresh(key, value string, ttl, refreshInterval time.Duration) chan struct{} {
-	stop := make(chan struct{})
+func (etcd *Etcd) unlock() error {
+	etcd.stopRefreshingLock <- struct{}{}
 
-	go func() {
-		ticker := time.NewTicker(refreshInterval)
+	key := etcd.key("lock")
+	opts := &client.DeleteOptions{
+		PrevValue: etcd.cfg.MachineID,
+	}
 
-		opts := &client.SetOptions{
-			PrevValue: value,
-			PrevExist: client.PrevExist,
-			TTL:       ttl,
-			Refresh:   true,
-		}
+	_, err := etcd.kapi.Delete(etcd.ctx, key, opts)
 
-	loop:
-		for {
-			select {
-			case <-stop:
-				break loop
-			case <-ticker.C:
-				_, err := etcd.kapi.Set(context.Background(), key, "", opts)
-				if err != nil {
-					etcd.log.Error.Println("[ETCD]", "Error refreshing key in etcd: "+err.Error())
-					if isError(err, client.ErrorCodeKeyNotFound) ||
-						isError(err, client.ErrorCodePrevValueRequired) ||
-						isError(err, client.ErrorCodeTestFailed) {
-						break loop
-					}
-				}
-			}
-		}
+	if err != nil && !isError(err, client.ErrorCodeKeyNotFound, client.ErrorCodePrevValueRequired, client.ErrorCodeTestFailed) {
+		return errors.New("error releasing the etcd lock: " + err.Error())
+	}
 
-		close(stop)
-		ticker.Stop()
-	}()
-
-	return stop
+	return nil
 }
 
 func (etcd *Etcd) sync() error {
 	var nodes client.Nodes
-	resp, err := etcd.kapi.Get(context.Background(), etcd.key("nodes"), &client.GetOptions{Recursive: true})
+	resp, err := etcd.kapi.Get(etcd.ctx, etcd.key("nodes"), &client.GetOptions{Recursive: true})
 
 	if err != nil {
 		if !isError(err, client.ErrorCodeKeyNotFound) {
@@ -176,73 +225,53 @@ func (etcd *Etcd) sync() error {
 	return nil
 }
 
-func (etcd *Etcd) unlock(stopRefreshing chan struct{}) error {
-	stopRefreshing <- struct{}{}
-
-	opts := &client.DeleteOptions{
-		PrevValue: etcd.cfg.MachineID,
-	}
-
-	_, err := etcd.kapi.Delete(context.Background(), etcd.key("lock"), opts)
-
-	if err != nil &&
-		!isError(err, client.ErrorCodeKeyNotFound) &&
-		!isError(err, client.ErrorCodePrevValueRequired) &&
-		!isError(err, client.ErrorCodeTestFailed) {
-		return errors.New("error releasing the etcd lock: " + err.Error())
-	}
-	return nil
-}
-
 func (etcd *Etcd) watch() {
-	go func() {
-	watch:
-		opts := &client.WatcherOptions{
-			AfterIndex: etcd.watchIndex,
-			Recursive:  true,
-		}
-		watcher := etcd.kapi.Watcher(etcd.key("nodes"), opts)
+	opts := &client.WatcherOptions{
+		AfterIndex: etcd.watchIndex,
+		Recursive:  true,
+	}
+	watcher := etcd.kapi.Watcher(etcd.key("nodes"), opts)
 
-	loop:
-		for {
-			select {
-			case <-etcd.stopWatchingNodes:
-				break loop
-			default:
-				resp, err := watcher.Next(context.Background())
-				if err != nil {
-					etcd.log.Error.Println("[ETCD]", "Error during watch on the etcd cluster: "+err.Error())
-					time.Sleep(5 * time.Second)
-					goto watch
+	stopWatching := false
+	for !stopWatching {
+		select {
+		case <-etcd.stopWatchingNodes:
+			stopWatching = true
+		default:
+			resp, err := watcher.Next(etcd.ctx)
+			if err != nil {
+				etcd.cfg.Log.Error.Println("[ETCD]", "Error during watch on the etcd cluster: "+err.Error())
+				time.Sleep(5 * time.Second)
+
+				go etcd.watch()
+				return
+			}
+
+			etcd.watchIndex = resp.Index
+			nodes := resp.Node.Nodes
+
+			switch resp.Action {
+			case "set", "update", "create":
+				for _, node := range nodes {
+					mapping, err := common.ParseMapping(node.Value, etcd.cfg)
+					if err != nil {
+						etcd.cfg.Log.Error.Println("[ETCD]", "Error parsing mapping: "+err.Error())
+						continue
+					}
+					etcd.mappings[common.IPtoInt(mapping.PrivateIP)] = mapping
 				}
-
-				etcd.watchIndex = resp.Index
-				nodes := resp.Node.Nodes
-
-				switch resp.Action {
-				case "set", "update", "create":
-					for _, node := range nodes {
-						mapping, err := common.ParseMapping(node.Value, etcd.cfg)
-						if err != nil {
-							etcd.log.Error.Println("[ETCD]", "Error parsing mapping: "+err.Error())
-							continue
-						}
-						etcd.mappings[common.IPtoInt(mapping.PrivateIP)] = mapping
+			case "delete", "expire":
+				for _, node := range nodes {
+					mapping, err := common.ParseMapping(node.Value, etcd.cfg)
+					if err != nil {
+						etcd.cfg.Log.Error.Println("[ETCD]", "Error parsing mapping: "+err.Error())
+						continue
 					}
-				case "delete", "expire":
-					for _, node := range nodes {
-						mapping, err := common.ParseMapping(node.Value, etcd.cfg)
-						if err != nil {
-							etcd.log.Error.Println("[ETCD]", "Error parsing mapping: "+err.Error())
-							continue
-						}
-						delete(etcd.mappings, common.IPtoInt(mapping.PrivateIP))
-					}
+					delete(etcd.mappings, common.IPtoInt(mapping.PrivateIP))
 				}
 			}
 		}
-		close(etcd.stopWatchingNodes)
-	}()
+	}
 }
 
 // Mapping returns a mapping and true based on the supplied uint32 representation of an ipv4 address if it exists within the datastore, otherwise it returns nil for the mapping and false.
@@ -253,35 +282,41 @@ func (etcd *Etcd) Mapping(ip uint32) (*common.Mapping, bool) {
 
 // Init the Etcd datastore which will open any necessary connections, preform an initial sync of the datastore, and define the local mapping in the datastore.
 func (etcd *Etcd) Init() error {
-	stopRefreshing, err := etcd.lock()
+	err := etcd.lock()
 	if err != nil {
 		return err
 	}
 
 	err = etcd.handleNetworkConfig()
 	if err != nil {
-		etcd.unlock(stopRefreshing)
+		etcd.unlock()
 		return err
 	}
 
 	err = etcd.sync()
 	if err != nil {
-		etcd.unlock(stopRefreshing)
+		etcd.unlock()
 		return err
 	}
 
 	err = etcd.handleLocalMapping()
 	if err != nil {
-		etcd.unlock(stopRefreshing)
+		etcd.unlock()
 		return err
 	}
 
-	return etcd.unlock(stopRefreshing)
+	err = etcd.handleFloatingMappings()
+	if err != nil {
+		etcd.unlock()
+		return err
+	}
+
+	return etcd.unlock()
 }
 
 // Start periodic synchronization, and DHCP lease refresh with the datastore, as well as start watching for changes in network topology.
 func (etcd *Etcd) Start() {
-	etcd.watch()
+	go etcd.watch()
 
 	ticker := time.NewTicker(etcd.cfg.DatastoreSyncInterval)
 	go func() {
@@ -293,7 +328,7 @@ func (etcd *Etcd) Start() {
 			case <-ticker.C:
 				err := etcd.sync()
 				if err != nil {
-					etcd.log.Error.Println("[ETCD]", "Error synchronizing mappings with the backend: "+err.Error())
+					etcd.cfg.Log.Error.Println("[ETCD]", "Error synchronizing mappings with the backend: "+err.Error())
 				}
 			}
 		}
@@ -304,11 +339,14 @@ func (etcd *Etcd) Start() {
 
 // Stop synchronizing with the backend and shutdown open connections.
 func (etcd *Etcd) Stop() {
-	go func() {
-		etcd.stopSyncing <- struct{}{}
-		etcd.stopWatchingNodes <- struct{}{}
-		etcd.stopRefreshingLease <- struct{}{}
-	}()
+	etcd.stopSyncing <- struct{}{}
+	etcd.stopRefreshingLease <- struct{}{}
+	etcd.stopWatchingNodes <- struct{}{}
+
+	close(etcd.stopSyncing)
+	close(etcd.stopRefreshingLock)
+	close(etcd.stopRefreshingLease)
+	close(etcd.stopWatchingNodes)
 }
 
 func generateConfig(cfg *common.Config) (client.Config, error) {
@@ -358,7 +396,7 @@ func generateConfig(cfg *common.Config) (client.Config, error) {
 	return etcdCfg, nil
 }
 
-func newEtcd(log *common.Logger, cfg *common.Config) (Datastore, error) {
+func newEtcd(cfg *common.Config) (Datastore, error) {
 	etcdCfg, err := generateConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -371,10 +409,14 @@ func newEtcd(log *common.Logger, cfg *common.Config) (Datastore, error) {
 
 	kapi := client.NewKeysAPI(cli)
 	return &Etcd{
-		log:      log,
-		cfg:      cfg,
-		mappings: make(map[uint32]*common.Mapping),
-		cli:      cli,
-		kapi:     kapi,
+		ctx:                 context.TODO(),
+		cfg:                 cfg,
+		mappings:            make(map[uint32]*common.Mapping),
+		cli:                 cli,
+		kapi:                kapi,
+		stopSyncing:         make(chan struct{}),
+		stopRefreshingLock:  make(chan struct{}),
+		stopRefreshingLease: make(chan struct{}),
+		stopWatchingNodes:   make(chan struct{}),
 	}, nil
 }

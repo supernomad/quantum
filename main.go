@@ -31,7 +31,7 @@ func main() {
 	cfg, err := common.NewConfig(log)
 	handleError(log, err)
 
-	store, err := datastore.New(datastore.ETCDDatastore, log, cfg)
+	store, err := datastore.New(datastore.ETCDDatastore, cfg)
 	handleError(log, err)
 
 	err = store.Init()

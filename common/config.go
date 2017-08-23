@@ -61,6 +61,7 @@ type Config struct {
 	PrivateIP                net.IP                 `internal:"false"  type:"ip"        short:"ip"   long:"private-ip"                  default:""                      description:"The private ip address to assign this quantum instance."`
 	ListenIP                 net.IP                 `internal:"false"  type:"ip"        short:"lip"  long:"listen-ip"                   default:""                      description:"The local server ip to listen on, leave blank of automatic association."`
 	ListenPort               int                    `internal:"false"  type:"int"       short:"p"    long:"listen-port"                 default:"1099"                  description:"The local server port to listen on."`
+	FloatingIPs              []net.IP               `internal:"false"  type:"ip-list"   short:"fips" long:"floating-ips"                default:""                      description:"The list of floating ip's for this node to participate in failover with."`
 	PublicIPv4               net.IP                 `internal:"false"  type:"ip"        short:"4"    long:"public-v4"                   default:""                      description:"The public ipv4 address to associate with this quantum instance, leave blank for automatic association."`
 	DisableIPv4              bool                   `internal:"false"  type:"bool"      short:"d4"   long:"disable-v4"                  default:"false"                 description:"Whether or not to disable public ipv4 auto addressing. Use this if you know the server doesn't have public ipv4 addressing."`
 	PublicIPv6               net.IP                 `internal:"false"  type:"ip"        short:"6"    long:"public-v6"                   default:""                      description:"The public ipv6 address to associate with this quantum instance, leave blank for automatic association."`
@@ -71,6 +72,7 @@ type Config struct {
 	DatastorePrefix          string                 `internal:"false"  type:"string"    short:"pr"   long:"datastore-prefix"            default:"quantum"               description:"The prefix to store quantum configuration data under in the key/value datastore."`
 	DatastoreSyncInterval    time.Duration          `internal:"false"  type:"duration"  short:"si"   long:"datastore-sync-interval"     default:"60s"                   description:"The interval of full datastore syncs."`
 	DatastoreRefreshInterval time.Duration          `internal:"false"  type:"duration"  short:"ri"   long:"datastore-refresh-interval"  default:"120s"                  description:"The interval of dhcp lease refreshes with the datastore."`
+	DatastoreFloatingIPTTL   time.Duration          `internal:"false"  type:"duration"  short:"fttl" long:"datastore-floating-ip-ttl"   default:"10s"                   description:"The ttl to use for floating ip addresses."`
 	DatastoreEndpoints       []string               `internal:"false"  type:"list"      short:"e"    long:"datastore-endpoints"         default:"127.0.0.1:2379"        description:"A comma delimited list of key/value datastore endpoints, in 'IPADDR:PORT' syntax."`
 	DatastoreUsername        string                 `internal:"false"  type:"string"    short:"u"    long:"datastore-username"          default:""                      description:"The username to use for authentication with the datastore."`
 	DatastorePassword        string                 `internal:"false"  type:"string"    short:"pw"   long:"datastore-password"          default:""                      description:"The password to use for authentication with the datastore."`
@@ -289,6 +291,22 @@ func (cfg *Config) parseArgs() error {
 				fieldValue.Set(reflect.ValueOf(list))
 			} else {
 				fieldValue.Set(reflect.ValueOf([]string{}))
+			}
+		case "ip-list":
+			if raw != "" {
+				list := strings.Split(raw, ",")
+				ips := make([]net.IP, 0)
+				for i := 0; i < len(list); i++ {
+					ip := net.ParseIP(list[i])
+					if ip == nil {
+						continue
+					}
+
+					ips = append(ips, ip)
+				}
+				fieldValue.Set(reflect.ValueOf(ips))
+			} else {
+				fieldValue.Set(reflect.ValueOf([]net.IP{}))
 			}
 		case "string":
 			fieldValue.Set(reflect.ValueOf(raw))

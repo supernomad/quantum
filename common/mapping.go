@@ -23,6 +23,9 @@ type Mapping struct {
 	// The port where quantum is listening for remote packets.
 	Port int `json:"port"`
 
+	// Whether or not this mapping represents a floating ip address.
+	Floating bool `jsone:"floating"`
+
 	// The public ipv4 address of the node represented by this mapping, which may or may not exist.
 	IPv4 net.IP `json:"ipv4,omitempty"`
 
@@ -107,5 +110,21 @@ func NewMapping(cfg *Config) *Mapping {
 		SupportedPlugins: cfg.Plugins,
 		PublicKey:        cfg.PublicKey,
 		PublicSalt:       cfg.PublicSalt,
+		Floating:         false,
+	}
+}
+
+// NewFloatingMapping generates a new basic Mapping with no cryptographic metadata.
+func NewFloatingMapping(cfg *Config, i int) *Mapping {
+	return &Mapping{
+		MachineID:        cfg.MachineID,
+		IPv4:             cfg.PublicIPv4,
+		IPv6:             cfg.PublicIPv6,
+		Port:             cfg.ListenPort,
+		PrivateIP:        cfg.FloatingIPs[i],
+		SupportedPlugins: cfg.Plugins,
+		PublicKey:        cfg.PublicKey,
+		PublicSalt:       cfg.PublicSalt,
+		Floating:         true,
 	}
 }

@@ -22,9 +22,8 @@ services:
       - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/keys/:/etc/quantum/ssl/keys/:ro
       - quantum0:/var/lib/quantum/
     networks:
-      quantum_dev_net_v4:
+      quantum_dev_net:
         ipv4_address: 172.18.0.2
-      quantum_dev_net_v6:
         ipv6_address: fd00:dead:beef::2
     entrypoint:
       - "/bin/start_quantum.sh"
@@ -46,6 +45,8 @@ services:
       - "/etc/quantum/ssl/certs/ec-ca.crt"
       - "--plugins"
       - "compression,encryption"
+      - "--floating-ips"
+      - "10.99.1.1"
   quantum1:
     cpuset: "0,1,2"
     container_name: quantum1
@@ -75,10 +76,10 @@ services:
       QUANTUM_DTLS_CERT: "/etc/quantum/ssl/certs/ec-server.crt"
       QUANTUM_DTLS_KEY: "/etc/quantum/ssl/keys/ec-server.key"
       QUANTUM_PLUGINS: "compression"
+      QUANTUM_FLOATING_IPS: "10.99.1.1"
     networks:
-      quantum_dev_net_v4:
+      quantum_dev_net:
         ipv4_address: 172.18.0.3
-      quantum_dev_net_v6:
         ipv6_address: fd00:dead:beef::3
     entrypoint: ["/bin/start_quantum.sh"]
   quantum2:
@@ -102,9 +103,8 @@ services:
     environment:
       QUANTUM_CONF_FILE: "/etc/quantum/quantum.yml"
     networks:
-      quantum_dev_net_v4:
+      quantum_dev_net:
         ipv4_address: 172.18.0.5
-      quantum_dev_net_v6:
         ipv6_address: fd00:dead:beef::5
     entrypoint: ["/bin/start_quantum.sh"]
   etcd:
@@ -120,9 +120,8 @@ services:
     ports:
       - 2379:2379
     networks:
-      quantum_dev_net_v4:
+      quantum_dev_net:
         ipv4_address: 172.18.0.4
-      quantum_dev_net_v6:
         ipv6_address: fd00:dead:beef::4
     environment:
       ETCD_LISTEN_CLIENT_URLS: "https://[fd00:dead:beef::4]:2379, https://172.18.0.4:2379"
@@ -134,12 +133,9 @@ services:
       ETCD_NAME: "datastore"
     entrypoint: ["/usr/local/bin/etcd", "--client-cert-auth=true"]
 networks:
-  quantum_dev_net_v4:
+  quantum_dev_net:
     external:
-      name: quantum_dev_net_v4
-  quantum_dev_net_v6:
-    external:
-      name: quantum_dev_net_v6
+      name: quantum_dev_net
 volumes:
   etcd:
     driver: local

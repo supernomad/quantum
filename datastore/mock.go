@@ -30,6 +30,6 @@ func (mock *Mock) Start() {
 func (mock *Mock) Stop() {
 }
 
-func newMock(log *common.Logger, cfg *common.Config) (Datastore, error) {
+func newMock(cfg *common.Config) (Datastore, error) {
 	return &Mock{}, nil
 }

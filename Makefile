@@ -22,12 +22,11 @@ gen_certs:
 
 gen_docker_network:
 	@echo "Setting up docker networks..."
-	@docker network create --subnet=172.18.0.0/24 --gateway=172.18.0.1 quantum_dev_net_v4
-	@docker network create --subnet='fd00:dead:beef::/64' --gateway='fd00:dead:beef::1' --ipv6 quantum_dev_net_v6
+	@docker network create --ipv6 --subnet=172.18.0.0/24 --gateway=172.18.0.1 --subnet='fd00:dead:beef::/64' --gateway='fd00:dead:beef::1' quantum_dev_net
 
 rm_docker_network:
 	@echo "Removing docker networks..."
-	@docker network rm quantum_dev_net_v4 quantum_dev_net_v6 || true
+	@docker network rm quantum_dev_net || true
 
 build_docker:
 	@echo "Building test docker container..."
@@ -69,7 +68,7 @@ lint:
 	@fgt go fmt './...'
 	@fgt go vet './...'
 	@fgt golint './...'
-	@find . -type f -not -path "*/ssl/**/*" -and -not -path "*/vendor/**/*" | xargs fgt misspell
+	@find . -type f -not -path "*/ssl/**/*" -and -not -path "*/vendor/**/*" -and -not -path "*/.git/*" | xargs fgt misspell
 
 check: lint
 	@echo "Running tests..."

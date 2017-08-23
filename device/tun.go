@@ -76,7 +76,7 @@ func newTUN(cfg *common.Config) (Device, error) {
 	}
 
 	if !tun.cfg.ReuseFDS {
-		err := initTun(tun.name, tun.cfg.PrivateIP.String(), tun.cfg.NetworkConfig)
+		err := initTun(tun.name, tun.cfg.PrivateIP, tun.cfg.FloatingIPs, tun.cfg.NetworkConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -106,7 +106,7 @@ func createTUN(name string) (string, int, error) {
 	return string(req.Name[:strings.Index(string(req.Name[:]), "\000")]), queue, nil
 }
 
-func initTun(name, src string, networkCfg *common.NetworkConfig) error {
+func initTun(name string, src net.IP, additionalIPs []net.IP, networkCfg *common.NetworkConfig) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return errors.New("error getting the virtual network device from the kernel: " + err.Error())
@@ -119,7 +119,7 @@ func initTun(name, src string, networkCfg *common.NetworkConfig) error {
 	if err != nil {
 		return errors.New("error setting the virtual network device MTU: " + err.Error())
 	}
-	addr, err := netlink.ParseAddr(src + "/32")
+	addr, err := netlink.ParseAddr(src.String() + "/32")
 	if err != nil {
 		return errors.New("error parsing the virtual network device address: " + err.Error())
 	}
@@ -131,12 +131,24 @@ func initTun(name, src string, networkCfg *common.NetworkConfig) error {
 		LinkIndex: link.Attrs().Index,
 		Scope:     netlink.SCOPE_LINK,
 		Protocol:  2,
-		Src:       net.ParseIP(src),
+		Src:       src,
 		Dst:       networkCfg.IPNet,
 	}
 	err = netlink.RouteAdd(route)
 	if err != nil {
 		return errors.New("error setting the virtual network device network routes: " + err.Error())
 	}
+
+	for i := 0; i < len(additionalIPs); i++ {
+		additional, err := netlink.ParseAddr(additionalIPs[i].String() + "/32")
+		if err != nil {
+			return errors.New("error parsing the virtual network device address: " + err.Error())
+		}
+		err = netlink.AddrAdd(link, additional)
+		if err != nil {
+			return errors.New("error setting the virtual network device address: " + err.Error())
+		}
+	}
+
 	return nil
 }

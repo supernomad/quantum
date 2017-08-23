@@ -145,6 +145,7 @@ func testYamlConfig(t *testing.T, args []string) {
 	os.Setenv("QUANTUM_LISTEN_PORT", "1")
 	os.Setenv("QUANTUM_CONF_FILE", ymlConfFile)
 	os.Setenv("QUANTUM_PID_FILE", "../quantum.pid")
+	os.Setenv("QUANTUM_FLOATING_IPS", "10.99.1.1,10.99.1.2,hello")
 	os.Setenv("_QUANTUM_REAL_DEVICE_NAME_", "quantum0")
 
 	os.Args = append(args, "-n", "100", "--datastore-prefix", "woot", "--datastore-tls-skip-verify", "-6", "fd00:dead:beef::2", "--network", "", "--network-backend", "", "--network-lease-time", "0")
@@ -176,6 +177,15 @@ func testYamlConfig(t *testing.T, args []string) {
 	if len(cfg.Plugins) != 2 {
 		t.Fatal("NewConfig didn't pick up file replacement for Plugins")
 	}
+	if len(cfg.FloatingIPs) != 2 {
+		t.Fatal("NewConfig didn't pick up environment variable replacement for FloatingIPs")
+	}
+	if cfg.FloatingIPs[0].String() != "10.99.1.1" {
+		t.Fatal("NewConfig didn't pick up environment variable replacement value for FloatingIPs[0]")
+	}
+	if cfg.FloatingIPs[1].String() != "10.99.1.2" {
+		t.Fatal("NewConfig didn't pick up environment variable replacement value for FloatingIPs[1]")
+	}
 
 	// Reset os.Args
 	os.Args = args
@@ -186,6 +196,7 @@ func testJSONConfig(t *testing.T, args []string) {
 	os.Setenv("QUANTUM_LISTEN_PORT", "1")
 	os.Setenv("QUANTUM_CONF_FILE", jsonConfFile)
 	os.Setenv("QUANTUM_PID_FILE", "../quantum.pid")
+	os.Setenv("QUANTUM_FLOATING_IPS", "")
 	os.Setenv("_QUANTUM_REAL_DEVICE_NAME_", "quantum0")
 
 	os.Args = append(args, "-n", "100", "--datastore-prefix", "woot", "--datastore-tls-skip-verify", "-6", "fd00:dead:beef::2", "--network", "", "--network-backend", "", "--network-lease-time", "0")
