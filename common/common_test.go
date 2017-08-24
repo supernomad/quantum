@@ -420,10 +420,11 @@ func TestParseMapping(t *testing.T) {
 func TestParseNetworkConfig(t *testing.T) {
 	defaultLeaseTime, _ := time.ParseDuration("48h")
 	DefaultNetworkConfig := &NetworkConfig{
-		Backend:     "udp",
-		Network:     "10.99.0.0/16",
-		StaticRange: "10.99.0.0/23",
-		LeaseTime:   defaultLeaseTime,
+		Backend:       "udp",
+		Network:       "10.99.0.0/16",
+		StaticRange:   "10.99.0.0/23",
+		FloatingRange: "10.99.2.0/23",
+		LeaseTime:     defaultLeaseTime,
 	}
 
 	baseIP, ipnet, _ := net.ParseCIDR(DefaultNetworkConfig.Network)
@@ -432,6 +433,9 @@ func TestParseNetworkConfig(t *testing.T) {
 
 	_, staticNet, _ := net.ParseCIDR(DefaultNetworkConfig.StaticRange)
 	DefaultNetworkConfig.StaticNet = staticNet
+
+	_, floatingNet, _ := net.ParseCIDR(DefaultNetworkConfig.FloatingRange)
+	DefaultNetworkConfig.FloatingNet = floatingNet
 
 	actual, err := ParseNetworkConfig([]byte(DefaultNetworkConfig.String()))
 	if err != nil {
@@ -469,6 +473,26 @@ func TestParseNetworkConfigIncorrectFormat(t *testing.T) {
 	}
 
 	netCfg.StaticRange = "10.20.0.0/23"
+	_, err = ParseNetworkConfig(netCfg.Bytes())
+	if err == nil {
+		t.Fatal("ParseNetworkConfig should have errored")
+	}
+
+	netCfg.StaticRange = "10.99.0.0/23"
+
+	netCfg.FloatingRange = "10.99.0./23"
+	_, err = ParseNetworkConfig(netCfg.Bytes())
+	if err == nil {
+		t.Fatal("ParseNetworkConfig should have errored")
+	}
+
+	netCfg.FloatingRange = "10.20.0.0/23"
+	_, err = ParseNetworkConfig(netCfg.Bytes())
+	if err == nil {
+		t.Fatal("ParseNetworkConfig should have errored")
+	}
+
+	netCfg.FloatingRange = "10.99.0.0/23"
 	_, err = ParseNetworkConfig(netCfg.Bytes())
 	if err == nil {
 		t.Fatal("ParseNetworkConfig should have errored")
