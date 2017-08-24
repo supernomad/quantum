@@ -46,7 +46,7 @@ services:
       - "--plugins"
       - "compression,encryption"
       - "--floating-ips"
-      - "10.99.1.1"
+      - "10.99.2.1"
   quantum1:
     cpuset: "0,1,2"
     container_name: quantum1
@@ -76,7 +76,7 @@ services:
       QUANTUM_DTLS_CERT: "/etc/quantum/ssl/certs/ec-server.crt"
       QUANTUM_DTLS_KEY: "/etc/quantum/ssl/keys/ec-server.key"
       QUANTUM_PLUGINS: "compression"
-      QUANTUM_FLOATING_IPS: "10.99.1.1"
+      QUANTUM_FLOATING_IPS: "10.99.2.1"
     networks:
       quantum_dev_net:
         ipv4_address: 172.18.0.3

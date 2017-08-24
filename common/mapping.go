@@ -24,7 +24,7 @@ type Mapping struct {
 	Port int `json:"port"`
 
 	// Whether or not this mapping represents a floating ip address.
-	Floating bool `jsone:"floating"`
+	Floating bool `json:"floating"`
 
 	// The public ipv4 address of the node represented by this mapping, which may or may not exist.
 	IPv4 net.IP `json:"ipv4,omitempty"`

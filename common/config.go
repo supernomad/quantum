@@ -88,9 +88,10 @@ type Config struct {
 	StatsAddress             string                 `internal:"false"  type:"string"    short:"sa"   long:"stats-address"               default:"0.0.0.0"               description:"The api server address."`
 	StatsPort                int                    `internal:"false"  type:"int"       short:"sp"   long:"stats-port"                  default:"1099"                  description:"The api server port."`
 	Network                  string                 `internal:"false"  type:"string"    short:"nw"   long:"network"                     default:"10.99.0.0/16"          description:"The network, in CIDR notation, to use for the entire quantum cluster."`
-	NetworkStaticRange       string                 `internal:"false"  type:"string"    short:"nr"   long:"network-static-range"        default:"10.99.0.0/23"          description:"The reserved subnet, in CIDR notatio, within the network to use for static ip address assignments."`
+	NetworkStaticRange       string                 `internal:"false"  type:"string"    short:"nsr"  long:"network-static-range"        default:"10.99.0.0/23"          description:"The reserved subnet, in CIDR notation, within the network to use for static ip address assignments."`
+	NetworkFloatingRange     string                 `internal:"false"  type:"string"    short:"nfr"  long:"network-floating-range"      default:"10.99.2.0/23"          description:"The reserved subnet, in CIDR notation, within the network to use for floating ip address assignments."`
 	NetworkBackend           string                 `internal:"false"  type:"string"    short:"nb"   long:"network-backend"             default:"udp"                   description:"The network backend to set in the datastore, if nothing already exists in the network configuration."`
-	NetworkLeaseTime         time.Duration          `internal:"false"  type:"duration"  short:"nl"   long:"network-lease-time"          default:"48h"                   description:"The lease time for DHCP assigned addresses within the quantum cluster."`
+	NetworkLeaseTime         time.Duration          `internal:"false"  type:"duration"  short:"nlt"  long:"network-lease-time"          default:"48h"                   description:"The lease time for DHCP assigned addresses within the quantum cluster."`
 	PublicKey                []byte                 `internal:"true"` // The public key to use with the encryption plugin.
 	PrivateKey               []byte                 `internal:"true"` // The private key to use with the encryption plugin.
 	PublicSalt               []byte                 `internal:"true"` // The public salt to use with the encryption plugin.
@@ -365,10 +366,11 @@ func (cfg *Config) computeArgs() error {
 	}
 
 	DefaultNetworkConfig := &NetworkConfig{
-		Backend:     cfg.NetworkBackend,
-		Network:     cfg.Network,
-		StaticRange: cfg.NetworkStaticRange,
-		LeaseTime:   cfg.NetworkLeaseTime,
+		Backend:       cfg.NetworkBackend,
+		Network:       cfg.Network,
+		StaticRange:   cfg.NetworkStaticRange,
+		FloatingRange: cfg.NetworkFloatingRange,
+		LeaseTime:     cfg.NetworkLeaseTime,
 	}
 
 	if DefaultNetworkConfig.Backend == "" {
@@ -405,6 +407,19 @@ func (cfg *Config) computeArgs() error {
 		}
 
 		DefaultNetworkConfig.StaticNet = staticNet
+	}
+
+	if DefaultNetworkConfig.FloatingRange != "" {
+		floatingBase, floatingNet, err := net.ParseCIDR(DefaultNetworkConfig.FloatingRange)
+		if err != nil {
+			return err
+		} else if !ipnet.Contains(floatingBase) {
+			return errors.New("network configuration has floatingRange defined but the range does not exist in the configured network")
+		} else if DefaultNetworkConfig.StaticNet != nil && DefaultNetworkConfig.StaticNet.Contains(floatingBase) {
+			return errors.New("network configuration has floatingRange and staticRange defined but the ranges conflict with each other")
+		}
+
+		DefaultNetworkConfig.FloatingNet = floatingNet
 	}
 
 	cfg.NetworkConfig = DefaultNetworkConfig

@@ -585,6 +585,63 @@ func TestGenerateLocalMapping(t *testing.T) {
 	}
 }
 
+func TestGenerateFloatingMapping(t *testing.T) {
+	defaultLeaseTime, _ := time.ParseDuration("48h")
+	DefaultNetworkConfig := &NetworkConfig{
+		Backend:       "udp",
+		Network:       "10.99.0.0/16",
+		StaticRange:   "10.99.0.0/23",
+		FloatingRange: "10.99.2.0/23",
+		LeaseTime:     defaultLeaseTime,
+	}
+
+	baseIP, ipnet, _ := net.ParseCIDR(DefaultNetworkConfig.Network)
+	DefaultNetworkConfig.BaseIP = baseIP
+	DefaultNetworkConfig.IPNet = ipnet
+
+	_, staticNet, _ := net.ParseCIDR(DefaultNetworkConfig.StaticRange)
+	DefaultNetworkConfig.StaticNet = staticNet
+
+	_, floatingNet, _ := net.ParseCIDR(DefaultNetworkConfig.FloatingRange)
+	DefaultNetworkConfig.FloatingNet = floatingNet
+
+	cfg := &Config{
+		PrivateIP:     net.ParseIP("10.99.0.1"),
+		PublicIPv4:    net.ParseIP("192.167.0.1"),
+		PublicIPv6:    net.ParseIP("fd00:dead:beef::2"),
+		FloatingIPs:   []net.IP{net.ParseIP("10.99.2.1"), net.ParseIP("10.99.2.2")},
+		ListenPort:    1099,
+		NetworkConfig: DefaultNetworkConfig,
+		MachineID:     "123",
+	}
+
+	mappings := make(map[uint32]*Mapping)
+	mapping, err := GenerateFloatingMapping(cfg, 0, mappings)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !testEq(mapping.PrivateIP.To4(), cfg.FloatingIPs[0].To4()) {
+		t.Fatal("GenerateFloatingMapping created the wrong mapping.")
+	}
+
+	mapping.Floating = false
+
+	mappings[IPtoInt(cfg.PrivateIP)] = mapping
+
+	_, err = GenerateFloatingMapping(cfg, 1, mappings)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mapping.MachineID = "456"
+
+	_, err = GenerateFloatingMapping(cfg, 0, mappings)
+	if err == nil {
+		t.Fatal("GenerateFloatingMapping failed to properly handle an existing ip address")
+	}
+}
+
 func TestSignaler(t *testing.T) {
 	log := NewLogger(NoopLogger)
 	cfg, err := NewConfig(log)

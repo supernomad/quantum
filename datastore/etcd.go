@@ -120,11 +120,13 @@ func (etcd *Etcd) lockFloatingIP(key, value string) {
 }
 
 func (etcd *Etcd) handleFloatingMappings() error {
-	mappings := make([]*common.Mapping, len(etcd.cfg.FloatingIPs))
+	for i := 0; i < len(etcd.cfg.FloatingIPs); i++ {
+		mapping, err := common.GenerateFloatingMapping(etcd.cfg, i, etcd.mappings)
+		if err != nil {
+			return err
+		}
 
-	for i := 0; i < len(mappings); i++ {
-		mappings[i] = common.NewFloatingMapping(etcd.cfg, i)
-		go etcd.lockFloatingIP(etcd.key("nodes", mappings[i].PrivateIP.String()), mappings[i].String())
+		go etcd.lockFloatingIP(etcd.key("nodes", mapping.PrivateIP.String()), mapping.String())
 	}
 
 	return nil
