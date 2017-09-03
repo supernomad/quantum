@@ -334,7 +334,7 @@ func (etcd *Etcd) Start() {
 				}
 			}
 		}
-		close(etcd.stopSyncing)
+
 		ticker.Stop()
 	}()
 }

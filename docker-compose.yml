@@ -2,7 +2,7 @@
 # Copyright (c) 2016-2017 Christian Saide <Supernomad>
 # Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
-version: "2"
+version: "2.1"
 services:
   quantum0:
     cpuset: "2,3"
@@ -22,7 +22,7 @@ services:
       - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/keys/:/etc/quantum/ssl/keys/:ro
       - quantum0:/var/lib/quantum/
     networks:
-      quantum_dev_net:
+      local:
         ipv4_address: 172.18.0.2
         ipv6_address: fd00:dead:beef::2
     entrypoint:
@@ -78,7 +78,7 @@ services:
       QUANTUM_PLUGINS: "compression"
       QUANTUM_FLOATING_IPS: "10.99.2.1"
     networks:
-      quantum_dev_net:
+      local:
         ipv4_address: 172.18.0.3
         ipv6_address: fd00:dead:beef::3
     entrypoint: ["/bin/start_quantum.sh"]
@@ -103,7 +103,7 @@ services:
     environment:
       QUANTUM_CONF_FILE: "/etc/quantum/quantum.yml"
     networks:
-      quantum_dev_net:
+      local:
         ipv4_address: 172.18.0.5
         ipv6_address: fd00:dead:beef::5
     entrypoint: ["/bin/start_quantum.sh"]
@@ -120,7 +120,7 @@ services:
     ports:
       - 2379:2379
     networks:
-      quantum_dev_net:
+      local:
         ipv4_address: 172.18.0.4
         ipv6_address: fd00:dead:beef::4
     environment:
@@ -133,9 +133,16 @@ services:
       ETCD_NAME: "datastore"
     entrypoint: ["/usr/local/bin/etcd", "--client-cert-auth=true"]
 networks:
-  quantum_dev_net:
-    external:
-      name: quantum_dev_net
+  local:
+    driver: bridge
+    enable_ipv6: true
+    ipam:
+      driver: default
+      config:
+        - subnet: '172.18.0.0/24'
+          gateway: '172.18.0.1'
+        - subnet: 'fd00:dead:beef::/64'
+          gateway: 'fd00:dead:beef::1'
 volumes:
   etcd:
     driver: local

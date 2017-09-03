@@ -1,7 +1,7 @@
 # Copyright (c) 2016-2017 Christian Saide <Supernomad>
 # Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
 
-.PHONY: all setup_ci setup_dev gen_certs gen_docker_network rm_docker_network build_docker ci_deps build_deps vendor_deps lib_deps compile install lint check clean release
+.PHONY: all setup_ci setup_dev gen_certs build_docker ci_deps build_deps vendor_deps lib_deps compile install lint check clean release
 
 CI=
 ifdef CI
@@ -14,19 +14,11 @@ all: lib_deps compile
 
 setup_ci: ci_deps build_deps vendor_deps gen_certs
 
-setup_dev: build_deps vendor_deps gen_certs rm_docker_network gen_docker_network build_docker
+setup_dev: build_deps vendor_deps gen_certs build_docker
 
 gen_certs:
 	@echo "Generating etcd certificates..."
 	@dist/bin/generate-tls-test-certs.sh
-
-gen_docker_network:
-	@echo "Setting up docker networks..."
-	@docker network create --ipv6 --subnet=172.18.0.0/24 --gateway=172.18.0.1 --subnet='fd00:dead:beef::/64' --gateway='fd00:dead:beef::1' quantum_dev_net
-
-rm_docker_network:
-	@echo "Removing docker networks..."
-	@docker network rm quantum_dev_net || true
 
 build_docker:
 	@echo "Building test docker container..."
