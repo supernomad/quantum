@@ -15,8 +15,8 @@ type Quic struct {
 	cfg     *common.Config
 	stop    bool
 	queues  []int
-	servers []*crypto.QuicContext
-	clients []*crypto.QuicContext
+	servers []*crypto.QuicServer
+	clients []*crypto.QuicSession
 }
 
 // Close the Quic socket and removes associated network configuration.

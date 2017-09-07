@@ -5,19 +5,17 @@ package crypto
 
 import (
 	"crypto/tls"
+	"crypto/x509"
+	"errors"
+	"io/ioutil"
 	"net"
 	"os"
 
 	quic "github.com/lucas-clemente/quic-go"
-	"github.com/lucas-clemente/quic-go/protocol"
 )
 
 func fdToPacket(fd int) (net.PacketConn, error) {
-	f, err := os.NewFile(fd, "")
-	if err != nil {
-		return nil, err
-	}
-
+	f := os.NewFile(uintptr(fd), "")
 	return net.FilePacketConn(f)
 }
 
@@ -82,7 +80,7 @@ func (ctx *QuicServer) Close() error {
 func NewQuicServer(fd int, skipVerify bool, caFile string, certFile string, keyFile string) (*QuicServer, error) {
 	quicCfg := &quic.Config{
 		KeepAlive: true,
-		Versions:  protocol.Version37,
+		Versions:  []quic.VersionNumber{39},
 	}
 	tlsCfg := &tls.Config{}
 
@@ -112,7 +110,7 @@ func NewQuicServer(fd int, skipVerify bool, caFile string, certFile string, keyF
 		return nil, err
 	}
 
-	listener, err := quic.Listen(pconn, tlsConf, quicCfg)
+	listener, err := quic.Listen(pconn, tlsCfg, quicCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +140,7 @@ func (session *QuicSession) Write(buf []byte) (int, error) {
 
 // Close will fully destroy this QuicSession, and return an error if any.
 func (session *QuicSession) Close() error {
-	if err := session.session.Close(); err != nil {
+	if err := session.session.Close(nil); err != nil {
 		return err
 	}
 	return session.stream.Close()
