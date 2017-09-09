@@ -1,5 +1,5 @@
-// Copyright (c) 2016-2017 Christian Saide <Supernomad>
-// Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+// Copyright (c) 2016-2017 Christian Saide <supernomad>
+// Licensed under the MPL-2.0, for details see https://github.com/supernomad/quantum/blob/master/LICENSE
 
 package crypto
 
@@ -76,7 +76,7 @@ func (ctx *QuicServer) Close() error {
 	return ctx.listener.Close()
 }
 
-// NewServerQuicServer returns a new server based quic context.
+// NewQuicServer returns a new server based quic context.
 func NewQuicServer(fd int, skipVerify bool, caFile string, certFile string, keyFile string) (*QuicServer, error) {
 	quicCfg := &quic.Config{
 		KeepAlive: true,
