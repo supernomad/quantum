@@ -1,9 +1,9 @@
 # `quantum`
-[![Build Status](https://jenkins.photonlabs.io/shield/status?org=Supernomad&repo=quantum&branch=develop&cache=0)](https://jenkins.photonlabs.io/job/Supernomad/job/quantum/job/develop/lastCompletedBuild/) [![Coverage Status](https://jenkins.photonlabs.io/shield/coverage?org=Supernomad&repo=quantum&branch=develop&cache=0)](https://jenkins.photonlabs.io/job/Supernomad/job/quantum/job/develop/lastCompletedBuild/cobertura/) [![Tests Status](https://jenkins.photonlabs.io/shield/tests?org=Supernomad&repo=quantum&branch=develop&cache=0)](https://jenkins.photonlabs.io/job/Supernomad/job/quantum/job/develop/lastCompletedBuild/testReport/) [![Go Report Card](https://goreportcard.com/badge/github.com/Supernomad/quantum)](https://goreportcard.com/report/github.com/Supernomad/quantum) [![GoDoc](https://godoc.org/github.com/Supernomad/quantum?status.png)](https://godoc.org/github.com/Supernomad/quantum)
+[![Build Status](https://jenkins.photonlabs.io/shield/status?org=supernomad&repo=quantum&branch=develop&cache=0)](https://jenkins.photonlabs.io/job/supernomad/job/quantum/job/develop/lastCompletedBuild/) [![Coverage Status](https://jenkins.photonlabs.io/shield/coverage?org=supernomad&repo=quantum&branch=develop&cache=0)](https://jenkins.photonlabs.io/job/supernomad/job/quantum/job/develop/lastCompletedBuild/cobertura/) [![Tests Status](https://jenkins.photonlabs.io/shield/tests?org=supernomad&repo=quantum&branch=develop&cache=0)](https://jenkins.photonlabs.io/job/supernomad/job/quantum/job/develop/lastCompletedBuild/testReport/) [![Go Report Card](https://goreportcard.com/badge/github.com/supernomad/quantum)](https://goreportcard.com/report/github.com/supernomad/quantum) [![GoDoc](https://godoc.org/github.com/supernomad/quantum?status.png)](https://godoc.org/github.com/supernomad/quantum)
 
-`quantum` is a software defined network device written in go with global networking, security, and auto-configuration at its heart. It leverages the latest distributed data stores and state of the art encryption to offer fully secured end to end global networking over a single cohesive network. `quantum` is fully opensource, and is licensed under the MPL-2.0, for details see [the license.](https://github.com/Supernomad/quantum/blob/master/LICENSE)
+`quantum` is a software defined network device written in go with global networking, security, and auto-configuration at its heart. It leverages the latest distributed data stores and state of the art encryption to offer fully secured end to end global networking over a single cohesive network. `quantum` is fully opensource, and is licensed under the MPL-2.0, for details see [the license.](https://github.com/supernomad/quantum/blob/master/LICENSE)
 
-> For detailed information on the operation and configuration of `quantum` take a look at the [wiki](https://github.com/Supernomad/quantum/wiki).
+> For detailed information on the operation and configuration of `quantum` take a look at the [wiki](https://github.com/supernomad/quantum/wiki).
 
 ### Operation
 `quantum` is designed to be essentially plug and play, however the default configuration will run `quantum` in an insecure mode and assumes each node running quantum is also running its own instance of the data store. In reality for `quantum` to guarantee safe operation it **must** be run with either the `encryption` plugin enabled or using the DTLS backend. As well as having TLS fully setup and configured with the datastore.
@@ -21,10 +21,10 @@
 - Environment variables override configuration file entries but can be overridden by cli parameters
 - Configuration file entries will override defaults but can be overridden by either cli parameters or environment variables
 
-Run `quantum -h|--help` for a current list of configuration options or see the [wiki on configuration](https://github.com/Supernomad/quantum/wiki/Configuration) for further information.
+Run `quantum -h|--help` for a current list of configuration options or see the [wiki on configuration](https://github.com/supernomad/quantum/wiki/Configuration) for further information.
 
 #### Security
-The security that `quantum` can guarantee is based on a few pieces of configuration. Review the following sections for a high level overview of the configuration needed to make `quantum` secure, and for a detailed overview of the different options see the [wiki on security.](https://github.com/Supernomad/quantum/wiki/Security).
+The security that `quantum` can guarantee is based on a few pieces of configuration. Review the following sections for a high level overview of the configuration needed to make `quantum` secure, and for a detailed overview of the different options see the [wiki on security.](https://github.com/supernomad/quantum/wiki/Security).
 
 ##### Datastore
 [Etcd security configuration](https://coreos.com/etcd/docs/latest/security.html) is very well documented and implemented. It is highly recommended to fully read and understand the security setup for etcd before considering quantum for production use. The security provided by `quantum` is intrinsicly linked to the security used by etcd, as the information stored in etcd is highly sensitive and should be kept out of sight of prying eyes.
@@ -65,7 +65,7 @@ To get started developing `quantum`, run the following shell commands to get you
 > Note that testing quantum requires `sudo` access to create and configure TUN/TAP devices, see the included `dist/bin/coverage.sh` script and `device/device_test.go` tests for details.
 
 ``` shell
-$ cd $GOPATH/src/github.com/Supernomad/quantum
+$ cd $GOPATH/src/github.com/supernomad/quantum
 # Setup the dev environment
 $ make setup_dev
 # Run a full development build including linting and unit tests
@@ -86,7 +86,7 @@ After running the above you will have a single etcd container and three quantum 
 To run basic unit testing and builds execute:
 
 ``` shell
-$ cd $GOPATH/src/github.com/Supernomad/quantum
+$ cd $GOPATH/src/github.com/supernomad/quantum
 $ make check
 ```
 
@@ -97,20 +97,20 @@ To do basic bandwidth based testing the `quantum` containers all have iperf3 ins
 # Start three shells
 
 # In first shell start iperf3 server
-$ cd $GOPATH/src/github.com/Supernomad/quantum
+$ cd $GOPATH/src/github.com/supernomad/quantum
 $ docker exec -it quantum0 iperf3 -s -f M
 
 # In second shell start iperf3 client in quantum1
-$ cd $GOPATH/src/github.com/Supernomad/quantum
+$ cd $GOPATH/src/github.com/supernomad/quantum
 $ docker exec -it quantum1 iperf3 -c 10.99.0.1 -P 2 -t 50
 
 # In third shell start iperf3 client in quantum2
-$ cd $GOPATH/src/github.com/Supernomad/quantum
+$ cd $GOPATH/src/github.com/supernomad/quantum
 $ docker exec -it quantum2 iperf3 -c 10.99.0.1 -P 2 -t 50
 ```
 
 ### Contributing
-Contributions are definitely welcome, if you are looking for something to contribute check out the current [road map](https://github.com/Supernomad/quantum/milestones) and grab an open issue in the next release.
+Contributions are definitely welcome, if you are looking for something to contribute check out the current [road map](https://github.com/supernomad/quantum/milestones) and grab an open issue in the next release.
 
 Work flow:
 
@@ -127,4 +127,4 @@ There are a few rules:
 - Documentation is added for new user facing functionality.
 
 ---
-Copyright (c) 2016-2017 Christian Saide <Supernomad>
+Copyright (c) 2016-2017 Christian Saide <supernomad>

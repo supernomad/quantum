@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Copyright (c) 2016-2017 Christian Saide <Supernomad>
-# Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+# Copyright (c) 2016-2017 Christian Saide <supernomad>
+# Licensed under the MPL-2.0, for details see https://github.com/supernomad/quantum/blob/master/LICENSE
 
 MODE="mode: count"
 SUDO="false"
@@ -59,7 +59,7 @@ function test_no_sudo() {
 
 function test_with_sudo() {
     sudo -i bash -c \
-        "cd $GOPATH/src/github.com/Supernomad/quantum; PATH='$PATH' GOPATH='$GOPATH' \
+        "cd $GOPATH/src/github.com/supernomad/quantum; PATH='$PATH' GOPATH='$GOPATH' \
         go test ${CI_ARGS} -timeout 20s -covermode=count -coverprofile=tmp-coverage.out ${BENCH_ARGS} ${1} 2>&1 \
         | tee -a testing_output.out"
 }
@@ -85,7 +85,7 @@ function handle_ci() {
     mkdir ${CI_OUTPUT_DIR}
 
     gocov convert full-coverage.out | gocov-xml > ${CI_OUTPUT_DIR}/coverage.xml
-    sed -i -e "s:/opt/go/src/github.com/Supernomad/quantum/::g" ${CI_OUTPUT_DIR}/coverage.xml
+    sed -i -e "s:/opt/go/src/github.com/supernomad/quantum/::g" ${CI_OUTPUT_DIR}/coverage.xml
 
     cat testing_output.out | go2xunit -output ${CI_OUTPUT_DIR}/tests.xml
     cat testing_output.out | gobench2plot > ${CI_OUTPUT_DIR}/benchmarks.xml

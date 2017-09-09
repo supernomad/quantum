@@ -1,10 +1,10 @@
-// Copyright (c) 2016-2017 Christian Saide <Supernomad>
-// Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+// Copyright (c) 2016-2017 Christian Saide <supernomad>
+// Licensed under the MPL-2.0, for details see https://github.com/supernomad/quantum/blob/master/LICENSE
 
 package device
 
 import (
-	"github.com/Supernomad/quantum/common"
+	"github.com/supernomad/quantum/common"
 )
 
 // Mock device struct to use for testing.

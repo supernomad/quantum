@@ -1,9 +1,9 @@
-// Copyright (c) 2016-2017 Christian Saide <Supernomad>
-// Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+// Copyright (c) 2016-2017 Christian Saide <supernomad>
+// Licensed under the MPL-2.0, for details see https://github.com/supernomad/quantum/blob/master/LICENSE
 
 node {
     try {
-        go_dir = "/opt/go/src/github.com/Supernomad/quantum"
+        go_dir = "/opt/go/src/github.com/supernomad/quantum"
 
         stage("Checkout") {
             checkout([
@@ -19,7 +19,7 @@ node {
         builder.inside('--net host --cap-add NET_ADMIN --cap-add NET_RAW') {
             stage("Setup") {
                 sh """
-                    mkdir -p /opt/go/src/github.com/Supernomad
+                    mkdir -p /opt/go/src/github.com/supernomad
                     ln -s ${env.WORKSPACE} ${go_dir}
                 """
                 sh "cd ${go_dir}; make setup_ci"

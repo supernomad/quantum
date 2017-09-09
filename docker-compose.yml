@@ -1,6 +1,6 @@
 ---
-# Copyright (c) 2016-2017 Christian Saide <Supernomad>
-# Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+# Copyright (c) 2016-2017 Christian Saide <supernomad>
+# Licensed under the MPL-2.0, for details see https://github.com/supernomad/quantum/blob/master/LICENSE
 
 version: "2.1"
 services:
@@ -18,8 +18,8 @@ services:
       - NET_RAW
     volumes:
       - $GOPATH/bin/quantum:/bin/quantum
-      - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/certs/:/etc/quantum/ssl/certs/:ro
-      - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/keys/:/etc/quantum/ssl/keys/:ro
+      - $GOPATH/src/github.com/supernomad/quantum/dist/ssl/certs/:/etc/quantum/ssl/certs/:ro
+      - $GOPATH/src/github.com/supernomad/quantum/dist/ssl/keys/:/etc/quantum/ssl/keys/:ro
       - quantum0:/var/lib/quantum/
     networks:
       local:
@@ -61,8 +61,8 @@ services:
       - NET_RAW
     volumes:
       - $GOPATH/bin/quantum:/bin/quantum
-      - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/certs/:/etc/quantum/ssl/certs/:ro
-      - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/keys/:/etc/quantum/ssl/keys/:ro
+      - $GOPATH/src/github.com/supernomad/quantum/dist/ssl/certs/:/etc/quantum/ssl/certs/:ro
+      - $GOPATH/src/github.com/supernomad/quantum/dist/ssl/keys/:/etc/quantum/ssl/keys/:ro
       - quantum1:/var/lib/quantum/
     environment:
       QUANTUM_UNENCRYPTED: "true"
@@ -96,9 +96,9 @@ services:
       - NET_RAW
     volumes:
       - $GOPATH/bin/quantum:/bin/quantum
-      - $GOPATH/src/github.com/Supernomad/quantum/dist/docker/quantum.yml:/etc/quantum/quantum.yml:ro
-      - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/certs/:/etc/quantum/ssl/certs/:ro
-      - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/keys/:/etc/quantum/ssl/keys/:ro
+      - $GOPATH/src/github.com/supernomad/quantum/dist/docker/quantum.yml:/etc/quantum/quantum.yml:ro
+      - $GOPATH/src/github.com/supernomad/quantum/dist/ssl/certs/:/etc/quantum/ssl/certs/:ro
+      - $GOPATH/src/github.com/supernomad/quantum/dist/ssl/keys/:/etc/quantum/ssl/keys/:ro
       - quantum2:/var/lib/quantum/
     environment:
       QUANTUM_CONF_FILE: "/etc/quantum/quantum.yml"
@@ -115,8 +115,8 @@ services:
       - "etcd.quantum.dev:fd00:dead:beef::4"
     volumes:
       - etcd:/var/lib/etcd
-      - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/certs/:/etc/etcd/ssl/certs/:ro
-      - $GOPATH/src/github.com/Supernomad/quantum/dist/ssl/keys/:/etc/etcd/ssl/keys/:ro
+      - $GOPATH/src/github.com/supernomad/quantum/dist/ssl/certs/:/etc/etcd/ssl/certs/:ro
+      - $GOPATH/src/github.com/supernomad/quantum/dist/ssl/keys/:/etc/etcd/ssl/keys/:ro
     ports:
       - 2379:2379
     networks:

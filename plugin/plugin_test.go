@@ -1,5 +1,5 @@
-// Copyright (c) 2016-2017 Christian Saide <Supernomad>
-// Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+// Copyright (c) 2016-2017 Christian Saide <supernomad>
+// Licensed under the MPL-2.0, for details see https://github.com/supernomad/quantum/blob/master/LICENSE
 
 package plugin
 
@@ -8,8 +8,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/Supernomad/quantum/common"
-	"github.com/Supernomad/quantum/crypto"
+	"github.com/supernomad/quantum/common"
+	"github.com/supernomad/quantum/crypto"
 )
 
 var mapping *common.Mapping

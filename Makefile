@@ -1,5 +1,5 @@
-# Copyright (c) 2016-2017 Christian Saide <Supernomad>
-# Licensed under the MPL-2.0, for details see https://github.com/Supernomad/quantum/blob/master/LICENSE
+# Copyright (c) 2016-2017 Christian Saide <supernomad>
+# Licensed under the MPL-2.0, for details see https://github.com/supernomad/quantum/blob/master/LICENSE
 
 .PHONY: all setup_ci setup_dev gen_certs build_docker ci_deps build_deps vendor_deps lib_deps compile install lint check clean release
 
@@ -49,11 +49,11 @@ lib_deps:
 
 compile:
 	@echo "Compiling quantum..."
-	@go build github.com/Supernomad/quantum
+	@go build github.com/supernomad/quantum
 
 install:
 	@echo "Installing quantum..."
-	@go install github.com/Supernomad/quantum
+	@go install github.com/supernomad/quantum
 
 lint:
 	@echo "Running linters..."
@@ -77,7 +77,7 @@ clean:
 release:
 	@echo "Generating release tar ball, zip file, and tag..."
 	@git checkout master
-	@go build github.com/Supernomad/quantum
+	@go build github.com/supernomad/quantum
 	@tar czf quantum_$(VERSION)_linux_amd64.tar.gz quantum LICENSE
 	@zip quantum_$(VERSION)_linux_amd64.zip quantum LICENSE
 	@rm -f quantum
