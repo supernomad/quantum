@@ -56,7 +56,7 @@ Currently `quantum` development is entirely in go and utilizes a few BASH script
 - docker
 - docker-compose
 - openssl
-- go 1.8.x
+- go 1.9.x
 - a recent c/c++ compiler
 
 #### Getting started
