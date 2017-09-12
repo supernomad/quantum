@@ -50,13 +50,13 @@ Currently `quantum` development is entirely in go and utilizes a few BASH script
 
 #### Development Dependencies
 - bash
-- make
+- GNU make
 - tun kernel module must be enabled
   - please see your distributions information on how to enable it.
 - docker
 - docker-compose
 - openssl
-- go 1.8.x
+- go 1.9.x
 - a recent c/c++ compiler
 
 #### Getting started
@@ -90,7 +90,7 @@ $ cd $GOPATH/src/github.com/supernomad/quantum
 $ make check
 ```
 
-To do basic bandwidth based testing the `quantum` containers all have iperf3 installed. For example to test how much throughput `quantum0` can handle from both `quantum1`/`quantum2`:
+To do basic bandwidth based testing each of the `quantum` containers all have iperf3 installed. For example to test how much throughput `quantum0` can handle from both `quantum1`/`quantum2`:
 
 ``` shell
 # Assuming the three development quantum containers are started
@@ -122,7 +122,7 @@ Work flow:
 
 There are a few rules:
 
-- All travis builds must successfully complete before a PR will be considered.
+- All jenkins builds must successfully complete before a PR will be considered.
 - `make all check` must be run successfully before the PR is open.
 - Documentation is added for new user facing functionality.
 

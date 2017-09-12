@@ -34,3 +34,6 @@ dist/ssl/csrs/
 
 # Temp ci xml files
 build_output/
+
+# Temp html docs
+docs/_build/

@@ -54,6 +54,9 @@ install:
 	@echo "Installing quantum..."
 	@go install github.com/supernomad/quantum
 
+html:
+	@cd docs/ && $(MAKE) html
+
 lint:
 	@echo "Running linters..."
 	@fgt go fmt './...'
@@ -73,6 +76,7 @@ clean:
 	@rm -f *_linux_amd64.tar.gz
 	@rm -f *_linux_amd64.zip
 	@rm -f quantum.pid
+	@cd docs/ && $(MAKE) clean
 
 release:
 	@echo "Generating release tar ball, zip file, and tag..."
