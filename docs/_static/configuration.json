@@ -1,0 +1,82 @@
+{
+    "sections": [
+        {
+            "name": "General",
+            "description": "These are general configuration options that quantum uses for basic operation. These should be normally be set on a per server basis however some of these are capabale of fully automatic configuration.",
+            "options": [
+                {
+                    "name": "Configuration File",
+                    "description": "The configuration file for quantum to use to pull user supplied configuration options from. Can be in either ``json`` or ``yaml`` syntax.",
+                    "short": "c",
+                    "long": "conf-file",
+                    "default": ""
+                }
+            ]
+        },
+        {
+            "name": "Plugins",
+            "description": "These configuration options apply to the various plugins.",
+            "options": [
+                {
+                    "name": "Plugins",
+                    "description": "The list of plugins to enable within `quantum`.",
+                    "short": "x",
+                    "long": "plugins",
+                    "default": ""
+                }
+            ]
+        },
+        {
+            "name": "Datastore",
+            "description": "These are datastore specific configuration options, and specifically apply to how ``quantum`` interacts with the backend datastore.",
+            "options": [
+                {
+                    "name": "Prefix",
+                    "description": "The prefix to use in the backend datastore to store ``quantum`` data under.",
+                    "short": "pr",
+                    "long": "datastore-prefix",
+                    "default": "quantum"
+                }
+            ]
+        },
+        {
+            "name": "DTLS",
+            "description": "These configuration options apply only when using the ``DTLS`` networking backend that ``quantum`` provides. They control how the network is interacted with.",
+            "options": [
+                {
+                    "name": "Skip Certificate Verification",
+                    "description": "Whether or not ``quantum`` should skip certificate verification. \n  WARNING: setting this to ``true`` is a security risk.",
+                    "short": "dtsv",
+                    "long": "dtls-skip-verify",
+                    "default": false
+                }
+            ]
+        },
+        {
+            "name": "Stats",
+            "description": "This set of configuration options apply to the rest api that ``quantum`` exposes for easy access to the internal metrics it collects.",
+            "options": [
+                {
+                    "name": "Route",
+                    "description": "The URI route that the internal rest api listens on for handling metric requests.",
+                    "short": "sr",
+                    "long": "stats-route",
+                    "default": "/stats"
+                }
+            ]
+        },
+        {
+            "name": "Network",
+            "description": "These configuration options define the ``quantum`` network that the instance will participate in. NOTE: Once these settings are persisted into the backend datastore these settings are completely ignored.",
+            "options": [
+                {
+                    "name": "Network Subnet",
+                    "description": "The overarching subnet that will constitute the ``quantum`` network.",
+                    "short": "nw",
+                    "long": "network",
+                    "default": "10.99.0.0/16"
+                }
+            ]
+        }
+    ]
+}

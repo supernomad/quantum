@@ -3,6 +3,7 @@
 *.a
 *.so
 *.pid
+*.pyc
 
 # Folders
 _obj
