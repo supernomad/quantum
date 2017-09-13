@@ -1,2 +1,2 @@
-How To Contribute
-=================
+Contributing
+============

@@ -1,2 +1,2 @@
-Some Operational Guarantees
+Guarantees and SLAs
 ===========================
