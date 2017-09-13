@@ -16,7 +16,7 @@ Welcome to the ``quantum`` manual. ``quantum`` is a lightweight and WAN oriented
    * - :doc:`Introduction <introduction>`
      - :doc:`Configuration Options <configuration>`
      - `Godoc <https://godoc.org/github.com/supernomad/quantum/>`_
-     - :doc:`Glossary <glossary>`
+     - :doc:`Use Cases <use-cases>`
    * - :doc:`Install <install>`
      - :doc:`Guarantees/SLAs <guarantees-sla>`
      - :doc:`Requirements <dev-reqs>`
@@ -24,7 +24,7 @@ Welcome to the ``quantum`` manual. ``quantum`` is a lightweight and WAN oriented
    * - :doc:`Quick Start <quick-start>`
      - :doc:`Distaster Recovery <dr>`
      - :doc:`Contributing <contribute>`
-     -
+     - :doc:`Glossary <glossary>`
 
 .. toctree::
    :hidden:
@@ -36,6 +36,7 @@ Welcome to the ``quantum`` manual. ``quantum`` is a lightweight and WAN oriented
    configuration.rst
    guarantees-sla.rst
    dr.rst
+   use-cases.rst
    dev-reqs.rst
    contribute.rst
    help.rst
