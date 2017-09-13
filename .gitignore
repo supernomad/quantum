@@ -37,5 +37,3 @@ build_output/
 
 # Temp html docs
 docs/_build/
-docs/_static/
-docs/_templates/
