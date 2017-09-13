@@ -13,10 +13,11 @@ Features
 --------
 
 The high level features of ``quantum`` are simple:
+  * Thrives in a high latency and distributed infrastructure.
   * Gracefully handles and manages network partitions.
   * Transparently provides powerful network level plugins to augment traffic in real time.
   * Provides a single seamless fully authenticated and secured mesh network.
-  * Exposes powerful network metrics for all connected servers, down to which network queue transmitted/received the traffic.
+  * Exposes powerful network metrics for all connected servers, down to which network queue transmitted/received a packet.
 
 Delving Deeper
 ==============
@@ -58,19 +59,18 @@ I would like to reach out to a few specific OSS projects that made ``quantum`` p
 
 First and foremost I would like to give a special thanks to the different software defined networks that exist, without which I would have never been inspired to make this project. So hats off to all of you.
 
-I could not have made ``quantum`` without the use of `OpenSSL <https://www.openssl.org/>`_ and I currently rely on its libraries to facilitate most of the cryptographic operations that ``quantum`` performs.
-
-I would also like to thank all of the authors of the following OSS golang libraries which ``quantum`` relies on to function:
-  * github.com/coreos/etcd
-  * github.com/coreos/go-semver/semver
-  * github.com/golang/snappy
-  * github.com/ugorji/go/codec
-  * github.com/vishvananda/netlink
-  * github.com/vishvananda/netns
-  * golang.org/x/crypto/curve25519
-  * golang.org/x/crypto/pbkdf2
-  * golang.org/x/net/context
-  * gopkg.in/yaml.v2
+I would also like to thank all of the authors of the following OSS libraries which ``quantum`` relies on to function, and wouldn't exist without:
+  * `OpenSSL <https://www.openssl.org/>`_
+  * `Etcd Client <https://github.com/coreos/etcd>`_
+  * `Semver <https://github.com/coreos/go-semver/semver>`_
+  * `Snappy <https://github.com/golang/snappy>`_
+  * `Codec <https://github.com/ugorji/go/codec>`_
+  * `Netlink <https://github.com/vishvananda/netlink>`_
+  * `Netns <https://github.com/vishvananda/netns>`_
+  * `Curve25519 <https://golang.org/x/crypto/curve25519>`_
+  * `Pbkdf2 <https://golang.org/x/crypto/pbkdf2>`_
+  * `Context <https://golang.org/x/net/context>`_
+  * `Yaml <https://gopkg.in/yaml.v2>`_
 
 .. toctree::
    :hidden:
