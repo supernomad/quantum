@@ -51,6 +51,27 @@ Delving Deeper
      -
      -
 
+Special Thanks
+==============
+
+I would like to reach out to a few specific OSS projects that made ``quantum`` possible.
+
+First and foremost I would like to give a special thanks to the different software defined networks that exist, without which I would have never been inspired to make this project. So hats off to all of you.
+
+I could not have made ``quantum`` without the use of `OpenSSL <https://www.openssl.org/>`_ and I currently rely on its libraries to facilitate most of the cryptographic operations that ``quantum`` performs.
+
+I would also like to thank all of the authors of the following OSS golang libraries which ``quantum`` relies on to function:
+  * github.com/coreos/etcd
+  * github.com/coreos/go-semver/semver
+  * github.com/golang/snappy
+  * github.com/ugorji/go/codec
+  * github.com/vishvananda/netlink
+  * github.com/vishvananda/netns
+  * golang.org/x/crypto/curve25519
+  * golang.org/x/crypto/pbkdf2
+  * golang.org/x/net/context
+  * gopkg.in/yaml.v2
+
 .. toctree::
    :hidden:
    :maxdepth: 2
