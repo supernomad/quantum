@@ -37,15 +37,15 @@ Delving Deeper
      - :doc:`Use Cases <use-cases>`
    * - :doc:`Install <install>`
      - :doc:`Guarantees/SLAs <guarantees-sla>`
-     - :doc:`Requirements <dev-reqs>`
+     - :doc:`Contributing <contribute>`
      - :doc:`Get Help <help>`
    * - :doc:`Quick Start <quick-start>`
      - :doc:`Distaster Recovery <dr>`
-     - :doc:`Contributing <contribute>`
+     - :doc:`Extending Quantum <extending>`
      - :doc:`Glossary <glossary>`
    * - :doc:`FAQ <faq>`
      - :doc:`Security <security>`
-     - :doc:`Extending Quantum <extending>`
+     -
      -
    * -
      - :doc:`Plugins <plugins>`

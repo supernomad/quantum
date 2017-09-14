@@ -10,6 +10,8 @@ else
 COVERAGE_ARGS=--sudo
 endif
 
+VERSION = $(shell go run dist/bin/get_version.go)
+
 all: lib_deps compile
 
 setup_ci: ci_deps build_deps vendor_deps gen_certs
@@ -33,6 +35,8 @@ ci_deps:
 
 build_deps:
 	@echo "Running go get to install build dependencies..."
+	@pip install sphinx
+	@pip install sphinx_rtd_theme
 	@go get -u golang.org/x/tools/cmd/cover
 	@go get -u github.com/golang/lint/golint
 	@go get -u github.com/client9/misspell/cmd/misspell
@@ -56,7 +60,7 @@ install:
 	@go install github.com/supernomad/quantum
 
 html:
-	@cd docs/ && $(MAKE) html
+	@cd docs/ && sphinx-build -D "version=$(VERSION)" -D "release=$(VERSION)" . _build/
 
 lint:
 	@echo "Running linters..."

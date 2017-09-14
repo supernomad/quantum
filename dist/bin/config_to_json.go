@@ -47,7 +47,7 @@ var sectionDescriptions = map[string]string{
 	"Plugins":   "The Plugins configuration section provides options to configure the internal ``quantum`` plugins. ",
 	"Datastore": "The Datastore configuration section modifies how the backend datastore is interacted with.",
 	"DTLS":      "The DTLS configuration section only applies when the networking backend for ``quantum`` is configured to use 'dtls'. This section configures the backend so that it can properly communicate with the other peers in the network.",
-	"Stats":     "The Stats section exposes options4 to change how the REST API that ``quantum`` runs internally is exported.",
+	"Stats":     "The Stats section exposes options to change how the REST API that ``quantum`` runs internally is exported.",
 	"Network":   "The Network configuration allows setting up the defaults for the entire ``quantum`` network.",
 }
 

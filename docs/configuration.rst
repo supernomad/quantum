@@ -26,7 +26,7 @@ The general configuration of ``quantum`` is split up into a few different sectio
 
 {% for section in config_options.sections %}
 {{ section.name }}
--------
+{{ "-" * section.name|length }}
 
 ----------------------
 
@@ -34,7 +34,7 @@ The general configuration of ``quantum`` is split up into a few different sectio
 
 {% for option in section.options %}
 {{ option.name }}
-^^^^^^^^^^^^^^^^^
+{{ "^" * option.name|length }}
 
 {{ option.description }}
 

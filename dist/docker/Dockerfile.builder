@@ -14,6 +14,7 @@ RUN apt-get update \
        wget \
        tar \
        git \
+       python-pip \
     && rm -rf /var/lib/apt/lists/* \
     && wget https://storage.googleapis.com/golang/go${GOVERSION}.linux-amd64.tar.gz \
     && tar -C /usr/local/ -xzvf go${GOVERSION}.linux-amd64.tar.gz \
