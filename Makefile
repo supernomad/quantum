@@ -52,7 +52,6 @@ lib_deps:
 
 compile:
 	@echo "Compiling quantum..."
-	@go run dist/bin/config_to_json.go docs/_static/configuration.json
 	@go build github.com/supernomad/quantum
 
 install:
@@ -60,7 +59,8 @@ install:
 	@go install github.com/supernomad/quantum
 
 html:
-	@sphinx-versioning --chdir docs build -a -B develop -r documentation docs _build/ -- -D "version=$(VERSION)" -D "release=$(VERSION)"
+	@go run dist/bin/config_to_json.go docs/_static/configuration.json
+	@sphinx-versioning --chdir docs build -a -B develop -r documentation docs _build/
 
 lint:
 	@echo "Running linters..."
