@@ -28,8 +28,6 @@ The general configuration of ``quantum`` is split up into a few different sectio
 {{ section.name }}
 {{ "-" * section.name|length }}
 
-----------------------
-
 {{ section.description }}
 
 {% for option in section.options %}
@@ -53,7 +51,7 @@ The general configuration of ``quantum`` is split up into a few different sectio
    * - ``-{{ option.short }}|--{{ option.long }}``
      - ``QUANTUM_{{ option.long | upper | replace('-','_') }}``
      - ``{{ option.long }}``
-     - ``{{ option.default }}``
+     - ``{% if option.default != "" %}{{ option.default }}{% else %} {% endif %}``
 
 {% endfor %}
 {% endfor %}

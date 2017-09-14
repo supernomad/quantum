@@ -85,7 +85,6 @@ I would also like to thank all of the authors of the following OSS libraries whi
    guarantees-sla.rst
    dr.rst
    use-cases.rst
-   dev-reqs.rst
    extending.rst
    contribute.rst
    faq.rst
