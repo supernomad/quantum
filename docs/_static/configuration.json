@@ -287,7 +287,7 @@
     },
     {
       "name": "Stats",
-      "description": "The Stats section exposes options4 to change how the REST API that ``quantum`` runs internally is exported.",
+      "description": "The Stats section exposes options to change how the REST API that ``quantum`` runs internally is exported.",
       "options": [
         {
           "name": "API URI Route",

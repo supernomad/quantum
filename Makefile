@@ -48,7 +48,7 @@ vendor_deps:
 
 lib_deps:
 	@echo "Running go get to install library dependencies..."
-	@go get -t -v './...'
+	@go get -t -v $(go list ./... | grep -v /dist/)
 
 compile:
 	@echo "Compiling quantum..."
@@ -60,7 +60,7 @@ install:
 	@go install github.com/supernomad/quantum
 
 html:
-	@cd docs/ && sphinx-build -D "version=$(VERSION)" -D "release=$(VERSION)" . _build/
+	@sphinx-versioning --chdir docs build -a -B develop -r documentation docs _build/ -- -D "version=$(VERSION)" -D "release=$(VERSION)"
 
 lint:
 	@echo "Running linters..."
