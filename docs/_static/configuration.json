@@ -1,82 +1,373 @@
 {
-    "sections": [
+  "sections": [
+    {
+      "name": "General",
+      "description": "The General configuration section focuses on the base level configuration options to modify the bahvior of ``quantum`` at a fundamental level.",
+      "options": [
         {
-            "name": "General",
-            "description": "These are general configuration options that quantum uses for basic operation. These should be normally be set on a per server basis however some of these are capabale of fully automatic configuration.",
-            "options": [
-                {
-                    "name": "Configuration File",
-                    "description": "The configuration file for quantum to use to pull user supplied configuration options from. Can be in either ``json`` or ``yaml`` syntax.",
-                    "short": "c",
-                    "long": "conf-file",
-                    "default": ""
-                }
-            ]
+          "name": "Configuration File",
+          "description": "The configuration file to use to configure quantum.",
+          "short": "c",
+          "long": "conf-file",
+          "default": "",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
         },
         {
-            "name": "Plugins",
-            "description": "These configuration options apply to the various plugins.",
-            "options": [
-                {
-                    "name": "Plugins",
-                    "description": "The list of plugins to enable within `quantum`.",
-                    "short": "x",
-                    "long": "plugins",
-                    "default": ""
-                }
-            ]
+          "name": "Quantum Device Name",
+          "description": "The name to give the TUN device quantum uses, append '%d' to have auto incrementing names.",
+          "short": "i",
+          "long": "device-name",
+          "default": "quantum%d",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
         },
         {
-            "name": "Datastore",
-            "description": "These are datastore specific configuration options, and specifically apply to how ``quantum`` interacts with the backend datastore.",
-            "options": [
-                {
-                    "name": "Prefix",
-                    "description": "The prefix to use in the backend datastore to store ``quantum`` data under.",
-                    "short": "pr",
-                    "long": "datastore-prefix",
-                    "default": "quantum"
-                }
-            ]
+          "name": "Workers",
+          "description": "The number of quantum workers to use, set to 0 for a worker per available cpu core.",
+          "short": "n",
+          "long": "workers",
+          "default": "0",
+          "type": "int",
+          "type_def": "A basic integer type, accepts any integer value."
         },
         {
-            "name": "DTLS",
-            "description": "These configuration options apply only when using the ``DTLS`` networking backend that ``quantum`` provides. They control how the network is interacted with.",
-            "options": [
-                {
-                    "name": "Skip Certificate Verification",
-                    "description": "Whether or not ``quantum`` should skip certificate verification. \n  WARNING: setting this to ``true`` is a security risk.",
-                    "short": "dtsv",
-                    "long": "dtls-skip-verify",
-                    "default": false
-                }
-            ]
+          "name": "Quantum IP",
+          "description": "The private ip address to assign this quantum instance.",
+          "short": "ip",
+          "long": "private-ip",
+          "default": "",
+          "type": "ip",
+          "type_def": "A basic ip type, which accepts both IPv4 and IPv6 addresses where specified."
         },
         {
-            "name": "Stats",
-            "description": "This set of configuration options apply to the rest api that ``quantum`` exposes for easy access to the internal metrics it collects.",
-            "options": [
-                {
-                    "name": "Route",
-                    "description": "The URI route that the internal rest api listens on for handling metric requests.",
-                    "short": "sr",
-                    "long": "stats-route",
-                    "default": "/stats"
-                }
-            ]
+          "name": "Listen IP",
+          "description": "The local server ip to listen on, leave blank of automatic association.",
+          "short": "lip",
+          "long": "listen-ip",
+          "default": "",
+          "type": "ip",
+          "type_def": "A basic ip type, which accepts both IPv4 and IPv6 addresses where specified."
         },
         {
-            "name": "Network",
-            "description": "These configuration options define the ``quantum`` network that the instance will participate in. NOTE: Once these settings are persisted into the backend datastore these settings are completely ignored.",
-            "options": [
-                {
-                    "name": "Network Subnet",
-                    "description": "The overarching subnet that will constitute the ``quantum`` network.",
-                    "short": "nw",
-                    "long": "network",
-                    "default": "10.99.0.0/16"
-                }
-            ]
+          "name": "Listen Port",
+          "description": "The local server port to listen on.",
+          "short": "p",
+          "long": "listen-port",
+          "default": "1099",
+          "type": "int",
+          "type_def": "A basic integer type, accepts any integer value."
+        },
+        {
+          "name": "Quantum Floating IPs",
+          "description": "The list of floating ip's for this node to participate in failover with.",
+          "short": "fips",
+          "long": "floating-ips",
+          "default": "",
+          "type": "ip-list",
+          "type_def": "A special list type specific to ip type options."
+        },
+        {
+          "name": "Public IPv4",
+          "description": "The public ipv4 address to associate with this quantum instance, leave blank for automatic association.",
+          "short": "4",
+          "long": "public-v4",
+          "default": "",
+          "type": "ip",
+          "type_def": "A basic ip type, which accepts both IPv4 and IPv6 addresses where specified."
+        },
+        {
+          "name": "Disable Public IPv4",
+          "description": "Whether or not to disable public ipv4 auto addressing. Use this if you know the server doesn't have public ipv4 addressing.",
+          "short": "d4",
+          "long": "disable-v4",
+          "default": "false",
+          "type": "bool",
+          "type_def": "A flag that takes no value."
+        },
+        {
+          "name": "Public IPv6",
+          "description": "The public ipv6 address to associate with this quantum instance, leave blank for automatic association.",
+          "short": "6",
+          "long": "public-v6",
+          "default": "",
+          "type": "ip",
+          "type_def": "A basic ip type, which accepts both IPv4 and IPv6 addresses where specified."
+        },
+        {
+          "name": "Disable Public IPv6",
+          "description": "Whether or not to disable public ipv6 auto addressing. Use this if you know the server doesn't have public ipv6 addressing.",
+          "short": "d6",
+          "long": "disable-v6",
+          "default": "false",
+          "type": "bool",
+          "type_def": "A flag that takes no value."
+        },
+        {
+          "name": "Data Directory",
+          "description": "The directory to store local quantum state to.",
+          "short": "d",
+          "long": "data-dir",
+          "default": "/var/lib/quantum",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
+        },
+        {
+          "name": "PID File Path",
+          "description": "The pid file to use for tracking rolling restarts.",
+          "short": "pf",
+          "long": "pid-file",
+          "default": "/var/run/quantum.pid",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
         }
-    ]
+      ]
+    },
+    {
+      "name": "Plugins",
+      "description": "The Plugins configuration section provides options to configure the internal ``quantum`` plugins. ",
+      "options": [
+        {
+          "name": "Plugins",
+          "description": "The plugins supported by this node.",
+          "short": "x",
+          "long": "plugins",
+          "default": "",
+          "type": "list",
+          "type_def": "A basic list type, accepts a comma delimited list of values."
+        }
+      ]
+    },
+    {
+      "name": "Datastore",
+      "description": "The Datastore configuration section modifies how the backend datastore is interacted with.",
+      "options": [
+        {
+          "name": "Prefix",
+          "description": "The prefix to store quantum configuration data under in the key/value datastore.",
+          "short": "pr",
+          "long": "datastore-prefix",
+          "default": "quantum",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
+        },
+        {
+          "name": "Datastore Resync Interval",
+          "description": "The interval of full datastore syncs.",
+          "short": "si",
+          "long": "datastore-sync-interval",
+          "default": "60s",
+          "type": "duration",
+          "type_def": "A duration value, syntax examples being '1s', '2h', '3d'."
+        },
+        {
+          "name": "Datastore Lease Rfresh Interval",
+          "description": "The interval of dhcp lease refreshes with the datastore.",
+          "short": "ri",
+          "long": "datastore-refresh-interval",
+          "default": "120s",
+          "type": "duration",
+          "type_def": "A duration value, syntax examples being '1s', '2h', '3d'."
+        },
+        {
+          "name": "Floating IP TTL",
+          "description": "The ttl to use for floating ip addresses.",
+          "short": "fttl",
+          "long": "datastore-floating-ip-ttl",
+          "default": "10s",
+          "type": "duration",
+          "type_def": "A duration value, syntax examples being '1s', '2h', '3d'."
+        },
+        {
+          "name": "Endpoints",
+          "description": "A comma delimited list of key/value datastore endpoints, in 'IPADDR:PORT' syntax.",
+          "short": "e",
+          "long": "datastore-endpoints",
+          "default": "127.0.0.1:2379",
+          "type": "list",
+          "type_def": "A basic list type, accepts a comma delimited list of values."
+        },
+        {
+          "name": "Username",
+          "description": "The username to use for authentication with the datastore.",
+          "short": "u",
+          "long": "datastore-username",
+          "default": "",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
+        },
+        {
+          "name": "Password",
+          "description": "The password to use for authentication with the datastore.",
+          "short": "pw",
+          "long": "datastore-password",
+          "default": "",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
+        },
+        {
+          "name": "Skip TLS Verification",
+          "description": "Whether or not to authenticate the TLS certificates of the key/value datastore.",
+          "short": "tsv",
+          "long": "datastore-tls-skip-verify",
+          "default": "false",
+          "type": "bool",
+          "type_def": "A flag that takes no value."
+        },
+        {
+          "name": "TLS CA Certificate Path",
+          "description": "The TLS CA certificate to authenticate the TLS certificates of the key/value datastore certificates.",
+          "short": "tca",
+          "long": "datastore-tls-ca-cert",
+          "default": "",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
+        },
+        {
+          "name": "TLS Public Certificate Path",
+          "description": "The TLS client certificate to use to authenticate with the key/value datastore.",
+          "short": "tc",
+          "long": "datastore-tls-cert",
+          "default": "",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
+        },
+        {
+          "name": "TLS Private Key Path",
+          "description": "The TLS client key to use to authenticate with the key/value datastore.",
+          "short": "tk",
+          "long": "datastore-tls-key",
+          "default": "",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
+        }
+      ]
+    },
+    {
+      "name": "DTLS",
+      "description": "The DTLS configuration section only applies when the networking backend for ``quantum`` is configured to use 'dtls'. This section configures the backend so that it can properly communicate with the other peers in the network.",
+      "options": [
+        {
+          "name": "Skip DTLS Verification",
+          "description": "Whether or not to authenticate the DTLS certificates when using the DTLS backend.",
+          "short": "dtsv",
+          "long": "dtls-skip-verify",
+          "default": "false",
+          "type": "bool",
+          "type_def": "A flag that takes no value."
+        },
+        {
+          "name": "DTLS CA Certificate Path",
+          "description": "The DTLS CA certificate to authenticate the DTLS certificates when using the DTLS backend.",
+          "short": "dtca",
+          "long": "dtls-ca-cert",
+          "default": "",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
+        },
+        {
+          "name": "DTLS Public Certificate Path",
+          "description": "The DTLS client certificate to use to authenticate when using the DTLS backend.",
+          "short": "dtc",
+          "long": "dtls-cert",
+          "default": "",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
+        },
+        {
+          "name": "DTLS Private Key Path",
+          "description": "The DTLS client key to use to authenticate when using the DTLS backend.",
+          "short": "dtk",
+          "long": "dtls-key",
+          "default": "",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
+        }
+      ]
+    },
+    {
+      "name": "Stats",
+      "description": "The Stats section exposes options4 to change how the REST API that ``quantum`` runs internally is exported.",
+      "options": [
+        {
+          "name": "API URI Route",
+          "description": "The api route to serve statistics data from.",
+          "short": "sr",
+          "long": "stats-route",
+          "default": "/stats",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
+        },
+        {
+          "name": "API Listen IP",
+          "description": "The api server address.",
+          "short": "sa",
+          "long": "stats-address",
+          "default": "0.0.0.0",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
+        },
+        {
+          "name": "API Listen Port",
+          "description": "The api server port.",
+          "short": "sp",
+          "long": "stats-port",
+          "default": "1099",
+          "type": "int",
+          "type_def": "A basic integer type, accepts any integer value."
+        }
+      ]
+    },
+    {
+      "name": "Network",
+      "description": "The Network configuration allows setting up the defaults for the entire ``quantum`` network.",
+      "options": [
+        {
+          "name": "Primary Subnet",
+          "description": "The network, in CIDR notation, to use for the entire quantum cluster.",
+          "short": "nw",
+          "long": "network",
+          "default": "10.99.0.0/16",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
+        },
+        {
+          "name": "Reserved Static IP Subnet",
+          "description": "The reserved subnet, in CIDR notation, within the network to use for static ip address assignments.",
+          "short": "nsr",
+          "long": "network-static-range",
+          "default": "10.99.0.0/23",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
+        },
+        {
+          "name": "Reserved Floating IP Subnet",
+          "description": "The reserved subnet, in CIDR notation, within the network to use for floating ip address assignments.",
+          "short": "nfr",
+          "long": "network-floating-range",
+          "default": "10.99.2.0/23",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
+        },
+        {
+          "name": "Backend",
+          "description": "The network backend to set in the datastore, if nothing already exists in the network configuration.",
+          "short": "nb",
+          "long": "network-backend",
+          "default": "udp",
+          "type": "string",
+          "type_def": "A basic string type, strings with spaces or special characters should be quoted."
+        },
+        {
+          "name": "DHCP Lease Time",
+          "description": "The lease time for DHCP assigned addresses within the quantum cluster.",
+          "short": "nlt",
+          "long": "network-lease-time",
+          "default": "48h",
+          "type": "duration",
+          "type_def": "A duration value, syntax examples being '1s', '2h', '3d'."
+        }
+      ]
+    }
+  ]
 }

@@ -48,6 +48,7 @@ lib_deps:
 
 compile:
 	@echo "Compiling quantum..."
+	@go run dist/bin/config_to_json.go docs/_static/configuration.json
 	@go build github.com/supernomad/quantum
 
 install:
@@ -62,7 +63,7 @@ lint:
 	@fgt go fmt './...'
 	@fgt go vet './...'
 	@fgt golint './...'
-	@find . -type f -not -path "*/ssl/**/*" -and -not -path "*/vendor/**/*" -and -not -path "*/.git/*" | xargs fgt misspell
+	@find . -type f -not -path "*/ssl/**/*" -and -not -path "*/vendor/**/*" -and -not -path "*/.git/*" -and -not -path "*/_build/**" | xargs fgt misspell
 
 check: lint
 	@echo "Running tests..."

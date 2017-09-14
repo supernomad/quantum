@@ -34,9 +34,12 @@ The general configuration of ``quantum`` is split up into a few different sectio
 
 {% for option in section.options %}
 {{ option.name }}
-+++++++++++++++++
+^^^^^^^^^^^^^^^^^
 
 {{ option.description }}
+
+{{ option.type }}
+  {{ option.type_def }}
 
 .. list-table::
    :widths: auto
