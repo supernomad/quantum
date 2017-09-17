@@ -56,11 +56,11 @@ compile:
 
 install:
 	@echo "Installing quantum..."
-	@go install github.com/supernomad/quantum
+	@mv quantum /usr/sbin
 
 html:
 	@go run dist/bin/config_to_json.go docs/_static/configuration.json
-	@sphinx-versioning --chdir docs build -a -B develop -r documentation docs _build/
+	@cd docs/ && $(MAKE) html
 
 lint:
 	@echo "Running linters..."

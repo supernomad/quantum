@@ -10,7 +10,7 @@ EnvironmentFile=-/etc/quantum/quantum.env
 PIDFile=/var/run/quantum.pid
 ExecReload=/bin/kill -HUP $MAINPID
 ExecStop=/bin/kill -TERM $MAINPID
-ExecStart=/usr/sbin/quantum
+ExecStart=/usr/sbin/quantum ${QUANTUM_CLI_OPTS}
 
 [Install]
 WantedBy=default.target

@@ -28,8 +28,6 @@ The general configuration of ``quantum`` is split up into a few different sectio
 {{ section.name }}
 {{ "-" * section.name|length }}
 
-----------------------
-
 {{ section.description }}
 
 {% for option in section.options %}
