@@ -15,6 +15,7 @@ This has a two major benefits:
 
   * The overall size and complexity of the ``quantum`` network is drastically cut down.
   * There is a much higher upper limit to the number of containers that can be run in a single network.
+
     * Instead of having a ``/16`` for all hosts **and** containers, you can have a ``/16`` for hosts and a ``/8`` **per** host number of conatiners all with unique addressing.
 
 The major drawback is that having a hostname per container does not work with ``quantum``, however this is unlikely to be necesary in real production deployments. Where you are likely to have hundreds if not thousands of containers running. The thought here is that its just as easy to remeber ``hostA.example.com`` has api services running on the port range ``1000:2000`` as it is to remember ``hostA.api0001.example.com``.
