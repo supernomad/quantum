@@ -51,7 +51,7 @@ The general configuration of ``quantum`` is split up into a few different sectio
    * - ``-{{ option.short }}|--{{ option.long }}``
      - ``QUANTUM_{{ option.long | upper | replace('-','_') }}``
      - ``{{ option.long }}``
-     - ``{% if option.default != "" %}{{ option.default }}{% else %} {% endif %}``
+     - ``{% if option.default != "" %}{{ option.default }}{% else %}""{% endif %}``
 
 {% endfor %}
 {% endfor %}

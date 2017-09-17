@@ -4,6 +4,18 @@
 
 Welcome to the ``quantum`` manual. ``quantum`` is a lightweight and WAN oriented software defined network (SDN), that is designed with security and scalability at its heart. This manual contains a full reference to ``quantum``, and indepth descriptions of its inner workings.
 
+Features
+========
+
+The high level features of ``quantum`` are simple:
+
+  * Thrives in a high latency and distributed infrastructure.
+  * Gracefully handles and manages network partitions.
+  * Transparently provides powerful network level plugins to augment traffic in real time.
+  * Provides a single seamless fully authenticated and secured mesh network.
+  * Exposes powerful network metrics for all connected servers, down to which network queue transmitted/received a packet.
+
+
 .. list-table::
    :widths: auto
    :header-rows: 1

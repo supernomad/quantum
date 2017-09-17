@@ -35,8 +35,6 @@ ci_deps:
 
 build_deps:
 	@echo "Running go get to install build dependencies..."
-	@pip install sphinx
-	@pip install sphinx_rtd_theme
 	@go get -u golang.org/x/tools/cmd/cover
 	@go get -u github.com/golang/lint/golint
 	@go get -u github.com/client9/misspell/cmd/misspell
@@ -45,6 +43,11 @@ build_deps:
 vendor_deps:
 	@echo "Building vendored deps..."
 	@dist/bin/build_ssl.sh $(shell cat /proc/cpuinfo | grep processor | wc -l)
+
+doc_deps:
+	@echo "Running pip install to get documentation dependencies..."
+	@pip install sphinx
+	@pip install sphinx_rtd_theme
 
 lib_deps:
 	@echo "Running go get to install library dependencies..."
