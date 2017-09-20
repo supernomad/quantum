@@ -32,15 +32,11 @@ The high level features of ``quantum`` are simple:
    * - :doc:`Install <install>`
      - :doc:`Operation <operation>`
      - :doc:`Contributing <contribute>`
-     - :doc:`Get Help <help>`
+     - :doc:`FAQ <faq>`
    * - :doc:`Quick Start <quick-start>`
-     - :doc:`Guarantees/SLAs <guarantees-sla>`
-     - :doc:`Extending Quantum <extending>`
-     - :doc:`Glossary <glossary>`
-   * - :doc:`FAQ <faq>`
      - :doc:`Security <security>`
-     -
-     -
+     - :doc:`Extending Quantum <extending>`
+     - :doc:`Get Help <help>`
 
 External Resources
 ==================
@@ -79,11 +75,9 @@ I would also like to thank all of the authors of the following OSS libraries whi
    security.rst
    network-backends.rst
    plugins.rst
-   guarantees-sla.rst
    use-cases.rst
    extending.rst
    contribute.rst
    faq.rst
-   glossary.rst
    help.rst
    license.rst
