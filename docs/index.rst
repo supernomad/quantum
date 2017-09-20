@@ -13,7 +13,7 @@ The high level features of ``quantum`` are simple:
   * Gracefully handles and manages network partitions.
   * Transparently provides powerful network level plugins to augment traffic in real time.
   * Provides a single seamless fully authenticated and secured mesh network.
-  * Exposes powerful network metrics for all connected servers, down to which network queue transmitted/received a packet.
+  * Exposes powerful network metrics for all connected peers, down to which network queue transmitted/received a packet.
 
 
 .. list-table::
@@ -39,10 +39,6 @@ The high level features of ``quantum`` are simple:
      - :doc:`Glossary <glossary>`
    * - :doc:`FAQ <faq>`
      - :doc:`Security <security>`
-     -
-     -
-   * -
-     - :doc:`Plugins <plugins>`
      -
      -
 
@@ -81,6 +77,7 @@ I would also like to thank all of the authors of the following OSS libraries whi
    configuration.rst
    operation.rst
    security.rst
+   network-backends.rst
    plugins.rst
    guarantees-sla.rst
    use-cases.rst

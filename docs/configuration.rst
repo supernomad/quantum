@@ -12,7 +12,7 @@
 Hierarchy
 =========
 
-The configuration option hierarchy was specifically designed to allow for operators to deploy quantum however they like and leverage what ever configuration management practices they are accustomed to. This means that an operator can deploy a general configuration template file for all ``quantum`` enabled servers, and then override settings in different data-centers using environment variables, and then further override settings on each host by specifying command line arguments.
+The configuration option hierarchy was specifically designed to allow for operators to deploy quantum however they like and leverage what ever configuration management practices they are accustomed to. This means that an operator can deploy a general configuration template file for all ``quantum`` enabled peers, and then override settings in different data-centers using environment variables, and then further override settings on each host by specifying command line arguments.
 
 Defaults
 ========

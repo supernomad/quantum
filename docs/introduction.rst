@@ -24,7 +24,7 @@ There are a myriad of :doc:`use cases <use-cases>`, that ``quantum`` aims to sol
   * Is your infrastructure spread accross many different providers?
   * Is your infrastructure spread over many geographic regions?
   * Would you benefit from detailed and highly granular network level metrics?
-  * Do you want to easily apply network level operations such as compression, encryption, and authentication to your traffic on a per node basis?
+  * Do you want to easily apply network level operations such as compression, encryption, and authentication to your traffic on a per peer basis?
   * Do you care more about server to server communication than inter container communication?
 
 If the answer to any of the above questions is "Yes", then ``quantum`` may be a very good candidate for your infrastructure.
