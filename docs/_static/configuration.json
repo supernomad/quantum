@@ -161,7 +161,7 @@
           "type_def": "A duration value, syntax examples being '1s', '2h', '3d'."
         },
         {
-          "name": "Datastore Lease Rfresh Interval",
+          "name": "Datastore Lease Refresh Interval",
           "description": "The interval of dhcp lease refreshes with the datastore.",
           "short": "ri",
           "long": "datastore-refresh-interval",
