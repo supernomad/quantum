@@ -2,12 +2,12 @@
  Install
 #########
 
-To start using ``quantum`` you have two different installation options. You can download a prebuilt binary, or you can build from source.
+To start using ``quantum`` you have two different installation options. You can download a prebuilt binary, or you can build it from source.
 
 First off there are some prerequisites:
 
-  * At least version 3.x kernel or higher.
-  * The TUN module enabled and operational.
+  * At least kernel version 3.x or higher.
+  * The TUN module must be enabled and operational.
 
 Prebuilt Binary
 ===============

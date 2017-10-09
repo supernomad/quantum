@@ -11,7 +11,7 @@ services:
       context: "./dist/docker"
     restart: unless-stopped
     extra_hosts:
-      - "etcd.quantum.dev:172.18.0.4"
+      - "etcd.quantum.dev:172.19.0.4"
       - "etcd.quantum.dev:fd00:dead:beef::4"
     cap_add:
       - NET_ADMIN
@@ -23,7 +23,7 @@ services:
       - quantum0:/var/lib/quantum/
     networks:
       local:
-        ipv4_address: 172.18.0.2
+        ipv4_address: 172.19.0.2
         ipv6_address: fd00:dead:beef::2
     entrypoint:
       - "/bin/start_quantum.sh"
@@ -54,7 +54,7 @@ services:
       context: "./dist/docker"
     restart: unless-stopped
     extra_hosts:
-      - "etcd.quantum.dev:172.18.0.4"
+      - "etcd.quantum.dev:172.19.0.4"
       - "etcd.quantum.dev:fd00:dead:beef::4"
     cap_add:
       - NET_ADMIN
@@ -67,7 +67,7 @@ services:
     environment:
       QUANTUM_UNENCRYPTED: "true"
       QUANTUM_TRUSTED: "10.99.2.1/32,10.99.2.2"
-      QUANTUM_PUBLIC_IP: "172.18.0.3"
+      QUANTUM_PUBLIC_IP: "172.19.0.3"
       QUANTUM_DATASTORE_ENDPOINTS: "etcd.quantum.dev:2379"
       QUANTUM_DATASTORE_TLS_CA_CERT: "/etc/quantum/ssl/certs/ca.crt"
       QUANTUM_DATASTORE_TLS_CERT: "/etc/quantum/ssl/certs/quantum1.quantum.dev.crt"
@@ -79,7 +79,7 @@ services:
       QUANTUM_FLOATING_IPS: "10.99.2.1"
     networks:
       local:
-        ipv4_address: 172.18.0.3
+        ipv4_address: 172.19.0.3
         ipv6_address: fd00:dead:beef::3
     entrypoint: ["/bin/start_quantum.sh"]
   quantum2:
@@ -89,7 +89,7 @@ services:
       context: "./dist/docker"
     restart: unless-stopped
     extra_hosts:
-      - "etcd.quantum.dev:172.18.0.4"
+      - "etcd.quantum.dev:172.19.0.4"
       - "etcd.quantum.dev:fd00:dead:beef::4"
     cap_add:
       - NET_ADMIN
@@ -104,14 +104,14 @@ services:
       QUANTUM_CONF_FILE: "/etc/quantum/quantum.yml"
     networks:
       local:
-        ipv4_address: 172.18.0.5
+        ipv4_address: 172.19.0.5
         ipv6_address: fd00:dead:beef::5
     entrypoint: ["/bin/start_quantum.sh"]
   etcd:
     container_name: etcd
     image: quay.io/coreos/etcd
     extra_hosts:
-      - "etcd.quantum.dev:172.18.0.4"
+      - "etcd.quantum.dev:172.19.0.4"
       - "etcd.quantum.dev:fd00:dead:beef::4"
     volumes:
       - etcd:/var/lib/etcd
@@ -121,11 +121,11 @@ services:
       - 2379:2379
     networks:
       local:
-        ipv4_address: 172.18.0.4
+        ipv4_address: 172.19.0.4
         ipv6_address: fd00:dead:beef::4
     environment:
-      ETCD_LISTEN_CLIENT_URLS: "https://[fd00:dead:beef::4]:2379, https://172.18.0.4:2379"
-      ETCD_ADVERTISE_CLIENT_URLS: "https://[fd00:dead:beef::4]:2379, https://172.18.0.4:2379"
+      ETCD_LISTEN_CLIENT_URLS: "https://[fd00:dead:beef::4]:2379, https://172.19.0.4:2379"
+      ETCD_ADVERTISE_CLIENT_URLS: "https://[fd00:dead:beef::4]:2379, https://172.19.0.4:2379"
       ETCD_CERT_FILE: "/etc/etcd/ssl/certs/etcd.quantum.dev.crt"
       ETCD_KEY_FILE: "/etc/etcd/ssl/keys/etcd.quantum.dev.key"
       ETCD_TRUSTED_CA_FILE: "/etc/etcd/ssl/certs/ca.crt"
@@ -139,8 +139,8 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: '172.18.0.0/24'
-          gateway: '172.18.0.1'
+        - subnet: '172.19.0.0/24'
+          gateway: '172.19.0.1'
         - subnet: 'fd00:dead:beef::/64'
           gateway: 'fd00:dead:beef::1'
 volumes:

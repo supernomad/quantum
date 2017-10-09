@@ -12,7 +12,7 @@ Compression
 Plugin Name:
   compression
 
-The compression plugin will use the `snappy <https://google.github.io/snappy/>`_ compression algorithm to encode and decode packets as they are sent and received. Depending on the types of traffic being routed over ``quantum`` this can result in a massive bandwidth savings, at the cost of CPU cycles to compute the compression. However given the data is incompressible, it will be skipped over and little if any CPU will be consumed.
+The compression plugin uses the `snappy <https://google.github.io/snappy/>`_ compression algorithm to encode and decode packets as they are sent and received. Depending on the types of traffic being routed over ``quantum`` this can result in a massive bandwidth savings, at the cost of CPU cycles to compute the compression. However given the data is incompressible, it will be skipped over and little if any CPU will be consumed.
 
 Packet Encryption
 =================

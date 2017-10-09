@@ -50,7 +50,7 @@ I would like to reach out to a few specific OSS projects that made ``quantum`` p
 
 First and foremost I would like to give a special thanks to the different software defined networks that exist, without which I would have never been inspired to make this project. So hats off to all of you.
 
-I would also like to thank all of the authors of the following OSS libraries which ``quantum`` relies on to function, and wouldn't exist without:
+I would also like to thank all of the authors and collaborators of the following OSS libraries which ``quantum`` relies on to function, and wouldn't exist without:
   * `OpenSSL <https://www.openssl.org/>`_
   * `Etcd Client <https://github.com/coreos/etcd>`_
   * `Semver <https://github.com/coreos/go-semver/semver>`_
