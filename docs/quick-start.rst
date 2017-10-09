@@ -2,7 +2,7 @@
  Quick Start
 #############
 
-``quantum`` by default runs in an insecure mode. These defaults facilitate ease of access and should be overriden as needed in your infrastructure. For detailed information runing within a production environment and security see the docs on :doc:`operating quantum <operation>` and :doc:`on security <security>`.
+``quantum`` by default runs in an insecure mode. These defaults facilitate ease of access and should be overridden as needed in your infrastructure. For detailed information running within a production environment and security see the docs on :doc:`operating quantum <operation>` and :doc:`on security <security>`.
 
 To run ``quantum``, you will need a basic etcd service and two servers that can both access your etcd service. Go ahead and :doc:`install quantum <install>` on your two servers under test, and once installed ensure that the two servers can communicate with each other via udp on port ``1099``. You can then run the following on the two servers under test to verify your installation and start up your first cluster:
 

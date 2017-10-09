@@ -22,7 +22,7 @@ Why use ``quantum``?
 
 There are a myriad of :doc:`use cases <use-cases>`, that ``quantum`` aims to solve. In order to determine whether or not ``quantum`` will fit your use case please ask yourself these key questions:
 
-  * Is your infrastructure spread accross many different providers?
+  * Is your infrastructure spread accros many different providers?
   * Is your infrastructure spread over many geographic regions?
   * Would you benefit from detailed and highly granular network level metrics?
   * Do you want to easily apply network level operations such as compression, encryption, and authentication to your traffic on a per peer basis?

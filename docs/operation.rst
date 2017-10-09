@@ -14,7 +14,7 @@ When first setting up ``quantum`` in your environment a few key things should be
   * The `floating ip reservation <configuration.html#reserved-floating-ip-subnet>`_ which defaults to ``10.99.2.0/23``.
   * The :doc:`networking backend <network-backends>` to utilize which defaults to ``udp`` and insecure.
   * The :doc:`plugins <plugins>` to utilize which defaults to none.
-  * The `listen port <configuration.html#listen-port>`_ to utilize for transmitting and recieving ``quantum`` network traffic which defaults to ``1099``.
+  * The `listen port <configuration.html#listen-port>`_ to utilize for transmitting and receiving ``quantum`` network traffic which defaults to ``1099``.
 
 Public Addressing
 =================
@@ -29,7 +29,7 @@ Public Addressing
 
 This public addressing will be used in combination with `the listen port <configuration.html#listen-port>`_, as the endpoint other servers will send ``quantum`` network traffic. This combination must be unique for all servers that operate in the same cluster.
 
-Because ``quantum`` operates in a mesh fashion and there is no middle man, firewall's should set to allow sending and recieving traffic from the entire cluster of ``quantum`` enabled servers.
+Because ``quantum`` operates in a mesh fashion and there is no middle man, firewall's should set to allow sending and receiving traffic from the entire cluster of ``quantum`` enabled servers.
 
 Rolling Restart
 ===============

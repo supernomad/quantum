@@ -10,9 +10,9 @@ DTLS
 Backend Name:
   dtls
 
-The DTLS network backend is an implementation of DTLS utilizing OpenSSL. This backend requires extra configuration for each peer in the network in the form of TLS certificates and enabling/disabling certification verfication. When utilizing this backend all network traffic is encrypted and authenticated before being transmitted as UDP packets using standardized functionality within DTLS and is fully compliant with their specifications.
+The DTLS network backend is an implementation of DTLS utilizing OpenSSL. This backend requires extra configuration for each peer in the network in the form of TLS certificates and enabling/disabling certification verification. When utilizing this backend all network traffic is encrypted and authenticated before being transmitted as UDP packets using standardized functionality within DTLS and is fully compliant with their specifications.
 
-  Note: Always enable certificate verficiation to ensure security within ``quantum``.
+  Note: Always enable certificate verification to ensure security within ``quantum``.
 
 One caveat to bear in mind when utlizing the DTLS backend, is that OpenSSL is statically compiled into ``quantum``. This has two rammifcations, first it means that the latest version of ``quantum`` tracks with the latest version of OpenSSL, second to update OpenSSL ``quantum`` itself must be updated.
 

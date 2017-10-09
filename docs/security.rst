@@ -7,7 +7,7 @@ Security within ``quantum`` is fully configurable and ranges from plain text com
 Etcd
 ====
 
-``quantum`` requires Etcd to distribute networking mappings amoung the peers participating within the greater network. While there is never any private security related information stored within the cluster, the entire network map is stored along with public IP's and public ports of each peer.
+``quantum`` requires Etcd to distribute networking mappings among the peers participating within the greater network. While there is never any private security related information stored within the cluster, the entire network map is stored along with public IP's and public ports of each peer.
 
 There are a few things to keep in mind when handling the Etcd cluster that ``quantum`` is going to utilize. In order to provide the most security the cluster should be configured with `TLS enabled <https://coreos.com/etcd/docs/latest/op-guide/security.html>`_ for both client and peer communication with certificate verification enabled. The TLS certificates should ideally be unique for each client and server, and be signed by a strong CA. This is critical for ``quantum`` to guarantee safe operation over the WAN.
 

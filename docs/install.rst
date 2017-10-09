@@ -29,14 +29,14 @@ To run ``quantum`` as a service please see :ref:`running_as_a_serivce`.
 Build
 =====
 
-In order to build ``quantum`` from source, you will need a few dependancies.
+In order to build ``quantum`` from source, you will need a few dependencies.
 
   * git
   * go 1.9.x
   * GNUMake
   * any recent C compiler
 
-Once the dependancies are installed run the following:
+Once the dependencies are installed run the following:
 
 .. code-block:: console
 

@@ -34,7 +34,7 @@ The plugin module implements logic to apply to each packet that ``quantum`` inte
 Rest
 ====
 
-The rest module exposes a simple rest api, for users to interact with. Currenly only a stats endpoint has been implemented.
+The rest module exposes a simple rest api, for users to interact with. Currently only a stats endpoint has been implemented.
 
 Socket
 ======
