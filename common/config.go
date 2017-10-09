@@ -26,12 +26,13 @@ import (
 )
 
 const (
-	envDatastorePrefix               = "QUANTUM_"
-	linkLocal                        = "fe80::/10"
-	defaultBackend                   = "udp"
-	defaultNetwork                   = "10.99.0.0/16"
-	defaultStaticRange               = "10.99.0.0/23"
-	defaultLeaseTime   time.Duration = 48 * time.Hour
+	envDatastorePrefix                 = "QUANTUM_"
+	linkLocal                          = "fe80::/10"
+	defaultBackend                     = "udp"
+	defaultNetwork                     = "10.99.0.0/16"
+	defaultStaticRange                 = "10.99.0.0/23"
+	defaultFloatingRange               = "10.99.2.0/23"
+	defaultLeaseTime     time.Duration = 48 * time.Hour
 )
 
 var (
@@ -383,6 +384,7 @@ func (cfg *Config) computeArgs() error {
 		cfg.Log.Warn.Println("[CONFIG]", "Using default network static range:", defaultStaticRange)
 		DefaultNetworkConfig.Network = defaultNetwork
 		DefaultNetworkConfig.StaticRange = defaultStaticRange
+		DefaultNetworkConfig.FloatingRange = defaultFloatingRange
 	}
 
 	if DefaultNetworkConfig.LeaseTime == 0 {

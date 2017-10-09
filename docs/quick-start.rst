@@ -13,10 +13,10 @@ On host1:
 .. code-block:: shell
 
     user@host1$ quantum -h
-    user@host1$ quantum --datastore-endpoints "${ETCD_HOSTS}" --datastore-prefix "/testing" --private-ip "10.99.0.1"
+    user@host1$ quantum --datastore-endpoints "${ETCD_HOSTS}" --datastore-prefix "/testing"
     [INFO] [MAIN] Listening on device:  quantum0
     [INFO] [MAIN] Network space:        10.99.0.0/16
-    [INFO] [MAIN] Private IP address:   10.99.0.1
+    [INFO] [MAIN] Private IP address:   10.99.4.1
     [INFO] [MAIN] Public IPv4 address:  # this servers public ip v4 address as determined by quantum if available
     [INFO] [MAIN] Public IPv6 address:  # this servers public ip v6 address as determined by quantum if available
     [INFO] [MAIN] Listening on port:    1099
@@ -28,10 +28,10 @@ On host2:
 .. code-block:: shell
 
     user@host2$ quantum -h
-    user@host2$ quantum --datastore-endpoints "${ETCD_HOSTS}" --datastore-prefix "/testing" --private-ip "10.99.0.2"
+    user@host2$ quantum --datastore-endpoints "${ETCD_HOSTS}" --datastore-prefix "/testing"
     [INFO] [MAIN] Listening on device:  quantum0
     [INFO] [MAIN] Network space:        10.99.0.0/16
-    [INFO] [MAIN] Private IP address:   10.99.0.2
+    [INFO] [MAIN] Private IP address:   10.99.4.2
     [INFO] [MAIN] Public IPv4 address:  # this servers public ip v4 address as determined by quantum if available
     [INFO] [MAIN] Public IPv6 address:  # this servers public ip v6 address as determined by quantum if available
     [INFO] [MAIN] Listening on port:    1099
@@ -44,7 +44,14 @@ On host1:
 
 .. code-block:: shell
 
-    user@host1$ ping 10.99.0.2 -c 5
+    user@host1$ ping 10.99.4.2 -c 5
     # Then check the stats locally and on the remote server.
     user@host1$ curl localhost:1099/stats?pretty
-    user@host1$ curl 10.99.0.2:1099/stats?pretty
+    user@host1$ curl 10.99.4.2:1099/stats?pretty
+
+If you are ever curious what the ``quantum`` ip address is on the local node run:
+
+.. code-block:: shell
+
+    user@host1$ echo ${QUANTUM_IP}
+    10.99.4.1

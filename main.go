@@ -86,6 +86,8 @@ func main() {
 	log.Info.Printf("[MAIN] Using backend:        %s", cfg.NetworkConfig.Backend)
 	log.Info.Printf("[MAIN] Using plugins:        %s", strings.Join(cfg.Plugins, ", "))
 
+	os.Setenv("QUANTUM_IP", cfg.PrivateIP.String())
+
 	err = signaler.Wait(true)
 	handleError(log, err)
 
