@@ -20,7 +20,7 @@ This has a few major benefits:
 Why use ``quantum``?
 ====================
 
-There are a myriad of :doc:`use cases <use-cases>`, that ``quantum`` aims to solve. In order to determine whether or not ``quantum`` will fit your use case please ask yourself these key questions:
+``quantum`` aims to solve problems unique to larger scale deployments, or deployments that cross cloud providers. In order to determine whether or not ``quantum`` will fit your use case please ask yourself these key questions:
 
   * Is your infrastructure spread accros many different providers?
   * Is your infrastructure spread over many geographic regions?

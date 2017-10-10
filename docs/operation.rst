@@ -25,7 +25,7 @@ Public Addressing
   * The `public ip v6 address <configuration.html#public-ipv6>`_.
   * Utilizing the `disable ip v4 flag <configuration.html#disable-public-ipv4>`_ or the `disable ip v6 flag <configuration.html#disable-public-ipv6>`_.
 
-  NOTE: You must have one available public ip address, however this address *can* be a NAT ip as its not bound but broadcast to the rest of the cluster for communication purposes.
+  NOTE: You must have one available public ip address, however this address *can* be a NAT ip as this address will not be bound locally, instead it will be broadcasted to the rest of the cluster for communication purposes.
 
 This public addressing will be used in combination with `the listen port <configuration.html#listen-port>`_, as the endpoint other servers will send ``quantum`` network traffic. This combination must be unique for all servers that operate in the same cluster.
 

@@ -28,15 +28,15 @@ The high level features of ``quantum`` are simple:
    * - :doc:`Introduction <introduction>`
      - :doc:`Configuration Options <configuration>`
      - `Godoc <https://godoc.org/github.com/supernomad/quantum/>`_
-     - :doc:`Use Cases <use-cases>`
+     - :doc:`Get Help <help>`
    * - :doc:`Install <install>`
      - :doc:`Operation <operation>`
      - :doc:`Contributing <contribute>`
-     - :doc:`FAQ <faq>`
+     - :doc:`How it works <how-it-works>`
    * - :doc:`Quick Start <quick-start>`
      - :doc:`Security <security>`
-     - :doc:`Extending Quantum <extending>`
-     - :doc:`Get Help <help>`
+     -
+     -
 
 External Resources
 ==================
@@ -70,14 +70,12 @@ I would also like to thank all of the authors and collaborators of the following
    introduction.rst
    install.rst
    quick-start.rst
+   how-it-works.rst
    configuration.rst
    operation.rst
    security.rst
    network-backends.rst
    plugins.rst
-   use-cases.rst
-   extending.rst
    contribute.rst
-   faq.rst
    help.rst
    license.rst
