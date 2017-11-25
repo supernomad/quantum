@@ -13,6 +13,9 @@ RUN apt-get update \
         net-tools \
         hping3 \
         iptables \
+        dnsutils \
+        curl \
+        wget \
     && rm -rf /var/lib/apt/lists/*
 
 COPY ./start_quantum.sh /bin/start_quantum.sh
