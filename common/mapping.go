@@ -26,6 +26,9 @@ type Mapping struct {
 	// Whether or not this mapping represents a floating ip address.
 	Floating bool `json:"floating"`
 
+	// Whether or not this mapping represents a gateway ip address.
+	Gateway bool `json:"gateway"`
+
 	// The public ipv4 address of the node represented by this mapping, which may or may not exist.
 	IPv4 net.IP `json:"ipv4,omitempty"`
 
@@ -111,6 +114,7 @@ func NewMapping(cfg *Config) *Mapping {
 		PublicKey:        cfg.PublicKey,
 		PublicSalt:       cfg.PublicSalt,
 		Floating:         false,
+		Gateway:          cfg.Gateway,
 	}
 }
 
@@ -126,5 +130,6 @@ func NewFloatingMapping(cfg *Config, i int) *Mapping {
 		PublicKey:        cfg.PublicKey,
 		PublicSalt:       cfg.PublicSalt,
 		Floating:         true,
+		Gateway:          cfg.Gateway,
 	}
 }

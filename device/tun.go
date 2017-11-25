@@ -76,7 +76,7 @@ func newTUN(cfg *common.Config) (Device, error) {
 	}
 
 	if !tun.cfg.ReuseFDS {
-		err := initTun(tun.name, tun.cfg.PrivateIP, tun.cfg.FloatingIPs, tun.cfg.NetworkConfig)
+		err := initTun(tun.name, tun.cfg.PrivateIP, tun.cfg.FloatingIPs, tun.cfg.NetworkConfig, tun.cfg.Forward)
 		if err != nil {
 			return nil, err
 		}
@@ -106,7 +106,7 @@ func createTUN(name string) (string, int, error) {
 	return string(req.Name[:strings.Index(string(req.Name[:]), "\000")]), queue, nil
 }
 
-func initTun(name string, src net.IP, additionalIPs []net.IP, networkCfg *common.NetworkConfig) error {
+func initTun(name string, src net.IP, additionalIPs []net.IP, networkCfg *common.NetworkConfig, forward bool) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return errors.New("error getting the virtual network device from the kernel: " + err.Error())
@@ -137,6 +137,26 @@ func initTun(name string, src net.IP, additionalIPs []net.IP, networkCfg *common
 	err = netlink.RouteAdd(route)
 	if err != nil {
 		return errors.New("error setting the virtual network device network routes: " + err.Error())
+	}
+
+	if forward {
+		routes, _ := netlink.RouteList(nil, netlink.FAMILY_V4)
+		for _, r := range routes {
+			if r.Dst == nil {
+				if err := netlink.RouteDel(&r); err != nil {
+					return errors.New("error removing old default route: " + err.Error())
+				}
+			}
+		}
+		route := &netlink.Route{
+			LinkIndex: link.Attrs().Index,
+			Src:       src,
+			Dst:       nil,
+		}
+		err = netlink.RouteAdd(route)
+		if err != nil {
+			return errors.New("error setting the virtual network device network routes: " + err.Error())
+		}
 	}
 
 	for i := 0; i < len(additionalIPs); i++ {

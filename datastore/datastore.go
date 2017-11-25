@@ -31,6 +31,9 @@ type Datastore interface {
 	// Mapping should return the mapping and true if it exists, if not the mapping should be nil and false should be returned along with it.
 	Mapping(ip uint32) (*common.Mapping, bool)
 
+	// GatewayMapping should retun the mapping and true if it exists specifically for destinations outside of the quantum network, if the mapping doesn't exist it will return nil and false.
+	GatewayMapping(ip uint32) (*common.Mapping, bool)
+
 	// Start should kick off any routines that need to run in the background to groom the mappings and manage the datastore state.
 	Start()
 

@@ -14,6 +14,7 @@ import (
 	"github.com/supernomad/quantum/device"
 	"github.com/supernomad/quantum/metric"
 	"github.com/supernomad/quantum/plugin"
+	"github.com/supernomad/quantum/router"
 	"github.com/supernomad/quantum/socket"
 )
 
@@ -22,6 +23,8 @@ var (
 	outgoing    *Outgoing
 	incoming    *Incoming
 	store       *datastore.Mock
+	cfg         *common.Config
+	rt          *router.Router
 
 	dev       device.Device
 	sock      socket.Socket
@@ -31,6 +34,8 @@ var (
 func init() {
 	ip := net.ParseIP("10.8.0.1")
 	ipv6 := net.ParseIP("dead::beef")
+
+	base, ipnet, _ := net.ParseCIDR("10.8.0.0/24")
 
 	store = &datastore.Mock{}
 	dev, _ = device.New(device.MOCKDevice, nil)
@@ -49,8 +54,12 @@ func init() {
 		})
 	aggregator.Start()
 
-	incoming = NewIncoming(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, []plugin.Plugin{}, dev, sock)
-	outgoing = NewOutgoing(&common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true}, aggregator, store, []plugin.Plugin{}, dev, sock)
+	netCfg := &common.NetworkConfig{BaseIP: base, IPNet: ipnet}
+	cfg = &common.Config{NumWorkers: 1, PrivateIP: ip, IsIPv6Enabled: true, IsIPv4Enabled: true, NetworkConfig: netCfg}
+	rt = router.New(cfg, store)
+
+	incoming = NewIncoming(cfg, aggregator, rt, []plugin.Plugin{}, dev, sock)
+	outgoing = NewOutgoing(cfg, aggregator, rt, []plugin.Plugin{}, dev, sock)
 }
 
 func benchmarkIncomingPipeline(buf []byte, queue int, b *testing.B) {

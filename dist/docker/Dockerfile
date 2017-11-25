@@ -12,6 +12,7 @@ RUN apt-get update \
         iputils-ping \
         net-tools \
         hping3 \
+        iptables \
     && rm -rf /var/lib/apt/lists/*
 
 COPY ./start_quantum.sh /bin/start_quantum.sh

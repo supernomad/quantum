@@ -21,6 +21,7 @@ import (
 type Etcd struct {
 	cfg                 *common.Config
 	mappings            map[uint32]*common.Mapping
+	gwMappings          map[uint32]*common.Mapping
 	ctx                 context.Context
 	cli                 client.Client
 	kapi                client.KeysAPI
@@ -216,14 +217,21 @@ func (etcd *Etcd) sync() error {
 	}
 
 	mappings := make(map[uint32]*common.Mapping)
+	gwMappings := make(map[uint32]*common.Mapping)
 	for _, node := range nodes {
 		mapping, err := common.ParseMapping(node.Value, etcd.cfg)
 		if err != nil {
 			return errors.New("error parsing a mapping retrieved from etcd: " + err.Error())
 		}
 		mappings[common.IPtoInt(mapping.PrivateIP)] = mapping
+		if mapping.Gateway {
+			etcd.cfg.Log.Info.Println("[ETCD]", "Got gateway mapping.")
+			gwMappings[common.IPtoInt(mapping.PrivateIP)] = mapping
+		}
 	}
+
 	etcd.mappings = mappings
+	etcd.gwMappings = gwMappings
 	return nil
 }
 
@@ -261,6 +269,9 @@ func (etcd *Etcd) watch() {
 						continue
 					}
 					etcd.mappings[common.IPtoInt(mapping.PrivateIP)] = mapping
+					if mapping.Gateway {
+						etcd.gwMappings[common.IPtoInt(mapping.PrivateIP)] = mapping
+					}
 				}
 			case "delete", "expire":
 				for _, node := range nodes {
@@ -270,6 +281,9 @@ func (etcd *Etcd) watch() {
 						continue
 					}
 					delete(etcd.mappings, common.IPtoInt(mapping.PrivateIP))
+					if mapping.Gateway {
+						delete(etcd.gwMappings, common.IPtoInt(mapping.PrivateIP))
+					}
 				}
 			}
 		}
@@ -280,6 +294,14 @@ func (etcd *Etcd) watch() {
 func (etcd *Etcd) Mapping(ip uint32) (*common.Mapping, bool) {
 	mapping, exists := etcd.mappings[ip]
 	return mapping, exists
+}
+
+// GatewayMapping should retun the mapping and true if it exists specifically for destinations outside of the quantum network, if the mapping doesn't exist it will return nil and false.
+func (etcd *Etcd) GatewayMapping(ip uint32) (*common.Mapping, bool) {
+	for _, mapping := range etcd.gwMappings {
+		return mapping, true
+	}
+	return nil, false
 }
 
 // Init the Etcd datastore which will open any necessary connections, preform an initial sync of the datastore, and define the local mapping in the datastore.
@@ -414,6 +436,7 @@ func newEtcd(cfg *common.Config) (Datastore, error) {
 		ctx:                 context.TODO(),
 		cfg:                 cfg,
 		mappings:            make(map[uint32]*common.Mapping),
+		gwMappings:          make(map[uint32]*common.Mapping),
 		cli:                 cli,
 		kapi:                kapi,
 		stopSyncing:         make(chan struct{}),

@@ -4,14 +4,13 @@
 package worker
 
 import (
-	"encoding/binary"
 	"runtime"
 
 	"github.com/supernomad/quantum/common"
-	"github.com/supernomad/quantum/datastore"
 	"github.com/supernomad/quantum/device"
 	"github.com/supernomad/quantum/metric"
 	"github.com/supernomad/quantum/plugin"
+	"github.com/supernomad/quantum/router"
 	"github.com/supernomad/quantum/socket"
 )
 
@@ -22,14 +21,12 @@ type Incoming struct {
 	plugins    []plugin.Plugin
 	dev        device.Device
 	sock       socket.Socket
-	store      datastore.Datastore
+	router     *router.Router
 	stop       bool
 }
 
 func (incoming *Incoming) resolve(payload *common.Payload) (*common.Payload, *common.Mapping, bool) {
-	dip := binary.LittleEndian.Uint32(payload.IPAddress)
-
-	if mapping, ok := incoming.store.Mapping(dip); ok {
+	if mapping, ok := incoming.router.Resolve(payload.IPAddress); ok {
 		return payload, mapping, true
 	}
 
@@ -100,14 +97,14 @@ func (incoming *Incoming) Stop() {
 }
 
 // NewIncoming generates a new Incoming worker which once started will handle packets coming from the remote nodes in the quantum network destined for the local node.
-func NewIncoming(cfg *common.Config, aggregator *metric.Aggregator, store datastore.Datastore, plugins []plugin.Plugin, dev device.Device, sock socket.Socket) *Incoming {
+func NewIncoming(cfg *common.Config, aggregator *metric.Aggregator, rt *router.Router, plugins []plugin.Plugin, dev device.Device, sock socket.Socket) *Incoming {
 	return &Incoming{
 		cfg:        cfg,
 		aggregator: aggregator,
 		plugins:    plugins,
 		dev:        dev,
 		sock:       sock,
-		store:      store,
+		router:     rt,
 		stop:       false,
 	}
 }

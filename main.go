@@ -14,6 +14,7 @@ import (
 	"github.com/supernomad/quantum/metric"
 	"github.com/supernomad/quantum/plugin"
 	"github.com/supernomad/quantum/rest"
+	"github.com/supernomad/quantum/router"
 	"github.com/supernomad/quantum/socket"
 	"github.com/supernomad/quantum/worker"
 )
@@ -59,8 +60,10 @@ func main() {
 
 	api := rest.New(cfg, aggregator)
 
-	outgoing := worker.NewOutgoing(cfg, aggregator, store, outgoingPlugins, dev, sock)
-	incoming := worker.NewIncoming(cfg, aggregator, store, incomingPlugins, dev, sock)
+	rt := router.New(cfg, store)
+
+	outgoing := worker.NewOutgoing(cfg, aggregator, rt, outgoingPlugins, dev, sock)
+	incoming := worker.NewIncoming(cfg, aggregator, rt, incomingPlugins, dev, sock)
 
 	api.Start()
 	aggregator.Start()
@@ -77,14 +80,16 @@ func main() {
 
 	signaler := common.NewSignaler(log, cfg, fds, map[string]string{common.RealDeviceNameEnv: dev.Name()})
 
-	log.Info.Printf("[MAIN] Listening on device:  %s", dev.Name())
-	log.Info.Printf("[MAIN] Network space:        %s", cfg.NetworkConfig.Network)
-	log.Info.Printf("[MAIN] Private IP address:   %s", cfg.PrivateIP)
-	log.Info.Printf("[MAIN] Public IPv4 address:  %s", cfg.PublicIPv4)
-	log.Info.Printf("[MAIN] Public IPv6 address:  %s", cfg.PublicIPv6)
-	log.Info.Printf("[MAIN] Listening on port:    %d", cfg.ListenPort)
-	log.Info.Printf("[MAIN] Using backend:        %s", cfg.NetworkConfig.Backend)
-	log.Info.Printf("[MAIN] Using plugins:        %s", strings.Join(cfg.Plugins, ", "))
+	log.Info.Printf("[MAIN] Listening on device:                 %s", dev.Name())
+	log.Info.Printf("[MAIN] Network space:                       %s", cfg.NetworkConfig.Network)
+	log.Info.Printf("[MAIN] Private IP address:                  %s", cfg.PrivateIP)
+	log.Info.Printf("[MAIN] Public IPv4 address:                 %s", cfg.PublicIPv4)
+	log.Info.Printf("[MAIN] Public IPv6 address:                 %s", cfg.PublicIPv6)
+	log.Info.Printf("[MAIN] Listening on port:                   %d", cfg.ListenPort)
+	log.Info.Printf("[MAIN] Using backend:                       %s", cfg.NetworkConfig.Backend)
+	log.Info.Printf("[MAIN] Using plugins:                       %s", strings.Join(cfg.Plugins, ", "))
+	log.Info.Printf("[MAIN] Forwarding network traffic:          %t", cfg.Forward)
+	log.Info.Printf("[MAIN] Handling forwarded network traffic:  %t", cfg.Gateway)
 
 	os.Setenv("QUANTUM_IP", cfg.PrivateIP.String())
 

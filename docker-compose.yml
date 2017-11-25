@@ -47,6 +47,7 @@ services:
       - "compression,encryption"
       - "--floating-ips"
       - "10.99.2.1"
+      - "--gateway"
   quantum1:
     cpuset: "0,1,2"
     container_name: quantum1

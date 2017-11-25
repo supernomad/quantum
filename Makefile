@@ -56,6 +56,7 @@ lib_deps:
 compile:
 	@echo "Compiling quantum..."
 	@go build github.com/supernomad/quantum
+	@go install github.com/supernomad/quantum
 
 install:
 	@echo "Installing quantum..."

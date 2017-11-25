@@ -9,12 +9,18 @@ import (
 
 // Mock datastore struct for testing.
 type Mock struct {
-	InternalMapping *common.Mapping
+	InternalMapping        *common.Mapping
+	InternalGatewayMapping *common.Mapping
 }
 
 // Mapping always returns the internal mapping and true.
 func (mock *Mock) Mapping(ip uint32) (*common.Mapping, bool) {
 	return mock.InternalMapping, true
+}
+
+// GatewayMapping always returns the internal mapping and true.
+func (mock *Mock) GatewayMapping(ip uint32) (*common.Mapping, bool) {
+	return mock.InternalGatewayMapping, true
 }
 
 // Init which is a noop.
