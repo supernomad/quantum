@@ -225,7 +225,6 @@ func (etcd *Etcd) sync() error {
 		}
 		mappings[common.IPtoInt(mapping.PrivateIP)] = mapping
 		if mapping.Gateway {
-			etcd.cfg.Log.Info.Println("[ETCD]", "Got gateway mapping.")
 			gwMappings[common.IPtoInt(mapping.PrivateIP)] = mapping
 		}
 	}
@@ -258,32 +257,27 @@ func (etcd *Etcd) watch() {
 			}
 
 			etcd.watchIndex = resp.Index
-			nodes := resp.Node.Nodes
 
 			switch resp.Action {
 			case "set", "update", "create":
-				for _, node := range nodes {
-					mapping, err := common.ParseMapping(node.Value, etcd.cfg)
-					if err != nil {
-						etcd.cfg.Log.Error.Println("[ETCD]", "Error parsing mapping: "+err.Error())
-						continue
-					}
-					etcd.mappings[common.IPtoInt(mapping.PrivateIP)] = mapping
-					if mapping.Gateway {
-						etcd.gwMappings[common.IPtoInt(mapping.PrivateIP)] = mapping
-					}
+				mapping, err := common.ParseMapping(resp.Node.Value, etcd.cfg)
+				if err != nil {
+					etcd.cfg.Log.Error.Println("[ETCD]", "Error parsing mapping: "+err.Error())
+					continue
+				}
+				etcd.mappings[common.IPtoInt(mapping.PrivateIP)] = mapping
+				if mapping.Gateway {
+					etcd.gwMappings[common.IPtoInt(mapping.PrivateIP)] = mapping
 				}
 			case "delete", "expire":
-				for _, node := range nodes {
-					mapping, err := common.ParseMapping(node.Value, etcd.cfg)
-					if err != nil {
-						etcd.cfg.Log.Error.Println("[ETCD]", "Error parsing mapping: "+err.Error())
-						continue
-					}
-					delete(etcd.mappings, common.IPtoInt(mapping.PrivateIP))
-					if mapping.Gateway {
-						delete(etcd.gwMappings, common.IPtoInt(mapping.PrivateIP))
-					}
+				mapping, err := common.ParseMapping(resp.Node.Value, etcd.cfg)
+				if err != nil {
+					etcd.cfg.Log.Error.Println("[ETCD]", "Error parsing mapping: "+err.Error())
+					continue
+				}
+				delete(etcd.mappings, common.IPtoInt(mapping.PrivateIP))
+				if mapping.Gateway {
+					delete(etcd.gwMappings, common.IPtoInt(mapping.PrivateIP))
 				}
 			}
 		}

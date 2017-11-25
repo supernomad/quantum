@@ -21,8 +21,6 @@ type Router struct {
 func (rt *Router) Resolve(destination net.IP) (*common.Mapping, bool) {
 	dip := binary.LittleEndian.Uint32(destination)
 
-	rt.cfg.Log.Info.Println("[Router]", "Resolving IP address:", destination.String())
-
 	if rt.cfg.NetworkConfig.IPNet.Contains(destination) {
 		return rt.store.Mapping(dip)
 	}
