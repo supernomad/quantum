@@ -21,10 +21,12 @@ type Router struct {
 func (rt *Router) Resolve(destination net.IP) (*common.Mapping, bool) {
 	dip := binary.LittleEndian.Uint32(destination)
 
+	// Returning a standard mapping if the requested destination exists in the quantum network.
 	if rt.cfg.NetworkConfig.IPNet.Contains(destination) {
 		return rt.store.Mapping(dip)
 	}
 
+	// Return the gateway mapping if it exists.
 	return rt.store.GatewayMapping(dip)
 }
 
