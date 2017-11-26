@@ -7,4 +7,9 @@ mkdir -p /dev/net
 mknod /dev/net/tun c 10 200
 chmod 0666 /dev/net/tun
 
+if [[ $1 == "masquerade" ]]; then
+	iptables -t nat -A POSTROUTING -s 10.99.0.0/16 -o eth0 -j MASQUERADE
+	shift
+fi
+
 /bin/quantum $@

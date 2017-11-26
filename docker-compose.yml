@@ -27,6 +27,7 @@ services:
         ipv6_address: fd00:dead:beef::2
     entrypoint:
       - "/bin/start_quantum.sh"
+      - "masquerade"
       - "--datastore-endpoints"
       - "etcd.quantum.dev:2379"
       - "--private-ip"
