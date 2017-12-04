@@ -42,7 +42,7 @@ build_deps:
 
 vendor_deps:
 	@echo "Building vendored deps..."
-	@dist/bin/build_ssl.sh $(shell cat /proc/cpuinfo | grep processor | wc -l)
+	@bash dist/bin/build_ssl.sh $(shell cat /proc/cpuinfo | grep processor | wc -l)
 
 doc_deps:
 	@echo "Running pip install to get documentation dependencies..."
