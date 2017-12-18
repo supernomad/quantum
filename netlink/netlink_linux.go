@@ -10,6 +10,7 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
+// RouteGet returns a list of routes that match the provided destination IP address.
 func RouteGet(dst net.IP) (Routes, error) {
 	tmpRoutes, err := netlink.RouteGet(dst)
 	if err != nil {
@@ -29,6 +30,7 @@ func RouteGet(dst net.IP) (Routes, error) {
 	return routes, nil
 }
 
+// LinkSetup will configure and UP the specified link with the given configuration options.
 func LinkSetup(name string, src net.IP, additionalIPs []net.IP, dst *net.IPNet, forward bool, mtu int) error {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
