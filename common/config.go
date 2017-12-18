@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/supernomad/quantum/crypto"
+	"github.com/supernomad/quantum/netlink"
 	"github.com/supernomad/quantum/version"
-	"github.com/vishvananda/netlink"
 	"gopkg.in/yaml.v2"
 )
 

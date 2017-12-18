@@ -5,13 +5,12 @@ package device
 
 import (
 	"errors"
-	"net"
 	"strings"
 	"syscall"
 	"unsafe"
 
 	"github.com/supernomad/quantum/common"
-	"github.com/vishvananda/netlink"
+	"github.com/supernomad/quantum/netlink"
 )
 
 // Tun device struct for managing a multi-queue TUN networking device.
@@ -76,7 +75,7 @@ func newTUN(cfg *common.Config) (Device, error) {
 	}
 
 	if !tun.cfg.ReuseFDS {
-		err := initTun(tun.name, tun.cfg.PrivateIP, tun.cfg.FloatingIPs, tun.cfg.NetworkConfig, tun.cfg.Forward)
+		err := netlink.LinkSetup(tun.name, tun.cfg.PrivateIP, tun.cfg.FloatingIPs, tun.cfg.NetworkConfig.IPNet, tun.cfg.Forward, common.MTU)
 		if err != nil {
 			return nil, err
 		}
@@ -104,71 +103,4 @@ func createTUN(name string) (string, int, error) {
 	}
 
 	return string(req.Name[:strings.Index(string(req.Name[:]), "\000")]), queue, nil
-}
-
-func initTun(name string, src net.IP, additionalIPs []net.IP, networkCfg *common.NetworkConfig, forward bool) error {
-	link, err := netlink.LinkByName(name)
-	if err != nil {
-		return errors.New("error getting the virtual network device from the kernel: " + err.Error())
-	}
-	err = netlink.LinkSetUp(link)
-	if err != nil {
-		return errors.New("error upping the virtual network device: " + err.Error())
-	}
-	err = netlink.LinkSetMTU(link, common.MTU)
-	if err != nil {
-		return errors.New("error setting the virtual network device MTU: " + err.Error())
-	}
-	addr, err := netlink.ParseAddr(src.String() + "/32")
-	if err != nil {
-		return errors.New("error parsing the virtual network device address: " + err.Error())
-	}
-	err = netlink.AddrAdd(link, addr)
-	if err != nil {
-		return errors.New("error setting the virtual network device address: " + err.Error())
-	}
-	route := &netlink.Route{
-		LinkIndex: link.Attrs().Index,
-		Scope:     netlink.SCOPE_LINK,
-		Protocol:  2,
-		Src:       src,
-		Dst:       networkCfg.IPNet,
-	}
-	err = netlink.RouteAdd(route)
-	if err != nil {
-		return errors.New("error setting the virtual network device network routes: " + err.Error())
-	}
-
-	if forward {
-		routes, _ := netlink.RouteList(nil, netlink.FAMILY_V4)
-		for _, r := range routes {
-			if r.Dst == nil {
-				if err := netlink.RouteDel(&r); err != nil {
-					return errors.New("error removing old default route: " + err.Error())
-				}
-			}
-		}
-		route := &netlink.Route{
-			LinkIndex: link.Attrs().Index,
-			Src:       src,
-			Dst:       nil,
-		}
-		err = netlink.RouteAdd(route)
-		if err != nil {
-			return errors.New("error setting the virtual network device network routes: " + err.Error())
-		}
-	}
-
-	for i := 0; i < len(additionalIPs); i++ {
-		additional, err := netlink.ParseAddr(additionalIPs[i].String() + "/32")
-		if err != nil {
-			return errors.New("error parsing the virtual network device address: " + err.Error())
-		}
-		err = netlink.AddrAdd(link, additional)
-		if err != nil {
-			return errors.New("error setting the virtual network device address: " + err.Error())
-		}
-	}
-
-	return nil
 }
