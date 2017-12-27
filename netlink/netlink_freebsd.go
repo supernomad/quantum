@@ -13,16 +13,16 @@ import (
 const (
 	routeCmdName    = "/sbin/route"
 	ifconfigCmdName = "/sbin/ifconfig"
-
-	routeCmdv4Args    = []string{"-n", "get", "-inet", "-host"}
-	ifconfigCmdv4Args = []string{"inet"}
-	routeCmdv6Args    = []string{"-n", "get", "-inet6", "-host"}
-	ifconfigCmdv6Args = []string{"inet6"}
 )
 
 var (
 	interfaceRE = regexp.MustCompile(`interface: (.+)`)
 	addressRE   = regexp.MustCompile(`(inet|inet6)\s([0-9.:a-f]+)\s`)
+
+	routeCmdv4Args    = []string{"-n", "get", "-inet", "-host"}
+	ifconfigCmdv4Args = []string{"inet"}
+	routeCmdv6Args    = []string{"-n", "get", "-inet6", "-host"}
+	ifconfigCmdv6Args = []string{"inet6"}
 )
 
 // RouteGet returns a list of routes that match the provided destination IP address.
@@ -45,7 +45,7 @@ func RouteGet(dst net.IP) (Routes, error) {
 		return nil, errors.New("route command '" + routeCmdName + "' failed to return routes: " + err.Error())
 	}
 
-	routeResults := interfaceRE.FindStringSubmatch(routeOutput)
+	routeResults := interfaceRE.FindStringSubmatch(string(routeOutput))
 	if routeResults == nil {
 		return nil, errors.New("route command did not return a valid interface for the provided route")
 	}
@@ -64,7 +64,7 @@ func RouteGet(dst net.IP) (Routes, error) {
 		return nil, errors.New("ifconfig command '" + ifconfigCmdName + "' failed to return addresses: " + err.Error())
 	}
 
-	addressResults := addressRE.FindStringSubmatch(ifconfigOutput)
+	addressResults := addressRE.FindStringSubmatch(string(ifconfigOutput))
 
 	if addressResults == nil {
 		return nil, errors.New("ifconfig command did not return valid addresses for the provided route")
