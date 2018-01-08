@@ -51,16 +51,16 @@ type Metrics struct {
 	Links map[string]*Metrics `json:"links,omitempty"`
 
 	// The stats for individual queues within quantm.
-	Queues []*Metrics `json:"queues,omitempty"`
+	Queues map[int]*Metrics `json:"queues,omitempty"`
 }
 
 // MetricsLog struct which contains the packet and byte statistics information for quantum.
 type MetricsLog struct {
 	// TxMetrics holds the packet and byte counts for packet transmission.
-	TxMetrics *Metrics
+	TxMetrics *Metrics `json:"tx"`
 
 	// RxMetrics holds the packet and byte counts for packet reception.
-	RxMetrics *Metrics
+	RxMetrics *Metrics `json:"rx"`
 }
 
 // Bytes returns a byte slice json representation of the MetricsLog struct in either flat or prettified notation, if there is an error while marshalling data a nil slice is returned.
@@ -78,17 +78,13 @@ func newMetricsLog(numWorkers int) *MetricsLog {
 	metricsLog := &MetricsLog{
 		TxMetrics: &Metrics{
 			Links:  make(map[string]*Metrics),
-			Queues: make([]*Metrics, numWorkers),
+			Queues: make(map[int]*Metrics),
 		},
 		RxMetrics: &Metrics{
 			Links:  make(map[string]*Metrics),
-			Queues: make([]*Metrics, numWorkers),
+			Queues: make(map[int]*Metrics),
 		},
 	}
 
-	for i := 0; i < numWorkers; i++ {
-		metricsLog.TxMetrics.Queues[i] = &Metrics{}
-		metricsLog.RxMetrics.Queues[i] = &Metrics{}
-	}
 	return metricsLog
 }

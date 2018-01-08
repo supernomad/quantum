@@ -43,7 +43,15 @@ func (aggregator *Aggregator) pipeline(metric *Metric) {
 	}
 
 	handleMetric(metrics, metric)
-	handleMetric(metrics.Queues[metric.Queue], metric)
+
+	if queueMetrics, ok := metrics.Queues[metric.Queue]; ok {
+		handleMetric(queueMetrics, metric)
+	} else {
+		queueMetrics = &Metrics{}
+		handleMetric(queueMetrics, metric)
+
+		metrics.Queues[metric.Queue] = queueMetrics
+	}
 
 	if metric.PrivateIP == "" {
 		return
