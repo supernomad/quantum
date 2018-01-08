@@ -121,19 +121,16 @@ services:
       - $GOPATH/src/github.com/supernomad/quantum/dist/ssl/keys/:/etc/etcd/ssl/keys/:ro
     ports:
       - 2379:2379
-    networks:
-      local:
-        ipv4_address: 172.19.0.4
-        ipv6_address: fd00:dead:beef::4
+    network_mode: host
     environment:
-      ETCD_LISTEN_CLIENT_URLS: "https://[fd00:dead:beef::4]:2379, https://172.19.0.4:2379"
-      ETCD_ADVERTISE_CLIENT_URLS: "https://[fd00:dead:beef::4]:2379, https://172.19.0.4:2379"
+      ETCD_LISTEN_CLIENT_URLS: "http://10.0.0.226:2379"
+      ETCD_ADVERTISE_CLIENT_URLS: "http://10.0.0.226:2379"
       ETCD_CERT_FILE: "/etc/etcd/ssl/certs/etcd.quantum.dev.crt"
       ETCD_KEY_FILE: "/etc/etcd/ssl/keys/etcd.quantum.dev.key"
       ETCD_TRUSTED_CA_FILE: "/etc/etcd/ssl/certs/ca.crt"
       ETCD_DATA_DIR: "/var/lib/etcd"
       ETCD_NAME: "datastore"
-    entrypoint: ["/usr/local/bin/etcd", "--client-cert-auth=true"]
+    entrypoint: ["/usr/local/bin/etcd"]
 networks:
   local:
     driver: bridge

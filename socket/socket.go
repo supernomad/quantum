@@ -41,8 +41,8 @@ func New(socketType string, cfg *common.Config) (Socket, error) {
 	switch socketType {
 	case UDPSocket:
 		return newUDP(cfg)
-	case DTLSSocket:
-		return newDTLS(cfg)
+	//case DTLSSocket:
+	//return newDTLS(cfg)
 	case MOCKSocket:
 		return newMock(cfg)
 	}

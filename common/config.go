@@ -76,7 +76,7 @@ type Config struct {
 	DatastoreSyncInterval    time.Duration          `internal:"false"  type:"duration"  short:"si"   long:"datastore-sync-interval"     default:"60s"                   description:"The interval of full datastore syncs."                                                                                        section:"Datastore"  name:"Datastore Resync Interval"`
 	DatastoreRefreshInterval time.Duration          `internal:"false"  type:"duration"  short:"ri"   long:"datastore-refresh-interval"  default:"120s"                  description:"The interval of dhcp lease refreshes with the datastore."                                                                     section:"Datastore"  name:"Datastore Lease Refresh Interval"`
 	DatastoreFloatingIPTTL   time.Duration          `internal:"false"  type:"duration"  short:"fttl" long:"datastore-floating-ip-ttl"   default:"10s"                   description:"The ttl to use for floating ip addresses."                                                                                    section:"Datastore"  name:"Floating IP TTL"`
-	DatastoreEndpoints       []string               `internal:"false"  type:"list"      short:"e"    long:"datastore-endpoints"         default:"127.0.0.1:2379"        description:"A comma delimited list of key/value datastore endpoints, in 'IPADDR:PORT' syntax."                                            section:"Datastore"  name:"Endpoints"`
+	DatastoreEndpoints       []string               `internal:"false"  type:"list"      short:"e"    long:"datastore-endpoints"         default:"10.0.0.226:2379"       description:"A comma delimited list of key/value datastore endpoints, in 'IPADDR:PORT' syntax."                                            section:"Datastore"  name:"Endpoints"`
 	DatastoreUsername        string                 `internal:"false"  type:"string"    short:"u"    long:"datastore-username"          default:""                      description:"The username to use for authentication with the datastore."                                                                   section:"Datastore"  name:"Username"`
 	DatastorePassword        string                 `internal:"false"  type:"string"    short:"pw"   long:"datastore-password"          default:""                      description:"The password to use for authentication with the datastore."                                                                   section:"Datastore"  name:"Password"`
 	DatastoreTLSSkipVerify   bool                   `internal:"false"  type:"bool"      short:"tsv"  long:"datastore-tls-skip-verify"   default:"false"                 description:"Whether or not to authenticate the TLS certificates of the key/value datastore."                                              section:"Datastore"  name:"Skip TLS Verification"`
@@ -489,8 +489,9 @@ func (cfg *Config) computeArgs() error {
 		return errors.New("an impossible situation occurred, neither ipv4 or ipv6 is available, check your networking configuration you must have public internet access to use automatic configuration")
 	}
 
-	pid := os.Getpid()
-	return ioutil.WriteFile(cfg.PidFile, []byte(strconv.Itoa(pid)), os.ModePerm)
+	//pid := os.Getpid()
+	//return ioutil.WriteFile(cfg.PidFile, []byte(strconv.Itoa(pid)), os.ModePerm)
+	return nil
 }
 
 // NewConfig creates a new Config struct based on user supplied input.

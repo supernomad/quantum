@@ -91,7 +91,7 @@ func createTUN(name string) (string, int, error) {
 
 	copy(req.Name[:15], name)
 
-	queue, err := syscall.Open("/dev/net/tun", syscall.O_RDWR, 0)
+	queue, err := syscall.Open("/dev/tun", syscall.O_RDWR, 0)
 	if err != nil {
 		syscall.Close(queue)
 		return "", -1, errors.New("error opening the /dev/net/tun char file: " + err.Error())
