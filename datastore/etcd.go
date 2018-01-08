@@ -27,10 +27,10 @@ type Etcd struct {
 	cli                 client.Client
 	kapi                client.KeysAPI
 	watchIndex          uint64
+	cancelWatch         context.CancelFunc
 	stopSyncing         chan struct{}
 	stopRefreshingLock  chan struct{}
 	stopRefreshingLease chan struct{}
-	stopWatchingNodes   chan struct{}
 }
 
 func isError(err error, codes ...int) bool {
@@ -240,39 +240,37 @@ func (etcd *Etcd) watch() {
 	}
 	watcher := etcd.kapi.Watcher(etcd.key("nodes"), opts)
 
-	stopWatching := false
-	for !stopWatching {
-		select {
-		case <-etcd.stopWatchingNodes:
-			stopWatching = true
-		default:
-			resp, err := watcher.Next(etcd.ctx)
+	for {
+		ctx, cancel := context.WithCancel(etcd.ctx)
+		etcd.cancelWatch = cancel
+		resp, err := watcher.Next(ctx)
+		if err != nil {
+			etcd.cfg.Log.Error.Println("[ETCD]", "Error during watch on the etcd cluster: "+err.Error())
+			time.Sleep(5 * time.Second)
+
+			go etcd.watch()
+			return
+		} else if ctx.Err() == context.Canceled {
+			break
+		}
+
+		etcd.watchIndex = resp.Index
+
+		switch resp.Action {
+		case "set", "update", "create":
+			mapping, err := common.ParseMapping(resp.Node.Value, etcd.cfg)
 			if err != nil {
-				etcd.cfg.Log.Error.Println("[ETCD]", "Error during watch on the etcd cluster: "+err.Error())
-				time.Sleep(5 * time.Second)
-
-				go etcd.watch()
-				return
+				etcd.cfg.Log.Error.Println("[ETCD]", "Error parsing mapping: "+err.Error())
+				continue
 			}
-
-			etcd.watchIndex = resp.Index
-
-			switch resp.Action {
-			case "set", "update", "create":
-				mapping, err := common.ParseMapping(resp.Node.Value, etcd.cfg)
-				if err != nil {
-					etcd.cfg.Log.Error.Println("[ETCD]", "Error parsing mapping: "+err.Error())
-					continue
-				}
-				etcd.mappings[common.IPtoInt(mapping.PrivateIP)] = mapping
-			case "delete", "expire":
-				mapping, err := common.ParseMapping(resp.Node.Value, etcd.cfg)
-				if err != nil {
-					etcd.cfg.Log.Error.Println("[ETCD]", "Error parsing mapping: "+err.Error())
-					continue
-				}
-				delete(etcd.mappings, common.IPtoInt(mapping.PrivateIP))
+			etcd.mappings[common.IPtoInt(mapping.PrivateIP)] = mapping
+		case "delete", "expire":
+			mapping, err := common.ParseMapping(resp.Node.Value, etcd.cfg)
+			if err != nil {
+				etcd.cfg.Log.Error.Println("[ETCD]", "Error parsing mapping: "+err.Error())
+				continue
 			}
+			delete(etcd.mappings, common.IPtoInt(mapping.PrivateIP))
 		}
 	}
 }
@@ -350,12 +348,14 @@ func (etcd *Etcd) Start() {
 func (etcd *Etcd) Stop() {
 	etcd.stopSyncing <- struct{}{}
 	etcd.stopRefreshingLease <- struct{}{}
-	etcd.stopWatchingNodes <- struct{}{}
+
+	if etcd.cancelWatch != nil {
+		etcd.cancelWatch()
+	}
 
 	close(etcd.stopSyncing)
 	close(etcd.stopRefreshingLock)
 	close(etcd.stopRefreshingLease)
-	close(etcd.stopWatchingNodes)
 }
 
 func generateConfig(cfg *common.Config) (client.Config, error) {
@@ -426,6 +426,5 @@ func newEtcd(cfg *common.Config) (Datastore, error) {
 		stopSyncing:         make(chan struct{}),
 		stopRefreshingLock:  make(chan struct{}),
 		stopRefreshingLease: make(chan struct{}),
-		stopWatchingNodes:   make(chan struct{}),
 	}, nil
 }

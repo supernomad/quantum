@@ -2,8 +2,7 @@
 # Copyright (c) 2016-2017 Christian Saide <supernomad>
 # Licensed under the MPL-2.0, for details see https://github.com/supernomad/quantum/blob/master/LICENSE
 
-# Etcd endpoints
-public-ip: "172.18.0.5"
+public-v4: "172.18.0.5"
 
 datastore-endpoints:
   - "etcd.quantum.dev:2379"

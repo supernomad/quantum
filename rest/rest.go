@@ -17,6 +17,7 @@ import (
 // Rest is a generic rest api struct for exporting internal information and general purpose api settings.
 type Rest struct {
 	cfg        *common.Config
+	stopped    bool
 	server     *http.Server
 	aggregator *metric.Aggregator
 }
@@ -38,7 +39,7 @@ func (rest *Rest) run() {
 	http.HandleFunc(rest.cfg.StatsRoute, rest.returnStats)
 
 	for {
-		if err := rest.server.ListenAndServe(); err != nil {
+		if err := rest.server.ListenAndServe(); err != nil && !rest.stopped {
 			rest.cfg.Log.Error.Println("[REST]", "Error initializing stats api:", err.Error())
 		}
 
@@ -53,6 +54,7 @@ func (rest *Rest) Start() {
 
 // Stop will stop the rest api.
 func (rest *Rest) Stop() error {
+	rest.stopped = true
 	return rest.server.Close()
 }
 
