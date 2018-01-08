@@ -89,7 +89,9 @@ func main() {
 	log.Info.Printf("[MAIN] Using backend:                       %s", cfg.NetworkConfig.Backend)
 	log.Info.Printf("[MAIN] Using plugins:                       %s", strings.Join(cfg.Plugins, ", "))
 	log.Info.Printf("[MAIN] Forwarding network traffic:          %t", cfg.Forward)
-	log.Info.Printf("[MAIN] Handling forwarded network traffic:  %t", cfg.Gateway)
+	if cfg.Forward {
+		log.Info.Printf("[MAIN] Gateway IP:                          %s", cfg.Gateway)
+	}
 
 	os.Setenv("QUANTUM_IP", cfg.PrivateIP.String())
 

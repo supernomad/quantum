@@ -16,6 +16,7 @@ dtls-cert: "/etc/quantum/ssl/certs/ec-server.crt"
 dtls-key: "/etc/quantum/ssl/keys/ec-server.key"
 
 forward: "true"
+gateway: "10.99.0.1"
 
 plugins:
   - encryption

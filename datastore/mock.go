@@ -19,7 +19,7 @@ func (mock *Mock) Mapping(ip uint32) (*common.Mapping, bool) {
 }
 
 // GatewayMapping always returns the internal mapping and true.
-func (mock *Mock) GatewayMapping(ip uint32) (*common.Mapping, bool) {
+func (mock *Mock) GatewayMapping() (*common.Mapping, bool) {
 	return mock.InternalGatewayMapping, true
 }
 

@@ -27,7 +27,7 @@ func (rt *Router) Resolve(destination net.IP) (*common.Mapping, bool) {
 	}
 
 	// Return the gateway mapping if it exists.
-	return rt.store.GatewayMapping(dip)
+	return rt.store.GatewayMapping()
 }
 
 // New returns a Router struct based on the passed in configuration and key/value store.

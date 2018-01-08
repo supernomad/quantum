@@ -48,7 +48,6 @@ services:
       - "compression,encryption"
       - "--floating-ips"
       - "10.99.2.1"
-      - "--gateway"
   quantum1:
     cpuset: "0,1,2"
     container_name: quantum1
@@ -108,7 +107,7 @@ services:
       local:
         ipv4_address: 172.19.0.5
         ipv6_address: fd00:dead:beef::5
-    entrypoint: ["/bin/start_quantum.sh"]
+    entrypoint: ["/bin/sleep", "3600"]
   etcd:
     container_name: etcd
     image: quay.io/coreos/etcd

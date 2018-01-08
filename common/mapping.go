@@ -26,8 +26,8 @@ type Mapping struct {
 	// Whether or not this mapping represents a floating ip address.
 	Floating bool `json:"floating"`
 
-	// Whether or not this mapping represents a gateway ip address.
-	Gateway bool `json:"gateway"`
+	// The gateway ip this node will forward traffic to.
+	Gateway net.IP `json:"gatewayIP"`
 
 	// The public ipv4 address of the node represented by this mapping, which may or may not exist.
 	IPv4 net.IP `json:"ipv4,omitempty"`
