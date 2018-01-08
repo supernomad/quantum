@@ -244,7 +244,7 @@ func (etcd *Etcd) watch() {
 		ctx, cancel := context.WithCancel(etcd.ctx)
 		etcd.cancelWatch = cancel
 		resp, err := watcher.Next(ctx)
-		if err != nil {
+		if ctx.Err() != context.Canceled && err != nil {
 			etcd.cfg.Log.Error.Println("[ETCD]", "Error during watch on the etcd cluster: "+err.Error())
 			time.Sleep(5 * time.Second)
 
