@@ -107,7 +107,7 @@ services:
       local:
         ipv4_address: 172.19.0.5
         ipv6_address: fd00:dead:beef::5
-    entrypoint: ["/bin/sleep", "3600"]
+    entrypoint: ["/bin/start_quantum.sh"]
   etcd:
     container_name: etcd
     image: quay.io/coreos/etcd
