@@ -127,4 +127,4 @@ There are a few rules:
 - Documentation is added for new user facing functionality.
 
 ---
-Copyright (c) 2016-2017 Christian Saide <supernomad>
+Copyright (c) 2016-2018 Christian Saide <supernomad>
