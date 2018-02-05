@@ -14,11 +14,14 @@ import (
 type Type int
 
 const (
-	// ETCDDatastore will tell quantum to use etcd as the backend datastore.
-	ETCDDatastore Type = iota
+	// ETCDV2Datastore will tell quantum to use etcd as the backend datastore.
+	ETCDV2Datastore = "etcdv2"
+
+	// ETCDV3Datastore will tell quantum to use etcd as the backend datastore.
+	ETCDV3Datastore = "etcdv3"
 
 	// MOCKDatastore will tell quantum to use a moked out backend datastore for testing.
-	MOCKDatastore
+	MOCKDatastore = "mock"
 
 	lockTTL = 10 * time.Second
 )
@@ -42,10 +45,12 @@ type Datastore interface {
 }
 
 // New generates a datastore object based on the passed in Type and user configuration.
-func New(datastoreType Type, cfg *common.Config) (Datastore, error) {
+func New(datastoreType string, cfg *common.Config) (Datastore, error) {
 	switch datastoreType {
-	case ETCDDatastore:
-		return newEtcd(cfg)
+	case ETCDV2Datastore:
+		return newEtcdV2(cfg)
+	case ETCDV3Datastore:
+		return newEtcdV3(cfg)
 	case MOCKDatastore:
 		return newMock(cfg)
 	default:

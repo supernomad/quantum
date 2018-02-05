@@ -18,8 +18,8 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Etcd datastore struct for interacting with the coreos etcd key/value datastore.
-type Etcd struct {
+// EtcdV2 datastore struct for interacting with the coreos etcd key/value datastore.
+type EtcdV2 struct {
 	cfg                 *common.Config
 	mappings            map[uint32]*common.Mapping
 	gateway             uint32
@@ -49,12 +49,12 @@ func isError(err error, codes ...int) bool {
 	return false
 }
 
-func (etcd *Etcd) key(strs ...string) string {
+func (etcd *EtcdV2) key(strs ...string) string {
 	strs = append([]string{etcd.cfg.DatastorePrefix}, strs...)
 	return path.Join(strs...)
 }
 
-func (etcd *Etcd) handleNetworkConfig() error {
+func (etcd *EtcdV2) handleNetworkConfig() error {
 	key := etcd.key("config")
 	resp, err := etcd.kapi.Get(etcd.ctx, key, &client.GetOptions{})
 
@@ -77,7 +77,7 @@ func (etcd *Etcd) handleNetworkConfig() error {
 	return nil
 }
 
-func (etcd *Etcd) handleLocalMapping() error {
+func (etcd *EtcdV2) handleLocalMapping() error {
 	mapping, err := common.GenerateLocalMapping(etcd.cfg, etcd.mappings)
 	if err != nil {
 		return errors.New("error generating the local network mapping: " + err.Error())
@@ -101,7 +101,7 @@ func (etcd *Etcd) handleLocalMapping() error {
 	return nil
 }
 
-func (etcd *Etcd) lockFloatingIP(key, value string) {
+func (etcd *EtcdV2) lockFloatingIP(key, value string) {
 	opts := &client.SetOptions{
 		PrevExist: client.PrevNoExist,
 		TTL:       etcd.cfg.DatastoreFloatingIPTTL,
@@ -124,7 +124,7 @@ func (etcd *Etcd) lockFloatingIP(key, value string) {
 	}
 }
 
-func (etcd *Etcd) handleFloatingMappings() error {
+func (etcd *EtcdV2) handleFloatingMappings() error {
 	for i := 0; i < len(etcd.cfg.FloatingIPs); i++ {
 		mapping, err := common.GenerateFloatingMapping(etcd.cfg, i, etcd.mappings)
 		if err != nil {
@@ -137,7 +137,7 @@ func (etcd *Etcd) handleFloatingMappings() error {
 	return nil
 }
 
-func (etcd *Etcd) refresh(key, value string, ttl, refreshInterval time.Duration, stop chan struct{}) {
+func (etcd *EtcdV2) refresh(key, value string, ttl, refreshInterval time.Duration, stop chan struct{}) {
 	ticker := time.NewTicker(refreshInterval)
 
 	opts := &client.SetOptions{
@@ -166,7 +166,7 @@ func (etcd *Etcd) refresh(key, value string, ttl, refreshInterval time.Duration,
 	ticker.Stop()
 }
 
-func (etcd *Etcd) lock() error {
+func (etcd *EtcdV2) lock() error {
 	key := etcd.key("lock")
 	opts := &client.SetOptions{
 		PrevExist: client.PrevNoExist,
@@ -190,7 +190,7 @@ func (etcd *Etcd) lock() error {
 	return nil
 }
 
-func (etcd *Etcd) unlock() error {
+func (etcd *EtcdV2) unlock() error {
 	etcd.stopRefreshingLock <- struct{}{}
 
 	key := etcd.key("lock")
@@ -207,7 +207,7 @@ func (etcd *Etcd) unlock() error {
 	return nil
 }
 
-func (etcd *Etcd) sync() error {
+func (etcd *EtcdV2) sync() error {
 	var nodes client.Nodes
 	resp, err := etcd.kapi.Get(etcd.ctx, etcd.key("nodes"), &client.GetOptions{Recursive: true})
 
@@ -233,7 +233,7 @@ func (etcd *Etcd) sync() error {
 	return nil
 }
 
-func (etcd *Etcd) watch() {
+func (etcd *EtcdV2) watch() {
 	opts := &client.WatcherOptions{
 		AfterIndex: etcd.watchIndex,
 		Recursive:  true,
@@ -276,19 +276,19 @@ func (etcd *Etcd) watch() {
 }
 
 // Mapping returns a mapping and true based on the supplied uint32 representation of an ipv4 address if it exists within the datastore, otherwise it returns nil for the mapping and false.
-func (etcd *Etcd) Mapping(ip uint32) (*common.Mapping, bool) {
+func (etcd *EtcdV2) Mapping(ip uint32) (*common.Mapping, bool) {
 	mapping, exists := etcd.mappings[ip]
 	return mapping, exists
 }
 
 // GatewayMapping should retun the mapping and true if it exists specifically for destinations outside of the quantum network, if the mapping doesn't exist it will return nil and false.
-func (etcd *Etcd) GatewayMapping() (*common.Mapping, bool) {
+func (etcd *EtcdV2) GatewayMapping() (*common.Mapping, bool) {
 	mapping, exists := etcd.mappings[etcd.gateway]
 	return mapping, exists
 }
 
 // Init the Etcd datastore which will open any necessary connections, preform an initial sync of the datastore, and define the local mapping in the datastore.
-func (etcd *Etcd) Init() error {
+func (etcd *EtcdV2) Init() error {
 	err := etcd.lock()
 	if err != nil {
 		return err
@@ -322,7 +322,7 @@ func (etcd *Etcd) Init() error {
 }
 
 // Start periodic synchronization, and DHCP lease refresh with the datastore, as well as start watching for changes in network topology.
-func (etcd *Etcd) Start() {
+func (etcd *EtcdV2) Start() {
 	go etcd.watch()
 
 	ticker := time.NewTicker(etcd.cfg.DatastoreSyncInterval)
@@ -345,7 +345,7 @@ func (etcd *Etcd) Start() {
 }
 
 // Stop synchronizing with the backend and shutdown open connections.
-func (etcd *Etcd) Stop() {
+func (etcd *EtcdV2) Stop() {
 	etcd.stopSyncing <- struct{}{}
 	etcd.stopRefreshingLease <- struct{}{}
 
@@ -405,7 +405,7 @@ func generateConfig(cfg *common.Config) (client.Config, error) {
 	return etcdCfg, nil
 }
 
-func newEtcd(cfg *common.Config) (Datastore, error) {
+func newEtcdV2(cfg *common.Config) (Datastore, error) {
 	etcdCfg, err := generateConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -417,7 +417,7 @@ func newEtcd(cfg *common.Config) (Datastore, error) {
 	}
 
 	kapi := client.NewKeysAPI(cli)
-	return &Etcd{
+	return &EtcdV2{
 		ctx:                 context.TODO(),
 		cfg:                 cfg,
 		mappings:            make(map[uint32]*common.Mapping),

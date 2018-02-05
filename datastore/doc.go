@@ -9,7 +9,7 @@ The design of the datastore module is to expose a single method that represents 
 The basic architecture is to have an in memory map object that is synchronized in the background. This allows the read only worker threads efficient access to the data, while still ensuring data consistency.
 
 Currently supported datastores:
-	https://github.com/coreos/etcd
+	https://github.com/coreos/etcd (Both v2 and v3 api's)
 
 The data structure itself is as follows:
 	Key: Private ip of the node

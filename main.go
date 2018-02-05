@@ -32,7 +32,7 @@ func main() {
 	cfg, err := common.NewConfig(log)
 	handleError(log, err)
 
-	store, err := datastore.New(datastore.ETCDDatastore, cfg)
+	store, err := datastore.New(datastore.ETCDV2Datastore, cfg)
 	handleError(log, err)
 
 	err = store.Init()
