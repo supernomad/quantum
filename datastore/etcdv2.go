@@ -18,7 +18,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// EtcdV2 datastore struct for interacting with the coreos etcd key/value datastore.
+// EtcdV2 datastore struct for interacting with the coreos etcd key/value datastore using the v2 api.
 type EtcdV2 struct {
 	cfg                 *common.Config
 	mappings            map[uint32]*common.Mapping
