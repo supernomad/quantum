@@ -165,7 +165,7 @@ func testYamlConfig(t *testing.T, args []string) {
 	if cfg.DatastorePassword != "Password1" {
 		t.Fatalf("NewConfig didn't pick up the config file replacement for Password")
 	}
-	if cfg.DatastorePrefix != "woot" {
+	if cfg.DatastorePrefix != "/woot" {
 		t.Fatal("NewConfig didn't pick up the cli replacement for Prefix")
 	}
 	if cfg.NumWorkers != runtime.NumCPU() {
@@ -216,7 +216,7 @@ func testJSONConfig(t *testing.T, args []string) {
 	if cfg.DatastorePassword != "Password1" {
 		t.Fatalf("NewConfig didn't pick up the config file replacement for Password")
 	}
-	if cfg.DatastorePrefix != "woot" {
+	if cfg.DatastorePrefix != "/woot" {
 		t.Fatal("NewConfig didn't pick up the cli replacement for Prefix")
 	}
 	if cfg.NumWorkers != runtime.NumCPU() {

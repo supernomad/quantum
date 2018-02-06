@@ -339,7 +339,7 @@ func (etcd *EtcdV3) Stop() {
 	close(etcd.stopSyncing)
 }
 
-func generateV3Config(cfg *common.Config, ctx context.Context) (clientv3.Config, error) {
+func generateV3Config(ctx context.Context, cfg *common.Config) (clientv3.Config, error) {
 	etcdCfg := clientv3.Config{
 		DialTimeout:          5 * time.Second,
 		DialKeepAliveTime:    10 * time.Second,
@@ -391,7 +391,7 @@ func generateV3Config(cfg *common.Config, ctx context.Context) (clientv3.Config,
 func newEtcdV3(cfg *common.Config) (Datastore, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	etcdCfg, err := generateV3Config(cfg, ctx)
+	etcdCfg, err := generateV3Config(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
