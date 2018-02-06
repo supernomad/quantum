@@ -170,7 +170,7 @@ func (etcd *EtcdV2) lock() error {
 	key := etcd.key("lock")
 	opts := &client.SetOptions{
 		PrevExist: client.PrevNoExist,
-		TTL:       lockV2TTL,
+		TTL:       lockTTL,
 	}
 
 	for {
@@ -179,14 +179,14 @@ func (etcd *EtcdV2) lock() error {
 		if err != nil && !isError(err, client.ErrorCodeNodeExist) {
 			return errors.New("error retrieving the lock on etcd: " + err.Error())
 		} else if isError(err, client.ErrorCodeNodeExist) {
-			time.Sleep(lockV2TTL)
+			time.Sleep(lockTTL)
 			continue
 		}
 
 		break
 	}
 
-	go etcd.refresh(key, etcd.cfg.MachineID, lockV2TTL, lockV2TTL/2, etcd.stopRefreshingLock)
+	go etcd.refresh(key, etcd.cfg.MachineID, lockTTL, lockTTL/2, etcd.stopRefreshingLock)
 	return nil
 }
 

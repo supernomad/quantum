@@ -93,7 +93,7 @@ func (etcd *EtcdV3) handleLocalMapping() error {
 
 	key := etcd.key("nodes", etcd.cfg.PrivateIP.String())
 
-	lease, err := etcd.lease(int64(etcd.cfg.NetworkConfig.LeaseTime.Seconds() / time.Second.Seconds()))
+	lease, err := etcd.lease(etcd.cfg.NetworkConfig.LeaseTime.Seconds() / time.Second.Seconds())
 	if err != nil {
 		return errors.New("could not lock private ip in etcd: " + err.Error())
 	}
@@ -123,7 +123,7 @@ func (etcd *EtcdV3) lockFloatingIP(key, value string) {
 		}
 		first = false
 
-		lease, err := etcd.lease(int64(etcd.cfg.DatastoreFloatingIPTTL.Seconds() / time.Second.Seconds()))
+		lease, err := etcd.lease(etcd.cfg.DatastoreFloatingIPTTL.Seconds() / time.Second.Seconds())
 		if err != nil {
 			etcd.cfg.Log.Error.Println("[ETCD]", "Error attempting to lock floating mapping in etcd: "+err.Error())
 			continue
@@ -156,8 +156,8 @@ func (etcd *EtcdV3) handleFloatingMappings() error {
 	return nil
 }
 
-func (etcd *EtcdV3) lease(ttl int64) (clientv3.LeaseID, error) {
-	resp, err := etcd.cli.Grant(etcd.cliCtx, ttl)
+func (etcd *EtcdV3) lease(ttl float64) (clientv3.LeaseID, error) {
+	resp, err := etcd.cli.Grant(etcd.cliCtx, int64(ttl))
 	if err != nil {
 		return -1, errors.New("failed creating lease: " + err.Error())
 	}
@@ -189,7 +189,7 @@ func (etcd *EtcdV3) lock() (clientv3.LeaseID, error) {
 	var lease clientv3.LeaseID
 
 	for {
-		lease, err = etcd.lease(lockV3TTL)
+		lease, err = etcd.lease(lockTTL.Seconds() / time.Second.Seconds())
 		if err != nil {
 			return -1, errors.New("could not lock etcd: " + err.Error())
 		}
@@ -207,7 +207,7 @@ func (etcd *EtcdV3) lock() (clientv3.LeaseID, error) {
 			break
 		}
 
-		time.Sleep((lockV3TTL + 1) * time.Second)
+		time.Sleep(lockTTL + time.Second)
 	}
 
 	err = etcd.keepalive(lease)
