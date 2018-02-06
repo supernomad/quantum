@@ -23,7 +23,8 @@ const (
 	// MOCKDatastore will tell quantum to use a moked out backend datastore for testing.
 	MOCKDatastore = "mock"
 
-	lockTTL = 10 * time.Second
+	lockV2TTL = 10 * time.Second
+	lockV3TTL = 10
 )
 
 // Datastore interface for quantum to use for retrieving mapping data from the backend datastore.

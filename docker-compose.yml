@@ -130,6 +130,10 @@ services:
       ETCD_CERT_FILE: "/etc/etcd/ssl/certs/etcd.quantum.dev.crt"
       ETCD_KEY_FILE: "/etc/etcd/ssl/keys/etcd.quantum.dev.key"
       ETCD_TRUSTED_CA_FILE: "/etc/etcd/ssl/certs/ca.crt"
+      ETCDCTL_CERT: "/etc/etcd/ssl/certs/etcd.quantum.dev.crt"
+      ETCDCTL_KEY: "/etc/etcd/ssl/keys/etcd.quantum.dev.key"
+      ETCDCTL_CACERT: "/etc/etcd/ssl/certs/ca.crt"
+      ETCDCTL_ENDPOINTS: "https://172.19.0.4:2379"
       ETCD_DATA_DIR: "/var/lib/etcd"
       ETCD_NAME: "datastore"
     entrypoint: ["/usr/local/bin/etcd", "--client-cert-auth=true"]

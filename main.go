@@ -32,7 +32,7 @@ func main() {
 	cfg, err := common.NewConfig(log)
 	handleError(log, err)
 
-	store, err := datastore.New(datastore.ETCDV2Datastore, cfg)
+	store, err := datastore.New(cfg.Datastore, cfg)
 	handleError(log, err)
 
 	err = store.Init()
@@ -86,6 +86,7 @@ func main() {
 	log.Info.Printf("[MAIN] Public IPv4 address:                 %s", cfg.PublicIPv4)
 	log.Info.Printf("[MAIN] Public IPv6 address:                 %s", cfg.PublicIPv6)
 	log.Info.Printf("[MAIN] Listening on port:                   %d", cfg.ListenPort)
+	log.Info.Printf("[MAIN] Using datastore:                     %s", cfg.Datastore)
 	log.Info.Printf("[MAIN] Using backend:                       %s", cfg.NetworkConfig.Backend)
 	log.Info.Printf("[MAIN] Using plugins:                       %s", strings.Join(cfg.Plugins, ", "))
 	log.Info.Printf("[MAIN] Forwarding network traffic:          %t", cfg.Forward)

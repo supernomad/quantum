@@ -72,7 +72,8 @@ type Config struct {
 	Forward                  bool                   `internal:"false"  type:"bool"      short:"f"    long:"forward"                     default:"false"                 description:"Whether or not the quantum device should forward all network traffic through quantum. Requires '-g|--gateway' to be specified."  section:"General"    name:"Forward Traffic"`
 	Gateway                  net.IP                 `internal:"false"  type:"ip"        short:"g"    long:"gateway"                     default:""                      description:"The private ip address of the remote quantum node to forward traffic to. Ignored unless '-f|--forward' is specified."            section:"General"    name:"Gateway"`
 	Plugins                  []string               `internal:"false"  type:"list"      short:"x"    long:"plugins"                     default:""                      description:"The plugins supported by this node."                                                                                             section:"Plugins"    name:"Plugins"`
-	DatastorePrefix          string                 `internal:"false"  type:"string"    short:"pr"   long:"datastore-prefix"            default:"quantum"               description:"The prefix to store quantum configuration data under in the key/value datastore."                                                section:"Datastore"  name:"Prefix"`
+	Datastore                string                 `internal:"false"  type:"string"    short:"s"    long:"datastore"                   default:"etcdv2"                description:"The key/value datastore to use to store quantum configuration."                                                                  section:"Datastore"  name:"Datastore"`
+	DatastorePrefix          string                 `internal:"false"  type:"string"    short:"pr"   long:"datastore-prefix"            default:"/quantum"              description:"The prefix to store quantum configuration data under in the key/value datastore."                                                section:"Datastore"  name:"Prefix"`
 	DatastoreSyncInterval    time.Duration          `internal:"false"  type:"duration"  short:"si"   long:"datastore-sync-interval"     default:"60s"                   description:"The interval of full datastore syncs."                                                                                           section:"Datastore"  name:"Datastore Resync Interval"`
 	DatastoreRefreshInterval time.Duration          `internal:"false"  type:"duration"  short:"ri"   long:"datastore-refresh-interval"  default:"120s"                  description:"The interval of dhcp lease refreshes with the datastore."                                                                        section:"Datastore"  name:"Datastore Lease Refresh Interval"`
 	DatastoreFloatingIPTTL   time.Duration          `internal:"false"  type:"duration"  short:"fttl" long:"datastore-floating-ip-ttl"   default:"10s"                   description:"The ttl to use for floating ip addresses."                                                                                       section:"Datastore"  name:"Floating IP TTL"`
@@ -329,6 +330,10 @@ func (cfg *Config) parseArgs() error {
 func (cfg *Config) computeArgs() error {
 	if cfg.Forward && cfg.Gateway == nil {
 		return errors.New("'-f|--forward' specified but no '-g|--gateway' specified to forward traffic to")
+	}
+
+	if !strings.HasPrefix(cfg.DatastorePrefix, "/") {
+		cfg.DatastorePrefix = "/" + cfg.DatastorePrefix
 	}
 
 	if (cfg.DatastoreTLSCert != "" && cfg.DatastoreTLSKey != "") || cfg.DatastoreTLSCA != "" {

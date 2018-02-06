@@ -170,7 +170,7 @@ func (etcd *EtcdV2) lock() error {
 	key := etcd.key("lock")
 	opts := &client.SetOptions{
 		PrevExist: client.PrevNoExist,
-		TTL:       lockTTL,
+		TTL:       lockV2TTL,
 	}
 
 	for {
@@ -179,14 +179,14 @@ func (etcd *EtcdV2) lock() error {
 		if err != nil && !isError(err, client.ErrorCodeNodeExist) {
 			return errors.New("error retrieving the lock on etcd: " + err.Error())
 		} else if isError(err, client.ErrorCodeNodeExist) {
-			time.Sleep(lockTTL)
+			time.Sleep(lockV2TTL)
 			continue
 		}
 
 		break
 	}
 
-	go etcd.refresh(key, etcd.cfg.MachineID, lockTTL, lockTTL/2, etcd.stopRefreshingLock)
+	go etcd.refresh(key, etcd.cfg.MachineID, lockV2TTL, lockV2TTL/2, etcd.stopRefreshingLock)
 	return nil
 }
 
@@ -358,7 +358,7 @@ func (etcd *EtcdV2) Stop() {
 	close(etcd.stopRefreshingLease)
 }
 
-func generateConfig(cfg *common.Config) (client.Config, error) {
+func generateV2Config(cfg *common.Config) (client.Config, error) {
 	endpointPrefix := "http://"
 	etcdCfg := client.Config{}
 
@@ -406,7 +406,7 @@ func generateConfig(cfg *common.Config) (client.Config, error) {
 }
 
 func newEtcdV2(cfg *common.Config) (Datastore, error) {
-	etcdCfg, err := generateConfig(cfg)
+	etcdCfg, err := generateV2Config(cfg)
 	if err != nil {
 		return nil, err
 	}
