@@ -406,6 +406,7 @@ func generateV2Config(cfg *common.Config) (client.Config, error) {
 }
 
 func newEtcdV2(cfg *common.Config) (Datastore, error) {
+	cfg.Log.Warn.Println("[ETCD]", "The 'etcdv2' backend is deprecated and will be removed in a future release.")
 	etcdCfg, err := generateV2Config(cfg)
 	if err != nil {
 		return nil, err

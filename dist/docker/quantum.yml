@@ -4,6 +4,7 @@
 
 public-v4: "172.18.0.5"
 
+datastore: etcdv3
 datastore-endpoints:
   - "etcd.quantum.dev:2379"
 datastore-tls-ca-cert: "/etc/quantum/ssl/certs/ca.crt"

@@ -14,6 +14,7 @@ import (
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/clientv3/clientv3util"
+	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/supernomad/quantum/common"
 	"golang.org/x/net/context"
 )
@@ -93,7 +94,7 @@ func (etcd *EtcdV3) handleLocalMapping() error {
 
 	key := etcd.key("nodes", etcd.cfg.PrivateIP.String())
 
-	lease, err := etcd.lease(etcd.cfg.NetworkConfig.LeaseTime.Seconds() / time.Second.Seconds())
+	lease, err := etcd.lease(etcd.cfg.NetworkConfig.LeaseTime / time.Second)
 	if err != nil {
 		return errors.New("could not lock private ip in etcd: " + err.Error())
 	}
@@ -123,7 +124,7 @@ func (etcd *EtcdV3) lockFloatingIP(key, value string) {
 		}
 		first = false
 
-		lease, err := etcd.lease(etcd.cfg.DatastoreFloatingIPTTL.Seconds() / time.Second.Seconds())
+		lease, err := etcd.lease(etcd.cfg.DatastoreFloatingIPTTL / time.Second)
 		if err != nil {
 			etcd.cfg.Log.Error.Println("[ETCD]", "Error attempting to lock floating mapping in etcd: "+err.Error())
 			continue
@@ -156,7 +157,7 @@ func (etcd *EtcdV3) handleFloatingMappings() error {
 	return nil
 }
 
-func (etcd *EtcdV3) lease(ttl float64) (clientv3.LeaseID, error) {
+func (etcd *EtcdV3) lease(ttl time.Duration) (clientv3.LeaseID, error) {
 	resp, err := etcd.cli.Grant(etcd.cliCtx, int64(ttl))
 	if err != nil {
 		return -1, errors.New("failed creating lease: " + err.Error())
@@ -182,46 +183,35 @@ func (etcd *EtcdV3) keepalive(lease clientv3.LeaseID) error {
 	return nil
 }
 
-func (etcd *EtcdV3) lock() (clientv3.LeaseID, error) {
+func (etcd *EtcdV3) lock() (*concurrency.Mutex, error) {
 	key := etcd.key("lock")
 
-	var err error
-	var lease clientv3.LeaseID
-
-	for {
-		lease, err = etcd.lease(lockTTL.Seconds() / time.Second.Seconds())
-		if err != nil {
-			return -1, errors.New("could not lock etcd: " + err.Error())
-		}
-
-		txResp, err := etcd.cli.Txn(etcd.cliCtx).
-			If(clientv3util.KeyMissing(key)).
-			Then(clientv3.OpPut(key, etcd.cfg.MachineID, clientv3.WithLease(lease))).
-			Commit()
-
-		if err != nil {
-			return -1, errors.New("error retrieving the lock on etcd: " + err.Error())
-		}
-
-		if txResp.Succeeded {
-			break
-		}
-
-		time.Sleep(lockTTL + time.Second)
-	}
-
-	err = etcd.keepalive(lease)
+	lease, err := etcd.lease(lockTTL / time.Second)
 	if err != nil {
-		return -1, errors.New("could not refresh etcd lock: " + err.Error())
+		return nil, errors.New("could not lock etcd: " + err.Error())
 	}
 
-	return lease, nil
+	lockSession, err := concurrency.NewSession(etcd.cli, concurrency.WithLease(lease))
+	if err != nil {
+		return nil, errors.New("failed to obtain lock session: " + err.Error())
+	}
+	defer lockSession.Close()
+
+	if err := etcd.keepalive(lease); err != nil {
+		return nil, errors.New("could not refresh etcd lock: " + err.Error())
+	}
+
+	mutex := concurrency.NewMutex(lockSession, key)
+
+	if err := mutex.Lock(etcd.cliCtx); err != nil {
+		return nil, errors.New("failed to obtain etcd lock: " + err.Error())
+	}
+
+	return mutex, nil
 }
 
-func (etcd *EtcdV3) unlock(lease clientv3.LeaseID) error {
-	_, err := etcd.cli.Revoke(etcd.cliCtx, lease)
-
-	if err != nil {
+func (etcd *EtcdV3) unlock(mutex *concurrency.Mutex) error {
+	if err := mutex.Unlock(etcd.cliCtx); err != nil {
 		return errors.New("error revoking etcd lock: " + err.Error())
 	}
 
@@ -230,13 +220,18 @@ func (etcd *EtcdV3) unlock(lease clientv3.LeaseID) error {
 
 func (etcd *EtcdV3) watch() {
 	key := etcd.key("nodes")
-outer:
 	for {
-		watch := etcd.cli.Watch(etcd.cliCtx, key, clientv3.WithPrefix())
+		ctx, cancel := context.WithTimeout(etcd.cliCtx, 30*time.Second)
+		watch := etcd.cli.Watch(ctx, key, clientv3.WithPrefix())
+
 		for resp := range watch {
 			if resp.Canceled {
-				break outer
+				if err := resp.Err(); err != nil {
+					etcd.cfg.Log.Error.Println("[ETCD]", "Error during watch operation: "+err.Error())
+				}
+				break
 			}
+
 			for _, ev := range resp.Events {
 				switch ev.Type.String() {
 				case "PUT":
@@ -256,6 +251,8 @@ outer:
 				}
 			}
 		}
+
+		cancel()
 	}
 }
 
@@ -273,36 +270,36 @@ func (etcd *EtcdV3) GatewayMapping() (*common.Mapping, bool) {
 
 // Init the Etcd datastore which will open any necessary connections, preform an initial sync of the datastore, and define the local mapping in the datastore.
 func (etcd *EtcdV3) Init() error {
-	lease, err := etcd.lock()
+	mutex, err := etcd.lock()
 	if err != nil {
 		return err
 	}
 
 	err = etcd.handleNetworkConfig()
 	if err != nil {
-		etcd.unlock(lease)
+		etcd.unlock(mutex)
 		return err
 	}
 
 	err = etcd.sync()
 	if err != nil {
-		etcd.unlock(lease)
+		etcd.unlock(mutex)
 		return err
 	}
 
 	err = etcd.handleLocalMapping()
 	if err != nil {
-		etcd.unlock(lease)
+		etcd.unlock(mutex)
 		return err
 	}
 
 	err = etcd.handleFloatingMappings()
 	if err != nil {
-		etcd.unlock(lease)
+		etcd.unlock(mutex)
 		return err
 	}
 
-	return etcd.unlock(lease)
+	return etcd.unlock(mutex)
 }
 
 // Start periodic synchronization, and DHCP lease refresh with the datastore, as well as start watching for changes in network topology.
