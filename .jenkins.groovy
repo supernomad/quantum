@@ -15,7 +15,7 @@ node {
             ])
         }
 
-        builder = docker.build('builder', '--pull -f ./dist/docker/Dockerfile.builder ./dist/')
+        builder = docker.build('builder', '--network host --pull -f ./dist/docker/Dockerfile.builder ./dist/')
         builder.inside('--net host --cap-add NET_ADMIN --cap-add NET_RAW') {
             stage("Setup") {
                 sh """
